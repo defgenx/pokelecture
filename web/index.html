@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <!-- Rewritten by the server: "/" standalone, "/pokelecture/" behind nginx. -->
+  <base href="__BASE__">
+  <meta name="theme-color" content="#ee1515">
+  <title>Pokélecture</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- The first tap anywhere unlocks audio playback: Chrome refuses to play
+       sound before a user gesture, so the game literally cannot start without
+       this screen. -->
+  <div id="gate" class="screen gate">
+    <div class="gate-art">
+      <div class="pokeball pokeball-xl spin-slow" aria-hidden="true"></div>
+      <img class="gate-pika" src="sprites/art/25.png" alt="Pikachu">
+    </div>
+
+    <h1 class="logo">Pokélecture</h1>
+    <p class="gate-sub">Apprends à lire avec les Pokémon</p>
+
+    <button id="gate-btn" class="btn btn-huge btn-ball">
+      <span class="pokeball pokeball-sm" aria-hidden="true"></span>
+      COMMENCER
+    </button>
+
+    <div class="sprite-strip" aria-hidden="true">
+      <img src="sprites/art/1.png" alt=""><img src="sprites/art/4.png" alt="">
+      <img src="sprites/art/7.png" alt=""><img src="sprites/art/16.png" alt="">
+      <img src="sprites/art/25.png" alt=""><img src="sprites/art/52.png" alt="">
+      <img src="sprites/art/133.png" alt=""><img src="sprites/art/143.png" alt="">
+    </div>
+  </div>
+
+  <div id="app" hidden></div>
+
+  <div id="fx" class="fx" aria-hidden="true"></div>
+
+  <script src="icons.js"></script>
+  <script src="sfx.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

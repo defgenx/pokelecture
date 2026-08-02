@@ -1,0 +1,94 @@
+{
+  "id": "ep03",
+  "route": 3,
+  "title": "Route 3 — f et v",
+  "story": "Le vent souffle sur la route 3 : ffff comme une flamme, vvvv comme des ailes. Au clair de lune, un Pokémon rose danse. Et derrière un buisson, un petit Pokémon marron te regarde.",
+  "new_graphemes": [
+    "f",
+    "v"
+  ],
+  "syllables": [
+    "fa",
+    "fi",
+    "fo",
+    "fu",
+    "fé",
+    "va",
+    "vi",
+    "vo",
+    "vu",
+    "vé"
+  ],
+  "words": [
+    {
+      "text": "Mélofée",
+      "pokemon": 35,
+      "syllables": [
+        "Mé",
+        "lo",
+        "fée"
+      ]
+    },
+    {
+      "text": "Évoli",
+      "pokemon": 133,
+      "syllables": [
+        "É",
+        "vo",
+        "li"
+      ]
+    },
+    {
+      "text": "Nosferapti",
+      "pokemon": 41,
+      "syllables": [
+        "Nos",
+        "fe",
+        "rap",
+        "ti"
+      ]
+    },
+    {
+      "text": "Fée",
+      "syllables": [
+        "Fée"
+      ],
+      "icon": "sparkle"
+    },
+    {
+      "text": "Vol",
+      "syllables": [
+        "Vol"
+      ],
+      "icon": "wing"
+    },
+    {
+      "text": "Vitesse",
+      "syllables": [
+        "Vi",
+        "tesse"
+      ],
+      "icon": "speed"
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Nosferapti vole vite.",
+      "pokemon": 41
+    },
+    {
+      "text": "Mélofée adore Évoli.",
+      "pokemon": 35
+    },
+    {
+      "text": "Évoli évite la Morsure.",
+      "pokemon": 133
+    }
+  ],
+  "reward_pokemon": 133,
+  "boss": {
+    "pokemon": 133,
+    "hp": 3,
+    "taunt": "Un Évoli sort des buissons ! Personne ne sait en quoi il va évoluer."
+  }
+}

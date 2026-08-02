@@ -1,0 +1,96 @@
+{
+  "id": "ep08",
+  "route": 8,
+  "title": "Route 8 — le son an",
+  "story": "Route 8 : le son annnn. Devant un p ou un b, il s'écrit am. Une petite chenille verte grignote les feuilles au bord du chemin : c'est le moment d'apprendre le nom du type Plante et l'attaque Tranche.",
+  "new_graphemes": [
+    "an",
+    "am"
+  ],
+  "syllables": [
+    "ban",
+    "can",
+    "dan",
+    "fan",
+    "lan",
+    "man",
+    "nan",
+    "pan",
+    "ran",
+    "san",
+    "tan",
+    "chan"
+  ],
+  "words": [
+    {
+      "text": "Chenipan",
+      "pokemon": 10,
+      "syllables": [
+        "Che",
+        "ni",
+        "pan"
+      ]
+    },
+    {
+      "text": "Nidoran",
+      "pokemon": 29,
+      "syllables": [
+        "Ni",
+        "do",
+        "ran"
+      ]
+    },
+    {
+      "text": "Plante",
+      "syllables": [
+        "Plan",
+        "te"
+      ],
+      "icon": "leaf"
+    },
+    {
+      "text": "Tranche",
+      "syllables": [
+        "Tran",
+        "che"
+      ],
+      "icon": "slash"
+    },
+    {
+      "text": "Danse",
+      "syllables": [
+        "Dan",
+        "se"
+      ],
+      "icon": "dance"
+    },
+    {
+      "text": "Sable",
+      "syllables": [
+        "Sa",
+        "ble"
+      ],
+      "icon": "sand"
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Chenipan danse.",
+      "pokemon": 10
+    },
+    {
+      "text": "Nidoran utilise Tranche.",
+      "pokemon": 29
+    },
+    {
+      "text": "Maman adore la danse.",
+      "icon": "dance"
+    }
+  ],
+  "reward_pokemon": 10,
+  "boss": {
+    "pokemon": 10,
+    "hp": 3,
+    "taunt": "Chenipan sort des feuilles ! Lis vite pour l'attraper."
+  }
+}

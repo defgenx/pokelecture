@@ -1,0 +1,8 @@
+# Generated, reproducible with `make content`
+web/audio/
+web/sprites/
+
+# Savegame
+var/
+
+bin/

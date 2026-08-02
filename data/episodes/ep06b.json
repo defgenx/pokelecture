@@ -1,0 +1,17 @@
+{
+  "id": "ep06b",
+  "route": 0,
+  "title": "Arène de l'Orage — Électhor",
+  "story": "L'orage gronde au-dessus de la route. Des éclairs tombent partout, et un oiseau tout jaune sort des nuages : Électhor, le Pokémon légendaire de la foudre ! Pikachu se cache derrière toi. À toi de lire !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 145,
+  "boss": {
+    "pokemon": 145,
+    "hp": 5,
+    "taunt": "Électhor lance des éclairs ! Lis vite, très vite, pour l'arrêter !"
+  }
+}

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="__BASE__">
+  <title>Pokélecture — studio voix</title>
+  <link rel="stylesheet" href="parent.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="pokeball" aria-hidden="true"></span>
+      <div>
+        <h1>Studio voix</h1>
+        <p id="tally">…</p>
+      </div>
+    </div>
+    <div class="tools">
+      <input id="q" type="search" placeholder="Filtrer…" autocomplete="off">
+      <label class="toggle"><input id="only-tts" type="checkbox"> Voix de synthèse seulement</label>
+    </div>
+  </header>
+
+  <p id="warn" class="warn" hidden></p>
+
+  <nav id="tabs" class="tabs"></nav>
+  <main id="list"></main>
+
+  <footer>
+    <p>
+      Maintiens <b>ENREGISTRER</b> pendant que tu parles, relâche pour envoyer.
+      L'enregistrement remplace la voix de synthèse à cette URL — le jeu n'a rien
+      à savoir. <b>↺</b> revient à la synthèse.
+    </p>
+    <p>Le micro exige un contexte sécurisé : ouvre cette page sur <code>localhost</code>, pas via l'IP du réseau.</p>
+  </footer>
+
+  <script src="parent.js"></script>
+</body>
+</html>

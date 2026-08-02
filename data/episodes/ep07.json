@@ -1,0 +1,96 @@
+{
+  "id": "ep07",
+  "route": 7,
+  "title": "Route 7 — le son on",
+  "story": "Route 7. Le son onnnn sort par le nez. Devant un p ou un b, il se déguise en om. Attention : quelque chose d'énorme dort en travers du chemin et ronfle très fort.",
+  "new_graphemes": [
+    "on",
+    "om",
+    "x"
+  ],
+  "syllables": [
+    "bon",
+    "con",
+    "don",
+    "fon",
+    "lon",
+    "mon",
+    "non",
+    "pon",
+    "ron",
+    "son",
+    "ton",
+    "chon"
+  ],
+  "words": [
+    {
+      "text": "Ronflex",
+      "pokemon": 143,
+      "syllables": [
+        "Ron",
+        "flex"
+      ]
+    },
+    {
+      "text": "Rondoudou",
+      "pokemon": 39,
+      "syllables": [
+        "Ron",
+        "dou",
+        "dou"
+      ]
+    },
+    {
+      "text": "Bombe",
+      "syllables": [
+        "Bom",
+        "be"
+      ],
+      "icon": "bomb"
+    },
+    {
+      "text": "Ombre",
+      "syllables": [
+        "Om",
+        "bre"
+      ],
+      "icon": "shadow"
+    },
+    {
+      "text": "Cocon",
+      "syllables": [
+        "Co",
+        "con"
+      ],
+      "icon": "cocoon"
+    },
+    {
+      "text": "Bonbon",
+      "syllables": [
+        "Bon",
+        "bon"
+      ],
+      "icon": "candy"
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Ronflex ronfle.",
+      "pokemon": 143
+    },
+    {
+      "text": "Rondoudou monte sur le roc.",
+      "pokemon": 39
+    },
+    {
+      "text": "Le bonbon tombe.",
+      "icon": "candy"
+    }
+  ],
+  "reward_pokemon": 143,
+  "boss": {
+    "pokemon": 143,
+    "hp": 3,
+    "taunt": "Ronflex bloque la route et ronfle ! Réveille-le avec tes mots."
+  }
+}

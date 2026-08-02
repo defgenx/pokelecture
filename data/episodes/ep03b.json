@@ -1,0 +1,17 @@
+{
+  "id": "ep03b",
+  "route": 0,
+  "title": "Arène de Glace — Artikodin",
+  "story": "Le ciel devient tout blanc. Un immense oiseau bleu descend des montagnes : Artikodin, un Pokémon légendaire ! Il ne veut pas de nouveaux sons aujourd'hui. Il veut voir si tu te souviens de TOUT ce que tu as appris. Prêt ?",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 144,
+  "boss": {
+    "pokemon": 144,
+    "hp": 5,
+    "taunt": "Artikodin ouvre ses grandes ailes glacées ! Six mots pour le vaincre. Vas-y !"
+  }
+}

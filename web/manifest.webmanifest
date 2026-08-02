@@ -1,0 +1,15 @@
+{
+  "name": "Pokélecture",
+  "short_name": "Pokélecture",
+  "description": "Apprendre à lire en français avec les Pokémon",
+  "start_url": "__BASE__",
+  "scope": "__BASE__",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#ffd166",
+  "theme_color": "#e3350d",
+  "lang": "fr",
+  "icons": [
+    { "src": "sprites/art/25.png", "sizes": "475x475", "type": "image/png", "purpose": "any" }
+  ]
+}

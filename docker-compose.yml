@@ -1,0 +1,24 @@
+# Standalone run: Pokélecture on its own, at http://<host>:8080/
+# To mount it under a path behind an existing site, see deploy/delvecch.io.md.
+
+services:
+  pokelecture:
+    build: .
+    image: pokelecture:1.0.0
+    container_name: pokelecture
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      POKELECTURE_BASE: /
+      POKELECTURE_NAME: ${POKELECTURE_NAME:-Dresseur}
+    volumes:
+      # The savegame. Keep it, or he starts over at route 1.
+      - pokelecture_var:/app/var
+      # Recordings made in the studio voix — the most expensive thing here to
+      # lose, since they are your actual voice.
+      - pokelecture_voice:/app/web/audio/recorded
+
+volumes:
+  pokelecture_var:
+  pokelecture_voice:

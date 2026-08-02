@@ -1,0 +1,131 @@
+{
+  "id": "ep01",
+  "route": 1,
+  "title": "Route 1 — les premiers sons",
+  "story": "Bienvenue à Lecturia ! Le professeur te confie un Pokédex magique : chaque son que tu apprends fait apparaître un Pokémon. Dès aujourd'hui, tu vas lire ton premier nom de Pokémon tout seul. Attention, quelque chose bouge dans les hautes herbes...",
+  "new_graphemes": [
+    "a",
+    "i",
+    "o",
+    "u",
+    "é",
+    "e",
+    "m",
+    "l",
+    "r",
+    "t",
+    "s",
+    "n",
+    "tt",
+    "ss"
+  ],
+  "syllables": [
+    "ma",
+    "mi",
+    "mo",
+    "mu",
+    "mé",
+    "la",
+    "li",
+    "lo",
+    "lu",
+    "lé",
+    "ra",
+    "ri",
+    "ro",
+    "ru",
+    "ré",
+    "ta",
+    "ti",
+    "to",
+    "tu",
+    "té",
+    "sa",
+    "si",
+    "so",
+    "su",
+    "sé",
+    "na",
+    "ni",
+    "no",
+    "nu",
+    "né"
+  ],
+  "words": [
+    {
+      "text": "Otaria",
+      "pokemon": 86,
+      "syllables": [
+        "O",
+        "ta",
+        "ri",
+        "a"
+      ]
+    },
+    {
+      "text": "Rattata",
+      "pokemon": 19,
+      "syllables": [
+        "Rat",
+        "ta",
+        "ta"
+      ]
+    },
+    {
+      "text": "Ramoloss",
+      "pokemon": 79,
+      "syllables": [
+        "Ra",
+        "mo",
+        "loss"
+      ]
+    },
+    {
+      "text": "Amonita",
+      "pokemon": 138,
+      "syllables": [
+        "A",
+        "mo",
+        "ni",
+        "ta"
+      ]
+    },
+    {
+      "text": "Morsure",
+      "syllables": [
+        "Mor",
+        "su",
+        "re"
+      ],
+      "icon": "bite"
+    },
+    {
+      "text": "Normal",
+      "syllables": [
+        "Nor",
+        "mal"
+      ],
+      "icon": "normal"
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Otaria utilise Morsure.",
+      "pokemon": 86
+    },
+    {
+      "text": "Rattata imite Otaria.",
+      "pokemon": 19
+    },
+    {
+      "text": "Ramoloss salue Amonita.",
+      "pokemon": 79
+    }
+  ],
+  "reward_pokemon": 19,
+  "boss": {
+    "pokemon": 19,
+    "hp": 3,
+    "taunt": "Un Rattata sauvage apparaît ! Lis son nom : Rat-ta-ta !"
+  }
+}

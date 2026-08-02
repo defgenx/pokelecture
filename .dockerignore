@@ -1,0 +1,13 @@
+.git
+.gitignore
+.idea
+.claude
+bin/
+var/
+README.md
+Makefile
+
+# NOT ignored on purpose:
+#   web/audio/    — the generated voice track; macOS-only to produce, so it has
+#                   to travel in the build context to reach the image.
+#   web/sprites/  — harmless either way; the build re-fetches them anyway.

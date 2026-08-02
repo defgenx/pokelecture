@@ -1,0 +1,93 @@
+{
+  "id": "ep09",
+  "route": 9,
+  "title": "Route 9 — la lettre g",
+  "story": "Route 9 : la lettre g. Ga, go, gu ! Mais attention, elle est maligne : devant un e ou un i, elle fait le son je. C'est comme ça qu'on lit l'attaque Charge, et le nom d'un poisson qui saute sans arrêt.",
+  "new_graphemes": [
+    "g",
+    "ge",
+    "gi"
+  ],
+  "syllables": [
+    "ga",
+    "go",
+    "gu",
+    "gou",
+    "gan",
+    "gon",
+    "ge",
+    "gi"
+  ],
+  "words": [
+    {
+      "text": "Goupix",
+      "pokemon": 37,
+      "syllables": [
+        "Gou",
+        "pix"
+      ]
+    },
+    {
+      "text": "Grodoudou",
+      "pokemon": 40,
+      "syllables": [
+        "Gro",
+        "dou",
+        "dou"
+      ]
+    },
+    {
+      "text": "Magicarpe",
+      "pokemon": 129,
+      "syllables": [
+        "Ma",
+        "gi",
+        "carpe"
+      ]
+    },
+    {
+      "text": "Charge",
+      "syllables": [
+        "Char",
+        "ge"
+      ],
+      "icon": "impact"
+    },
+    {
+      "text": "Rage",
+      "syllables": [
+        "Ra",
+        "ge"
+      ],
+      "icon": "rage"
+    },
+    {
+      "text": "Garde",
+      "syllables": [
+        "Gar",
+        "de"
+      ],
+      "icon": "shield"
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Magicarpe utilise Charge.",
+      "pokemon": 129
+    },
+    {
+      "text": "Goupix imite Grodoudou.",
+      "pokemon": 37
+    },
+    {
+      "text": "Grodoudou danse.",
+      "pokemon": 40
+    }
+  ],
+  "reward_pokemon": 37,
+  "boss": {
+    "pokemon": 37,
+    "hp": 3,
+    "taunt": "Un Goupix agite sa queue blanche ! Lis les mots pour l'attaquer."
+  }
+}

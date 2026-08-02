@@ -1,0 +1,92 @@
+{
+  "id": "ep04",
+  "route": 4,
+  "title": "Route 4 — b et c",
+  "story": "Route 4 : le b et le c arrivent. Ba, be, bi, bo, bu... ca, co, cu ! Tu vas pouvoir lire le nom d'un Pokémon qui n'a que deux syllabes, et le nom d'une attaque d'eau.",
+  "new_graphemes": [
+    "b",
+    "c"
+  ],
+  "syllables": [
+    "ba",
+    "bi",
+    "bo",
+    "bu",
+    "bé",
+    "ca",
+    "co",
+    "cu"
+  ],
+  "words": [
+    {
+      "text": "Abo",
+      "pokemon": 23,
+      "syllables": [
+        "A",
+        "bo"
+      ]
+    },
+    {
+      "text": "Sabelette",
+      "pokemon": 27,
+      "syllables": [
+        "Sa",
+        "be",
+        "lette"
+      ]
+    },
+    {
+      "text": "Caninos",
+      "pokemon": 58,
+      "syllables": [
+        "Ca",
+        "ni",
+        "nos"
+      ]
+    },
+    {
+      "text": "Cascade",
+      "syllables": [
+        "Cas",
+        "ca",
+        "de"
+      ],
+      "icon": "water"
+    },
+    {
+      "text": "Croc",
+      "syllables": [
+        "Croc"
+      ],
+      "icon": "fang"
+    },
+    {
+      "text": "Bulbe",
+      "syllables": [
+        "Bul",
+        "be"
+      ],
+      "icon": "bulb"
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Abo utilise Morsure.",
+      "pokemon": 23
+    },
+    {
+      "text": "Caninos adore Sabelette.",
+      "pokemon": 58
+    },
+    {
+      "text": "Sabelette imite Abo.",
+      "pokemon": 27
+    }
+  ],
+  "reward_pokemon": 58,
+  "boss": {
+    "pokemon": 58,
+    "hp": 3,
+    "taunt": "Un Caninos aboie très fort ! Il crache des flammes. Lis pour l'attaquer !"
+  }
+}

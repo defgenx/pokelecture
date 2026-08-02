@@ -1,0 +1,116 @@
+/* Studio voix — the parent-facing recorder. Deliberately plain and dense: this
+   is a tool for an adult at a keyboard, not a screen for the child. */
+
+:root {
+  --red: #ee1515;
+  --blue: #3b4cca;
+  --ink: #14161a;
+  --muted: #6a7180;
+  --line: #e4e7ee;
+  --ok: #12a150;
+  --bg: #f6f7fa;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand h1 { margin: 0; font-size: 19px; letter-spacing: -.2px; }
+.brand p { margin: 0; color: var(--muted); font-size: 13px; }
+
+.pokeball {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(180deg, var(--red) 0 46%, var(--ink) 46% 54%, #fff 54% 100%);
+  border: 2px solid var(--ink);
+  position: relative;
+  flex: 0 0 auto;
+}
+.pokeball::after {
+  content: ''; position: absolute; inset: 0; margin: auto;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--ink);
+}
+
+.tools { display: flex; align-items: center; gap: 14px; }
+#q {
+  font: inherit; padding: 8px 12px; min-width: 220px;
+  border: 1px solid var(--line); border-radius: 9px; background: #fff;
+}
+.toggle { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+
+.warn {
+  margin: 0; padding: 12px 20px;
+  background: #fff6e5; border-bottom: 1px solid #f0dcb0; color: #7a5300; font-size: 14px;
+}
+
+.tabs { display: flex; gap: 6px; padding: 12px 20px 0; flex-wrap: wrap; }
+.tabs button {
+  font: inherit; font-weight: 600;
+  padding: 7px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: #fff; color: var(--muted);
+  cursor: pointer;
+}
+.tabs button.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+main { padding: 14px 20px 60px; max-width: 900px; }
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  margin-bottom: 7px;
+}
+.row.done { border-color: #bde7cd; background: #f6fffa; }
+.row.busy { border-color: var(--red); }
+
+.row .txt { min-width: 0; }
+.row .txt b { display: block; font-size: 16px; overflow-wrap: anywhere; }
+.row .txt small { color: var(--muted); font-size: 12px; }
+
+.row button {
+  font: inherit; font-weight: 600;
+  border-radius: 9px; border: 1px solid var(--line);
+  background: #fff; cursor: pointer; padding: 8px 12px;
+  white-space: nowrap;
+}
+.row button:hover { border-color: #c9cedb; }
+.row .rec { border-color: var(--red); color: var(--red); min-width: 128px; }
+.row .rec.armed { background: var(--red); color: #fff; }
+.row .revert:disabled { opacity: .3; cursor: default; }
+.row .badge { font-size: 12px; color: var(--muted); min-width: 76px; text-align: right; }
+.row.done .badge { color: var(--ok); font-weight: 600; }
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 16px 20px 40px;
+  color: var(--muted);
+  font-size: 13px;
+  max-width: 900px;
+}
+footer p { margin: 0 0 6px; }
+code { background: #eceff5; padding: 1px 5px; border-radius: 4px; }

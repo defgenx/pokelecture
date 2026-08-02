@@ -1,0 +1,97 @@
+{
+  "id": "ep02",
+  "route": 2,
+  "title": "Route 2 — p et d",
+  "story": "Bravo pour Rattata ! Sur la route 2, deux nouvelles lettres t'attendent : le p et le d. Avec elles, tu vas pouvoir lire le nom d'un Pokémon à deux têtes.",
+  "new_graphemes": [
+    "p",
+    "d"
+  ],
+  "syllables": [
+    "pa",
+    "pi",
+    "po",
+    "pu",
+    "pé",
+    "da",
+    "di",
+    "do",
+    "du",
+    "dé"
+  ],
+  "words": [
+    {
+      "text": "Doduo",
+      "pokemon": 84,
+      "syllables": [
+        "Do",
+        "du",
+        "o"
+      ]
+    },
+    {
+      "text": "Dodrio",
+      "pokemon": 85,
+      "syllables": [
+        "Do",
+        "dri",
+        "o"
+      ]
+    },
+    {
+      "text": "Nidorina",
+      "pokemon": 30,
+      "syllables": [
+        "Ni",
+        "do",
+        "ri",
+        "na"
+      ]
+    },
+    {
+      "text": "Paras",
+      "pokemon": 46,
+      "syllables": [
+        "Pa",
+        "ras"
+      ]
+    },
+    {
+      "text": "Tornade",
+      "syllables": [
+        "Tor",
+        "na",
+        "de"
+      ],
+      "icon": "tornado"
+    },
+    {
+      "text": "Dodo",
+      "syllables": [
+        "Do",
+        "do"
+      ],
+      "icon": "sleep"
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Doduo utilise Tornade.",
+      "icon": "tornado"
+    },
+    {
+      "text": "Nidorina a mordu Paras.",
+      "pokemon": 46
+    },
+    {
+      "text": "Dodrio imite Doduo.",
+      "pokemon": 85
+    }
+  ],
+  "reward_pokemon": 84,
+  "boss": {
+    "pokemon": 84,
+    "hp": 3,
+    "taunt": "Un Doduo court vers toi ! Ses deux têtes te regardent. Lis vite !"
+  }
+}

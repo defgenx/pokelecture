@@ -1,0 +1,95 @@
+{
+  "id": "ep06",
+  "route": 6,
+  "title": "Route 6 — le son ch",
+  "story": "Sur la route 6, un train démarre : chhhhh ! Le c et le h se donnent la main pour faire un seul son. Avec le k et le è, tu vas enfin pouvoir lire le nom du Pokémon le plus célèbre du monde...",
+  "new_graphemes": [
+    "ch",
+    "è",
+    "k"
+  ],
+  "syllables": [
+    "cha",
+    "che",
+    "chi",
+    "cho",
+    "chu",
+    "chou",
+    "ka",
+    "ki",
+    "ko"
+  ],
+  "words": [
+    {
+      "text": "Pikachu",
+      "pokemon": 25,
+      "syllables": [
+        "Pi",
+        "ka",
+        "chu"
+      ]
+    },
+    {
+      "text": "Salamèche",
+      "pokemon": 4,
+      "syllables": [
+        "Sa",
+        "la",
+        "mè",
+        "che"
+      ]
+    },
+    {
+      "text": "Machoc",
+      "pokemon": 66,
+      "syllables": [
+        "Ma",
+        "choc"
+      ]
+    },
+    {
+      "text": "Sacha",
+      "syllables": [
+        "Sa",
+        "cha"
+      ],
+      "icon": "trainer"
+    },
+    {
+      "text": "Charme",
+      "syllables": [
+        "Char",
+        "me"
+      ],
+      "icon": "heart"
+    },
+    {
+      "text": "Chute",
+      "syllables": [
+        "Chu",
+        "te"
+      ],
+      "icon": "fall"
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Pikachu adore Sacha.",
+      "pokemon": 25
+    },
+    {
+      "text": "Salamèche utilise Charme.",
+      "icon": "heart"
+    },
+    {
+      "text": "Machoc cache la boule.",
+      "pokemon": 66
+    }
+  ],
+  "reward_pokemon": 25,
+  "boss": {
+    "pokemon": 25,
+    "hp": 3,
+    "taunt": "Pikachu bondit devant toi ! Ses joues crépitent. Lis son nom : Pi-ka-chu !"
+  }
+}

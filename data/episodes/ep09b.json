@@ -1,0 +1,17 @@
+{
+  "id": "ep09b",
+  "route": 0,
+  "title": "Arène Psy — Mewtwo",
+  "story": "Tout devient silencieux. Les objets se mettent à flotter dans l'air. Devant toi apparaît Mewtwo, le Pokémon le plus puissant du monde. Il lit dans les pensées... mais toi, maintenant, tu sais lire les mots. Montre-lui !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 150,
+  "boss": {
+    "pokemon": 150,
+    "hp": 6,
+    "taunt": "Mewtwo fait flotter les syllabes dans les airs ! Remets-les dans l'ordre !"
+  }
+}

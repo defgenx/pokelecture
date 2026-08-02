@@ -1,0 +1,93 @@
+{
+  "id": "ep05",
+  "route": 5,
+  "title": "Route 5 — le son ou",
+  "story": "Le o et le u se sont collés : ensemble, ils ne font qu'un seul son, ouuuu, comme le loup. Et attention : dans les noms de Pokémon, deux o collés se lisent ou aussi ! Rou-cool, Tenta-cool.",
+  "new_graphemes": [
+    "ou",
+    "oo"
+  ],
+  "syllables": [
+    "bou",
+    "cou",
+    "dou",
+    "fou",
+    "lou",
+    "mou",
+    "nou",
+    "pou",
+    "rou",
+    "sou",
+    "tou",
+    "vou"
+  ],
+  "words": [
+    {
+      "text": "Roucool",
+      "pokemon": 16,
+      "syllables": [
+        "Rou",
+        "cool"
+      ]
+    },
+    {
+      "text": "Miaouss",
+      "pokemon": 52,
+      "syllables": [
+        "Mia",
+        "ouss"
+      ]
+    },
+    {
+      "text": "Poudre",
+      "syllables": [
+        "Pou",
+        "dre"
+      ],
+      "icon": "powder"
+    },
+    {
+      "text": "Roc",
+      "syllables": [
+        "Roc"
+      ],
+      "icon": "rock"
+    },
+    {
+      "text": "Coupe",
+      "syllables": [
+        "Cou",
+        "pe"
+      ],
+      "icon": "cut"
+    },
+    {
+      "text": "Boule",
+      "syllables": [
+        "Bou",
+        "le"
+      ],
+      "icon": "ball"
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Roucool utilise Coupe.",
+      "pokemon": 16
+    },
+    {
+      "text": "Miaouss roule la boule.",
+      "pokemon": 52
+    },
+    {
+      "text": "Otaria adore la soupe.",
+      "pokemon": 86
+    }
+  ],
+  "reward_pokemon": 16,
+  "boss": {
+    "pokemon": 16,
+    "hp": 3,
+    "taunt": "Un Roucool descend en piqué ! Il bat des ailes très vite. À toi de lire !"
+  }
+}
