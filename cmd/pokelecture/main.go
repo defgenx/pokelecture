@@ -20,7 +20,9 @@ import (
 func main() {
 	addr := flag.String("addr", envOr("POKELECTURE_ADDR", ":8080"), "adresse d'écoute")
 	root := flag.String("root", envOr("POKELECTURE_ROOT", "."), "racine du projet (contient data/ et web/)")
-	name := flag.String("name", envOr("POKELECTURE_NAME", "Dresseur"), "prénom de l'enfant")
+	// Empty means "not configured": keep whatever the savegame holds, and fall
+	// back to progress.DefaultName on a fresh one.
+	name := flag.String("name", envOr("POKELECTURE_NAME", ""), "prénom de l'enfant (défaut: celui de la sauvegarde)")
 	base := flag.String("base", envOr("POKELECTURE_BASE", "/"), "chemin de montage, ex. /pokelecture/")
 	flag.Parse()
 
@@ -59,8 +61,8 @@ func main() {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	fmt.Printf("\n  Pokélecture — %d épisode(s), %d pokémon (monté sur %s)\n",
-		len(cur.Episodes), len(cur.Pokemon), mount)
+	fmt.Printf("\n  Pokélecture — %s, %d épisode(s), %d pokémon (monté sur %s)\n",
+		store.Name(), len(cur.Episodes), len(cur.Pokemon), mount)
 	for _, u := range urls(*addr) {
 		fmt.Printf("  ▸ %s%s\n", u, strings.TrimPrefix(mount, "/"))
 	}

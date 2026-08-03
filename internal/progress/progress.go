@@ -64,7 +64,17 @@ type Store struct {
 	state State
 }
 
+// DefaultName is the fallback when nothing is configured at startup and the
+// savegame does not carry a name yet.
+const DefaultName = "Dresseur"
+
 // Open loads the savegame, creating an empty one if the file does not exist.
+//
+// name is what was configured at startup (-name / POKELECTURE_NAME); the empty
+// string means "not configured". A configured name always wins over the one
+// already in the savegame, so renaming the child is a restart away. It used to
+// apply only when the stored name was empty, which meant the very first run
+// pinned the name forever and the flag looked like it did nothing.
 func Open(path string, name string) (*Store, error) {
 	s := &Store{path: path, state: State{
 		Name:     name,
@@ -75,6 +85,9 @@ func Open(path string, name string) (*Store, error) {
 	b, err := os.ReadFile(path)
 	switch {
 	case os.IsNotExist(err):
+		if s.state.Name == "" {
+			s.state.Name = DefaultName
+		}
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			return nil, err
 		}
@@ -91,10 +104,30 @@ func Open(path string, name string) (*Store, error) {
 	if s.state.Items == nil {
 		s.state.Items = map[string]Item{}
 	}
-	if s.state.Name == "" {
+
+	// Persist right away rather than waiting for the next Save(): the name is
+	// the one field a parent changes on purpose, and seeing it stick in
+	// progress.json is how you confirm the restart took.
+	switch {
+	case name != "" && name != s.state.Name:
 		s.state.Name = name
+		if err := s.flush(); err != nil {
+			return nil, err
+		}
+	case s.state.Name == "":
+		s.state.Name = DefaultName
+		if err := s.flush(); err != nil {
+			return nil, err
+		}
 	}
 	return s, nil
+}
+
+// Name returns the child's name currently in effect.
+func (s *Store) Name() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.state.Name
 }
 
 // Snapshot returns a copy safe to serialise.

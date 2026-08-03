@@ -53,7 +53,7 @@ git clone git@github.com:defgenx/pokelecture.git
       - "8080"
     environment:
       POKELECTURE_BASE: /pokelecture/
-      POKELECTURE_NAME: Dresseur
+      POKELECTURE_NAME: ${POKELECTURE_NAME:-}
     volumes:
       - pokelecture_var:/app/var
       - pokelecture_voice:/app/web/audio/recorded
@@ -64,6 +64,12 @@ volumes:
 ```
 
 Et `pokelecture` dans le `depends_on` de nginx.
+
+`POKELECTURE_NAME` est lu au démarrage et **écrase** le prénom déjà dans la
+sauvegarde : renommer l'enfant ne coûte qu'un redémarrage, et la progression est
+conservée. Laissé vide, la sauvegarde garde son prénom (`Dresseur` sur une
+sauvegarde neuve). Mets-le dans un `.env` non versionné à côté du
+`docker-compose.yml` — le dépôt est public.
 
 ## 4. Ajouter le `location` nginx
 
@@ -88,6 +94,43 @@ Dans le bloc `server { listen 443 ssl; }`, **avant** le `location /` :
     }
 ```
 
+## 4 bis. Protéger le studio voix
+
+Le jeu reste ouvert (pas de mot de passe devant un enfant de cinq ans), mais le
+studio est public sinon : n'importe qui pourrait écraser ta voix. Protéger
+`parent.html` seul ne suffirait pas — le studio écrit via `api/record/`, qu'on
+atteint directement en `curl` sans jamais charger la page. Il faut donc les trois
+emplacements, **avant** `location /pokelecture/` :
+
+```nginx
+    location = /pokelecture/parent.html {
+        include /etc/nginx/conf.d/studio-auth.inc;
+    }
+
+    location ^~ /pokelecture/api/record/ {
+        include /etc/nginx/conf.d/studio-auth.inc;
+    }
+
+    location = /pokelecture/api/texts {
+        include /etc/nginx/conf.d/studio-auth.inc;
+    }
+```
+
+`studio-auth.inc` porte l'`auth_basic`, le `proxy_pass` et le
+`client_max_body_size 12m` (les enregistrements montent à ~8 Mo). Un seul realm
+pour les trois, afin que le navigateur réutilise les identifiants saisis sur
+`parent.html` quand la page appelle ensuite `api/texts` et `api/record/`.
+
+Crée le fichier d'identifiants **sur le serveur** (jamais versionné) :
+
+```bash
+cd delvecch.io
+htpasswd -Bc frontend/nginx/htpasswd studio    # ou: docker run --rm httpd htpasswd -Bn studio
+```
+
+Sans ce fichier nginx répond 500 sur le studio — ça échoue fermé, donc pas de
+fuite, mais la page est cassée jusqu'à ce qu'il existe.
+
 ## 5. Lancer
 
 ```bash
@@ -107,11 +150,8 @@ curl -s  https://delvecch.io/pokelecture/api/state | head -c 200
 
 ## Notes
 
-- **Le studio voix (`/pokelecture/parent.html`) sera accessible publiquement.**
-  Le micro exige un contexte sécurisé, ce que HTTPS fournit — donc n'importe qui
-  pourra écraser la voix du jeu. Si le site est indexé, protège-le : un
-  `location = /pokelecture/parent.html { auth_basic … }` suffit, ou retire la
-  page de l'image en production.
+- Le studio voix est derrière `auth_basic` (étape 4 bis) : page **et** endpoints
+  d'écriture. Le micro exige un contexte sécurisé, ce que HTTPS fournit.
 - Le Pokédex, la progression et les étoiles sont **globaux** : une seule
   sauvegarde, pas de comptes. C'est voulu (un seul enfant), mais ça veut dire que
   n'importe quel visiteur fait avancer sa progression. Même remarque : si l'URL

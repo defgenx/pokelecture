@@ -16,8 +16,9 @@ audio:
 sprites:
 	go run ./cmd/pokecontent sprites
 
+# NAME= renomme l'enfant et écrase la sauvegarde ; sans lui, elle garde son prénom.
 run:
-	go run ./cmd/pokelecture -name $(or $(NAME),Dresseur)
+	go run ./cmd/pokelecture -name "$(NAME)"
 
 build:
 	go build -o bin/pokelecture ./cmd/pokelecture

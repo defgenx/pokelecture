@@ -316,6 +316,14 @@ docker compose up -d                # standalone, http://<host>:8080/
 
 Sous `https://delvecch.io/pokelecture/` : voir **[deploy/delvecch.io.md](deploy/delvecch.io.md)**.
 
+### Le prénom de l'enfant
+
+`POKELECTURE_NAME` (ou `-name`, ou `make run NAME=…`) est lu **à chaque
+démarrage** et écrase le prénom stocké dans la sauvegarde : renommer ne coûte
+qu'un redémarrage et ne touche ni la progression, ni le Pokédex, ni les étoiles.
+Laissé vide, la sauvegarde garde le prénom qu'elle a déjà — `Dresseur` sur une
+sauvegarde neuve.
+
 ### Comment le sous-chemin fonctionne
 
 `POKELECTURE_BASE=/pokelecture/` fait deux choses : le serveur réécrit

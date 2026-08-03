@@ -53,10 +53,13 @@ RUN mkdir -p var web/audio/recorded && chown -R poke:poke /app
 
 USER poke
 
+# POKELECTURE_NAME is deliberately left unset: set it and it overrides the name
+# in the savegame at every start, leave it and the savegame keeps the name it
+# already has (falling back to "Dresseur" on a fresh one). Baking a default in
+# here would silently rename the child back on any start that forgot the var.
 ENV POKELECTURE_ADDR=:8080 \
     POKELECTURE_ROOT=/app \
-    POKELECTURE_BASE=/ \
-    POKELECTURE_NAME=Dresseur
+    POKELECTURE_BASE=/
 
 EXPOSE 8080
 

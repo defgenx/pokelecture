@@ -11,7 +11,9 @@ services:
       - "8080:8080"
     environment:
       POKELECTURE_BASE: /
-      POKELECTURE_NAME: ${POKELECTURE_NAME:-Dresseur}
+      # Set POKELECTURE_NAME (shell or .env) to name the child; it overrides the
+      # savegame at every start. Left empty, the savegame keeps its own name.
+      POKELECTURE_NAME: ${POKELECTURE_NAME:-}
     volumes:
       # The savegame. Keep it, or he starts over at route 1.
       - pokelecture_var:/app/var
