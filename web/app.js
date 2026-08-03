@@ -37,57 +37,82 @@ async function api(path, body) {
    recorded at a speed chosen per style). If a file is missing we fall back to
    the browser's own French voice so a content change never breaks the game. */
 
+// A 40 ms silent WAV. Played inside the COMMENCER tap it grants the one audio
+// element permission to play for the rest of the session — Android only trusts
+// an element that was started from a real gesture.
+const SILENCE = 'data:audio/wav;base64,UklGRjAAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQwAAAAAAAAAAAAAAAAAAAA=';
+
 const Voice = {
-  cache: new Map(),
-  current: null,
+  el: null,
+  voices: [],
+  missing: new Set(), // URLs the server does not have; never wait on them twice
+  cancelled: 0,
 
   unlock() {
-    // Called from the first real tap. Touching speechSynthesis here also warms
-    // up the voice list, which Android populates lazily.
-    if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
+    /* One element for the whole game, primed here. Android caps how many media
+       players a page may hold, and the previous one-element-per-line cache blew
+       past that cap on a long session; a single reused element also means the
+       autoplay check is passed exactly once. */
+    if (!this.el) {
+      this.el = new Audio();
+      this.el.preload = 'auto';
+    }
+    this.el.src = SILENCE;
+    const p = this.el.play();
+    if (p && p.catch) p.catch(() => {});
+    this.loadVoices();
   },
 
-  element(url) {
-    let a = this.cache.get(url);
-    if (!a) {
-      a = new Audio(url);
-      a.preload = 'auto';
-      this.cache.set(url, a);
-    }
-    return a;
+  // Android fills the voice list asynchronously: getVoices() is empty on the
+  // first call, so an utterance built from it goes out with no French voice
+  // attached and the device reads it in its own language — or stays silent.
+  loadVoices() {
+    if (!('speechSynthesis' in window)) return;
+    const grab = () => { this.voices = window.speechSynthesis.getVoices() || []; };
+    grab();
+    window.speechSynthesis.onvoiceschanged = grab;
   },
 
   stop() {
-    if (this.current) {
-      try { this.current.pause(); } catch (_) {}
-      this.current = null;
+    if (this.el) {
+      try { this.el.pause(); } catch (_) {}
     }
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    if ('speechSynthesis' in window) {
+      const s = window.speechSynthesis;
+      if (s.speaking || s.pending) {
+        s.cancel();
+        this.cancelled = Date.now();
+      }
+    }
   },
 
   play(url, text) {
     this.stop();
-    if (!url) return this.speak(text);
+    // No recorded track (or a missing one): straight to the browser voice, with
+    // no 404 round trip in front of every single line.
+    if (!url || !this.el || this.missing.has(url)) return this.speak(text);
 
     return new Promise((resolve) => {
-      const a = this.element(url);
+      const a = this.el;
       let settled = false;
       const finish = (fallback) => {
         if (settled) return;
         settled = true;
         a.removeEventListener('ended', onEnd);
         a.removeEventListener('error', onErr);
-        if (fallback) this.speak(text).then(resolve);
-        else resolve();
+        if (fallback) {
+          this.missing.add(url);
+          this.speak(text).then(resolve);
+        } else resolve();
       };
       const onEnd = () => finish(false);
       const onErr = () => finish(true);
 
       a.addEventListener('ended', onEnd);
       a.addEventListener('error', onErr);
-      try { a.currentTime = 0; } catch (_) {}
-      this.current = a;
-      a.play().catch(() => finish(true));
+      a.src = url;
+      const p = a.play();
+      if (p && p.catch) p.catch(() => finish(true));
       // Safety net: a stalled element must not freeze the game.
       setTimeout(() => finish(false), 12000);
     });
@@ -95,15 +120,25 @@ const Voice = {
 
   speak(text) {
     if (!text || !('speechSynthesis' in window)) return Promise.resolve();
+    const synth = window.speechSynthesis;
     return new Promise((resolve) => {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'fr-FR';
-      u.rate = 0.85;
-      const fr = window.speechSynthesis.getVoices().find((v) => v.lang && v.lang.startsWith('fr'));
-      if (fr) u.voice = fr;
-      u.onend = () => resolve();
-      u.onerror = () => resolve();
-      window.speechSynthesis.speak(u);
+      const go = () => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'fr-FR';
+        u.rate = 0.85;
+        const list = this.voices.length ? this.voices : synth.getVoices() || [];
+        // Android reports fr_FR, desktop fr-FR.
+        const fr = list.find((v) => v.lang && v.lang.replace('_', '-').startsWith('fr'));
+        if (fr) u.voice = fr;
+        u.onend = () => resolve();
+        u.onerror = () => resolve();
+        synth.speak(u);
+      };
+      // Android drops an utterance queued in the same task as a cancel(), which
+      // is every line of the game: play() stops the previous one first.
+      const wait = Date.now() - this.cancelled < 250 ? 150 : 0;
+      if (wait) setTimeout(go, wait);
+      else go();
       setTimeout(resolve, 9000);
     });
   },

@@ -20,18 +20,30 @@ sous-chemins (redirections cassées, assets qui remontent à la racine).
 Le même binaire tourne donc sans changement à la racine en local et sous
 `/pokelecture/` en production.
 
-## 1. Générer la voix (sur le Mac)
+## 1. Générer la voix (sur le Mac), puis **la committer**
 
 Le `.m4a` est produit par `say`, qui n'existe que sur macOS : il doit voyager
-dans le contexte de build.
+dans le contexte de build. Or le serveur build depuis un clone du dépôt — donc
+`web/audio/` est versionné, et une génération non committée n'atteint jamais la
+tablette.
 
 ```bash
 cd pokelecture
 make content          # valide, génère la voix, récupère les sprites
+git add web/audio && git commit -m "chore: régénère la voix" && git push
 ```
 
-Sans cette étape l'image se construit quand même : le jeu retombe sur la voix
-du navigateur.
+Sans cette étape l'image se construit quand même, mais le jeu part **muet** :
+il retombe sur la voix du navigateur, ce que Chrome sur Android ne fournit que
+si une voix française est installée sur l'appareil. Sur une tablette Android,
+« pas de `.m4a` » veut donc dire « pas de son du tout ».
+
+Vérifier, après déploiement, qu'un fichier répond bien :
+
+```bash
+curl -sI https://delvecch.io/pokelecture/audio/bulbizarre-8a23d0.m4a | head -3
+# HTTP/2 200 · content-type: audio/mp4
+```
 
 ## 2. Cloner le dépôt à côté du site
 
@@ -146,6 +158,11 @@ Vérifier :
 curl -sI https://delvecch.io/pokelecture/           # 200
 curl -s  https://delvecch.io/pokelecture/ | grep base   # <base href="/pokelecture/">
 curl -s  https://delvecch.io/pokelecture/api/state | head -c 200
+
+# La voix : 200 et audio/mp4, sinon la tablette sera muette (voir étape 1).
+curl -s -o /dev/null -w '%{http_code} %{content_type}\n' \
+  "https://delvecch.io/pokelecture/$(curl -s https://delvecch.io/pokelecture/api/state \
+   | python3 -c 'import sys,json;print(json.load(sys.stdin)["pokedex"][0]["name_audio"])')"
 ```
 
 ## Notes

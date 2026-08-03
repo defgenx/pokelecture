@@ -15,22 +15,36 @@ const Sfx = {
 
   // Must be called from a user gesture (the COMMENCER tap).
   unlock() {
-    if (this.ctx) return;
+    if (this.ctx) return this.resume();
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     this.ctx = new AC();
     this.bus = this.ctx.createGain();
     this.bus.gain.value = 0.22; // well under the voice, which must stay clearest
     this.bus.connect(this.ctx.destination);
+    this.resume();
+
+    /* Android suspends the context whenever the page goes to the background —
+       and on a tablet that happens constantly: the screen times out mid-game,
+       the child switches app, the dock takes over. A suspended context never
+       resumes on its own, so without these two hooks every game sound dies
+       silently the first time the tablet sleeps. */
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) this.resume();
+    });
+    document.addEventListener('pointerdown', () => this.resume(), { capture: true });
   },
 
   resume() {
-    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    if (!this.ctx || this.ctx.state === 'running') return;
+    const p = this.ctx.resume();
+    if (p && p.catch) p.catch(() => {});
   },
 
   // tone plays one shaped oscillator note.
   tone(freq, start, dur, { type = 'triangle', gain = 1, slideTo = null } = {}) {
     if (!this.ctx || this.muted) return;
+    this.resume();
     const t0 = this.ctx.currentTime + start;
     const osc = this.ctx.createOscillator();
     const env = this.ctx.createGain();
@@ -51,6 +65,7 @@ const Sfx = {
   // noise plays a filtered burst, for impacts and whooshes.
   noise(start, dur, { freq = 1200, q = 1, gain = 1, slideTo = null } = {}) {
     if (!this.ctx || this.muted) return;
+    this.resume();
     const t0 = this.ctx.currentTime + start;
     const n = Math.floor(this.ctx.sampleRate * dur);
     const buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);

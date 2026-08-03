@@ -162,6 +162,9 @@ func (s *Server) handleAudio(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	// Explicit, because the runtime image carries no /etc/mime.types: Go knows
+	// nothing about .m4a there and would sniff the container down to video/mp4.
+	w.Header().Set("Content-Type", "audio/mp4")
 	w.Header().Set("Cache-Control", "public, max-age=604800")
 	http.ServeFile(w, r, generated)
 }

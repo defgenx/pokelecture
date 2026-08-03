@@ -70,8 +70,8 @@ internal/progress    sauvegarde JSON + répétition espacée (5 boîtes)
 internal/speech      texte → clé de fichier audio stable
 data/                le contenu (c'est ici que tu passeras ton temps)
 web/                 frontend : HTML/CSS/JS, aucun build
-web/audio/           .m4a générés (régénérables, non versionnés)
-web/sprites/         sprites téléchargés (idem)
+web/audio/           .m4a générés — **versionnés** (voir Déploiement)
+web/sprites/         sprites téléchargés (régénérables, non versionnés)
 ```
 
 **Décision clé** : un épisode *déclare* du contenu, il ne scripte pas d'écrans.
@@ -338,8 +338,11 @@ d'habitude quand on monte une app sous un path.
 ### Ce qui n'est pas dans l'image
 
 - **La voix** est produite par `say` (macOS) : elle voyage dans le contexte de
-  build. Sans elle l'image se construit quand même, et le jeu retombe sur la voix
-  du navigateur.
+  build. Comme le serveur construit l'image depuis un **clone du dépôt**, elle
+  est committée — sinon la production part sans aucune voix, et sur une tablette
+  Android le filet de sécurité TTS ne rattrape rien (pas de voix française
+  installée, `getVoices()` vide). Après tout `make content` : commite
+  `web/audio/`, sinon la tablette ne l'entendra jamais.
 - **Les sprites** sont téléchargés au build depuis PokeAPI — jamais commités.
 - La sauvegarde (`var/`) et tes enregistrements (`web/audio/recorded/`) sont des
   volumes : ne les perds pas.
