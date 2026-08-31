@@ -102,8 +102,26 @@ function statCards() {
 
 function episodesTab(list) {
   list.append(statCards());
+  const overrides = (state.sum.settings && state.sum.settings.episode_stars) || {};
+  list.append(el('p', { style: 'color:#6a7180;font-size:13px' },
+    '« ★ pour la suite » : les étoiles que CET épisode doit avoir pour débloquer le suivant — ' +
+    'par défaut la règle globale (onglet Réglages), ajustable épisode par épisode.'));
   state.sum.episodes.forEach((e) => {
     const stars = e.completions > 0 ? '★'.repeat(e.best_stars) + '☆'.repeat(3 - e.best_stars) : '';
+
+    // The per-episode unlock threshold, overriding the global policy.
+    const sel = el('select', { class: 'small', title: '★ que cet épisode doit avoir pour débloquer le suivant' },
+      [['', `global (${'★'.repeat(state.sum.settings.min_stars) || 'terminer'})`],
+       ['0', 'terminer suffit'], ['1', '★ requis'], ['2', '★★ requis'], ['3', '★★★ requis']]
+        .map(([v, label]) => {
+          const o = el('option', { value: v }, label);
+          if (String(overrides[e.id] ?? '') === v) o.selected = true;
+          return o;
+        }),
+    );
+    sel.addEventListener('change', () =>
+      act(`api/admin/episodes/${e.id}/stars`, { min_stars: sel.value === '' ? -1 : Number(sel.value) }));
+
     list.append(el('div', { class: 'row' },
       el('div', { class: 'txt' },
         el('b', {}, `${e.legendary ? '★ ' : ''}${e.title}${e.badge ? ` · 🎖 ${e.badge}` : ''}`),
@@ -112,10 +130,11 @@ function episodesTab(list) {
           : 'verrouillé — termine les épisodes précédents'),
       ),
       el('span', { class: 'stars' }, stars),
+      sel,
       el('button', {
         class: 'small',
         disabled: e.completions === 0,
-        title: 'Efface les stats de cet épisode (les étoiles restent acquises)',
+        title: 'Efface les stats de cet épisode ; ses étoiles quittent le total et se regagnent en le rejouant',
         onclick: () => act(`api/admin/episodes/${e.id}/reset`),
       }, '↺ Rejouer comme neuf'),
       el('button', {
@@ -219,7 +238,8 @@ function dangerTab(list) {
     ),
     el('p', { style: 'color:#6a7180;font-size:13px;margin-top:8px' },
       'Exiger des étoiles fait des rediffusions une partie du parcours ; le mode libre ' +
-      'laisse jouer n\'importe quel épisode. Appliqué immédiatement.'),
+      'laisse jouer n\'importe quel épisode. Appliqué immédiatement. Chaque épisode peut ' +
+      'avoir son propre seuil dans l\'onglet Épisodes (« ★ pour la suite »).'),
   ));
 
   const recs = s.records || {};

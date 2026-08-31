@@ -81,6 +81,34 @@ func TestOpenRenameKeepsProgress(t *testing.T) {
 	}
 }
 
+// Resetting an episode must reclaim its stars, or replaying it double-counts:
+// CompleteEpisode awards the delta against a BestStars the reset just erased.
+func TestResetEpisodeReclaimsStars(t *testing.T) {
+	s := open(t, newPath(t), "")
+
+	s.CompleteEpisode("ep01", 3, refTime)
+	s.CompleteEpisode("ep02", 2, refTime)
+	if got := s.Snapshot().Stars; got != 5 {
+		t.Fatalf("Stars = %d, want 5", got)
+	}
+
+	s.ResetEpisode("ep01")
+	if got := s.Snapshot().Stars; got != 2 {
+		t.Fatalf("Stars after reset = %d, want 2", got)
+	}
+
+	s.CompleteEpisode("ep01", 3, refTime)
+	if got := s.Snapshot().Stars; got != 5 {
+		t.Fatalf("Stars after replay = %d, want 5 (no double count)", got)
+	}
+
+	// Resetting an episode that was never played must not touch the total.
+	s.ResetEpisode("ep99")
+	if got := s.Snapshot().Stars; got != 5 {
+		t.Fatalf("Stars after no-op reset = %d, want 5", got)
+	}
+}
+
 func newPath(t *testing.T) string {
 	t.Helper()
 	return filepath.Join(t.TempDir(), "var", "progress.json")

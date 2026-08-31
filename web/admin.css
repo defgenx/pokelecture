@@ -1,5 +1,13 @@
 /* Administration — additions on top of parent.css, same plain adult-tool tone. */
 
+/* Episode rows carry one extra column (the per-episode ★ threshold select). */
+.row { grid-template-columns: 1fr repeat(5, auto); }
+.row select.small {
+  font: inherit; font-size: 13px;
+  padding: 6px 8px; border-radius: 9px;
+  border: 1px solid var(--line); background: #fff; color: var(--ink);
+}
+
 .section { margin-bottom: 26px; }
 .section h2 { font-size: 16px; margin: 18px 0 10px; }
 

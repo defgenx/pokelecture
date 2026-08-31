@@ -276,9 +276,12 @@ Quatre onglets, tout agit sur `var/progress.json` immédiatement :
 - **Pokédex** : attraper / retirer n'importe quel Pokémon à la main.
 - **Réglages** : renommer l'enfant sans redémarrer ; **la politique de
   déblocage** — terminer suffit (défaut), ou exiger ★ / ★★ / ★★★ avant de
-  débloquer la suite, ou tout débloquer (mode libre) ; l'étage de la Tour et
-  les records des mini-jeux ; et la remise à zéro complète (le prénom et ces
-  réglages sont conservés).
+  débloquer la suite, ou tout débloquer (mode libre) — avec, dans l'onglet
+  Épisodes, **un seuil propre à chaque épisode** (« ★ pour la suite ») qui
+  prime sur la règle globale ; l'étage de la Tour et les records des
+  mini-jeux ; et la remise à zéro complète (le prénom et ces réglages sont
+  conservés). « Rejouer comme neuf » retire du total les étoiles de l'épisode
+  remis à zéro — elles se regagnent en le rejouant, jamais en double.
 
 Comme le studio voix, la page n'a **aucune authentification** : en public,
 mets un `auth_basic` devant.

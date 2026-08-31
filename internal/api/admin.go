@@ -202,15 +202,37 @@ func (s *Server) handleAdminPokedex(w http.ResponseWriter, r *http.Request) {
 	s.adminDone(w)
 }
 
-// handleAdminSettings updates the progression policy: how many stars an
+// handleAdminSettings updates the global progression policy: how many stars an
 // episode needs before the next one unlocks, or free play (all unlocked).
 func (s *Server) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
-	var req progress.Settings
+	var req struct {
+		MinStars int  `json:"min_stars"`
+		FreePlay bool `json:"free_play"`
+	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.MinStars < 0 || req.MinStars > 3 {
 		http.Error(w, "réglages invalides", http.StatusBadRequest)
 		return
 	}
-	s.store.UpdateSettings(req)
+	s.store.UpdateSettings(req.MinStars, req.FreePlay)
+	s.adminDone(w)
+}
+
+// handleAdminEpisodeStars sets one episode's own star threshold — the stars it
+// must have earned before the next episode unlocks. -1 goes back to the global
+// policy.
+func (s *Server) handleAdminEpisodeStars(w http.ResponseWriter, r *http.Request) {
+	if _, ok := s.cur.Episode(r.PathValue("id")); !ok {
+		http.Error(w, "épisode inconnu", http.StatusNotFound)
+		return
+	}
+	var req struct {
+		MinStars int `json:"min_stars"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.MinStars > 3 {
+		http.Error(w, "réglages invalides", http.StatusBadRequest)
+		return
+	}
+	s.store.SetEpisodeStars(r.PathValue("id"), req.MinStars)
 	s.adminDone(w)
 }
 

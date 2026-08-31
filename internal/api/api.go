@@ -87,6 +87,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /api/admin/episodes/{id}/complete", s.handleAdminEpisodeComplete)
 	mux.HandleFunc("POST /api/admin/pokedex/{id}", s.handleAdminPokedex)
 	mux.HandleFunc("POST /api/admin/settings", s.handleAdminSettings)
+	mux.HandleFunc("POST /api/admin/episodes/{id}/stars", s.handleAdminEpisodeStars)
 
 	// Must sit in front of the file server so a recording can shadow the
 	// generated file behind the same URL.
@@ -188,8 +189,9 @@ func (s *Server) state() stateView {
 			out.NextID = ep.ID
 		}
 		// The parent decides what "done enough to move on" means: completed
-		// is the default, a star threshold makes replays part of the course.
-		unlocked = unlocked && stat.Completions > 0 && stat.BestStars >= st.Settings.MinStars
+		// is the default, a star threshold (global, or set per episode) makes
+		// replays part of the course.
+		unlocked = unlocked && stat.Completions > 0 && stat.BestStars >= st.Settings.MinStarsFor(ep.ID)
 	}
 	if out.NextID == "" && len(s.cur.Episodes) > 0 {
 		// Everything done: replay the least recently played episode, so the

@@ -53,6 +53,18 @@ type Settings struct {
 	MinStars int `json:"min_stars"`
 	// FreePlay unlocks every episode regardless of completion.
 	FreePlay bool `json:"free_play"`
+	// EpisodeStars overrides MinStars for specific episodes: the stars THAT
+	// episode must have earned before the following one unlocks.
+	EpisodeStars map[string]int `json:"episode_stars,omitempty"`
+}
+
+// MinStarsFor is the threshold in force for one episode: its own override if
+// set, the global policy otherwise.
+func (s Settings) MinStarsFor(id string) int {
+	if v, ok := s.EpisodeStars[id]; ok {
+		return v
+	}
+	return s.MinStars
 }
 
 // State is the whole savegame.
@@ -162,6 +174,10 @@ func (s *Store) copyLocked() State {
 	out.Records = make(map[string]int, len(s.state.Records))
 	for k, v := range s.state.Records {
 		out.Records[k] = v
+	}
+	out.Settings.EpisodeStars = make(map[string]int, len(s.state.Settings.EpisodeStars))
+	for k, v := range s.state.Settings.EpisodeStars {
+		out.Settings.EpisodeStars[k] = v
 	}
 	out.Episodes = make(map[string]EpisodeStat, len(s.state.Episodes))
 	for k, v := range s.state.Episodes {
@@ -297,12 +313,28 @@ func (s *Store) Record(game string, score int, lowerBetter bool) bool {
 	return beaten
 }
 
-// UpdateSettings replaces the progression policy.
-func (s *Store) UpdateSettings(set Settings) {
+// UpdateSettings replaces the global progression policy. The per-episode
+// overrides are managed by SetEpisodeStars and survive this call.
+func (s *Store) UpdateSettings(minStars int, freePlay bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	set.MinStars = max(0, min(3, set.MinStars))
-	s.state.Settings = set
+	s.state.Settings.MinStars = max(0, min(3, minStars))
+	s.state.Settings.FreePlay = freePlay
+}
+
+// SetEpisodeStars sets (0–3) or clears (negative) one episode's own star
+// threshold, overriding the global policy for that episode only.
+func (s *Store) SetEpisodeStars(id string, stars int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if stars < 0 {
+		delete(s.state.Settings.EpisodeStars, id)
+		return
+	}
+	if s.state.Settings.EpisodeStars == nil {
+		s.state.Settings.EpisodeStars = map[string]int{}
+	}
+	s.state.Settings.EpisodeStars[id] = min(3, stars)
 }
 
 // Rename changes the child's name without touching anything else.
@@ -329,12 +361,17 @@ func (s *Store) Reset() {
 	}
 }
 
-// ResetEpisode forgets one episode's stats, so it plays as new again. Stars
-// already banked stay banked: taking stars away from a five-year-old is not a
-// feature. The spaced-review items are shared across episodes and stay too.
+// ResetEpisode forgets one episode's stats, so it plays as new again. Its
+// banked stars leave the total with it: the counter's invariant is
+// Stars = sum of BestStars, and keeping them would double-count on the replay
+// (CompleteEpisode awards the delta against a BestStars that is now gone).
+// The spaced-review items are shared across episodes and stay.
 func (s *Store) ResetEpisode(id string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if st, ok := s.state.Episodes[id]; ok {
+		s.state.Stars = max(0, s.state.Stars-st.BestStars)
+	}
 	delete(s.state.Episodes, id)
 }
 
