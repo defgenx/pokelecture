@@ -1,0 +1,25 @@
+{
+  "id": "ep29",
+  "route": 24,
+  "title": "Île 6 — er qui fait é",
+  "story": "La dernière île ! À la fin d'un mot, le e et le r ensemble font le son é : rocher, panier, chanter. Dans le grand jardin de l'île, une fleur géante s'ouvre au soleil... Bulbizarre a fini de grandir. Après cette île, la Tour du Ciel t'attend !",
+  "new_graphemes": ["er"],
+  "syllables": ["cher", "ter", "ser", "per", "ler", "nier", "lier", "tier"],
+  "words": [
+    {"text": "Florizarre", "pokemon": 3, "syllables": ["Flo", "ri", "zarre"]},
+    {"text": "Rocher", "icon": "rock", "syllables": ["Ro", "cher"]},
+    {"text": "Panier", "emoji": "🧺", "syllables": ["Pa", "nier"]},
+    {"text": "Chanter", "emoji": "🎤", "syllables": ["Chan", "ter"]}
+  ],
+  "sentences": [
+    {"text": "Florizarre aime chanter.", "pokemon": 3},
+    {"text": "Le panier roule sur le rocher.", "emoji": "🧺"},
+    {"text": "Sacha chante sur la route.", "icon": "trainer"}
+  ],
+  "reward_pokemon": 3,
+  "boss": {
+    "pokemon": 3,
+    "hp": 3,
+    "taunt": "Bulbizarre a évolué ! Florizarre fait trembler le sol du jardin !"
+  }
+}

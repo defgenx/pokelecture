@@ -1,0 +1,27 @@
+{
+  "id": "ep27",
+  "route": 22,
+  "title": "Île 4 — oin et ien",
+  "story": "Quatrième île : les sons oin, comme dans l'attaque Soin, et ien, comme dans chien. Au loin, un aboiement fait trembler les arbres. Un grand chien à la crinière dorée monte la garde : Caninos a évolué !",
+  "new_graphemes": ["oin", "ien"],
+  "syllables": ["coin", "foin", "loin", "soin", "bien", "lien", "mien", "rien", "tien", "chien"],
+  "words": [
+    {"text": "Arcanin", "pokemon": 59, "syllables": ["Ar", "ca", "nin"]},
+    {"text": "Gardien", "icon": "shield", "syllables": ["Gar", "dien"]},
+    {"text": "Pointu", "emoji": "📌", "syllables": ["Poin", "tu"]},
+    {"text": "Lointain", "emoji": "🏝", "syllables": ["Loin", "tain"]},
+    {"text": "Chien", "emoji": "🐕", "syllables": ["Chien"]},
+    {"text": "Soin", "icon": "heart", "syllables": ["Soin"]}
+  ],
+  "sentences": [
+    {"text": "Le chien salue Arcanin.", "pokemon": 59},
+    {"text": "Caninos regarde au loin.", "pokemon": 58},
+    {"text": "Évoli aime bien le foin.", "pokemon": 133}
+  ],
+  "reward_pokemon": 59,
+  "boss": {
+    "pokemon": 59,
+    "hp": 3,
+    "taunt": "Arcanin, le gardien de l'île, bondit devant toi ! Montre-lui tes mots !"
+  }
+}

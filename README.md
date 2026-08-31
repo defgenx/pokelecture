@@ -14,10 +14,26 @@ make run NAME=Prénom    # affiche les URLs du réseau local
 ```
 
 Puis sur la tablette : ouvrir `http://192.168.x.x:8080` (l'adresse est affichée
-au démarrage) → menu Chrome → **Ajouter à l'écran d'accueil**.
+au démarrage) → **Ajouter à l'écran d'accueil** (menu Chrome sur Android ;
+bouton Partager → « Sur l'écran d'accueil » dans Safari sur iPad).
+
+### Tablettes : iPad et Pixel Tablet
+
+Le jeu est conçu pour l'une comme pour l'autre : icône d'application générée
+(fond jaune, y compris la variante *maskable* pour les launchers Android),
+portrait **et** paysage, zones sûres (barre d'état, encoche), pincer-zoomer et
+appui long neutralisés (des doigts de cinq ans touchent partout), et l'écran
+reste allumé pendant une séance (wake lock, en HTTPS).
+
+Une seule asymétrie à connaître : l'iPad ne lit pas les enregistrements WebM.
+Le studio voix enregistre désormais en **AAC (.m4a)** quand le navigateur le
+permet (Chrome récent, Safari) — ces enregistrements passent partout. Un vieil
+enregistrement `.webm` continue de marcher sur Android mais retombe sur la voix
+de synthèse côté iPad : ré-enregistre la ligne et c'est réglé.
 
 La sauvegarde est un simple fichier JSON : `var/progress.json`. `make reset`
-repart de zéro.
+repart de zéro — ou, plus fin, l'**administration** sur l'ordinateur :
+`http://localhost:8080/admin.html` (voir plus bas).
 
 ---
 
@@ -154,7 +170,7 @@ continuant à voir la vraie orthographe :
 Ça marche aussi sur un `word` ou une `sentence`. Et si ça ne suffit pas :
 enregistre-le au studio voix, c'est définitif.
 
-### Arènes légendaires
+### Arènes légendaires, badges et Ligue
 
 Un épisode avec `"legendary": true` ne déclare **aucun** contenu : il tire ses
 syllabes, ses mots et ses phrases de **tout ce qui a été appris avant**. C'est
@@ -162,10 +178,29 @@ donc à la fois une vraie révision cumulée et le moment où un Pokémon légen
 entre au Pokédex. Le combat est plus long (5–6 PV, 6 mots) et l'écran passe en
 violet et or.
 
-Livrées : **Artikodin** après la route 3, **Électhor** après la route 6,
-**Mewtwo** après la route 9. En réserve dans `pokemon.json` pour les sections
-suivantes : Sulfura, Lugia, Ho-Oh, Celebi, Mew, Zoroark — ils apparaissent en
-silhouette au Pokédex, ce qui donne envie d'aller les chercher.
+Une arène porte en plus un `"badge": {"id": "glace", "name": "Badge Glace"}` :
+le badge est remis en cérémonie après la victoire, et la collection s'affiche
+sur l'écran d'accueil (gris tant qu'il n'est pas gagné). Les id valides sont
+listés dans `curriculum.Badges` (Go) et dessinés dans `web/icons.js` (`BADGES`) —
+une faute de frappe fait échouer `pokecontent check`.
+
+Livrées : **Artikodin** (Badge Glace) après la route 3, **Électhor** (Badge
+Orage) après la route 6, **Mewtwo** (Badge Psy) après la route 9, **Sulfura**
+(Badge Volcan) après la route 12, **Lugia** (Badge Marée) après la route 15,
+**Ho-Oh** (Badge Arc-en-ciel) après la route 18.
+
+Après la route 18 : **le Conseil des 4** — quatre combats légendaires
+consécutifs (Suicune, Entei, Celebi, Zoroark), sans badge, comme dans les vrais
+jeux — puis **le Champion** : Mew, le Pokémon le plus rare, et le **Trophée du
+Champion**.
+
+### Le Pokédex se complète en lisant
+
+Terminer un épisode attrape **tous** les Pokémon rencontrés dedans : la
+récompense, le boss, et chaque Pokémon lu dans un mot ou une phrase. Lire un
+nom, c'est l'attraper. `pokecontent check` échoue si un Pokémon de
+`pokemon.json` n'est attrapable dans aucun épisode : une silhouette qu'on ne
+peut jamais remplir est exactement le genre d'impasse que ce jeu s'interdit.
 
 ### Règles de contenu, apprises à la dure
 
@@ -211,6 +246,28 @@ sons, c'est ~5 minutes et c'est là que se joue l'essentiel.
 > Le micro exige un contexte sécurisé : ouvre la page sur `localhost`, pas via
 > l'adresse IP du réseau. Les enregistrements vont dans `web/audio/recorded/` et
 > `pokecontent prune` n'y touche jamais.
+
+## Administration — vérifier, débloquer, réinitialiser
+
+```bash
+make run
+# puis, sur l'ordinateur : http://localhost:8080/admin.html
+```
+
+Quatre onglets, tout agit sur `var/progress.json` immédiatement :
+
+- **Épisodes** : parties jouées, étoiles, dernière session. « ↺ Rejouer comme
+  neuf » efface les stats d'un épisode (les étoiles déjà gagnées restent
+  acquises) ; « ✓ Marquer terminé » débloque la suite et remplit le Pokédex
+  comme une vraie victoire — le bouton pour sauter un épisode qui bloque.
+- **Révisions** : chaque syllabe/mot/phrase avec sa boîte de répétition espacée,
+  du plus fragile au plus solide — c'est la liste de ce qui coince vraiment.
+- **Pokédex** : attraper / retirer n'importe quel Pokémon à la main.
+- **Réglages** : renommer l'enfant sans redémarrer, et la remise à zéro
+  complète (le prénom est conservé).
+
+Comme le studio voix, la page n'a **aucune authentification** : en public,
+mets un `auth_basic` devant.
 
 ### Pourquoi les `say_as` sont ce qu'ils sont
 
@@ -259,47 +316,122 @@ combat avec barre de PV verte→jaune→rouge, et un compagnon (Pikachu au dépa
 puis sa dernière capture) qui le suit d'écran en écran et saute à chaque bonne
 réponse.
 
+Le combat est mis en scène comme dans les jeux : écran **VS** où les deux
+sprites déboulent face à face, mot reconstruit = attaque, **COUP CRITIQUE !**
+quand le mot est bâti sans une seule erreur, riposte du boss (charge + bruit
+sourd, jamais de dégâts pour l'enfant — perdre n'existe pas à 5 ans), et
+**COMBAT PARFAIT !** avec confettis quand tous les mots sont passés du premier
+coup.
+
 Le son fait le reste : `web/sfx.js` synthétise tout au Web Audio, sans un seul
 fichier — carillon montant sur une bonne réponse, whoosh d'attaque, arpège de
-capture, grondement à l'entrée d'un légendaire. Plus des confettis sur une
-capture et en fin de séance.
+capture, grondement à l'entrée d'un légendaire, fanfare de badge. Plus des
+confettis sur une capture, un badge et en fin de séance.
 
 ---
 
-## Épisodes livrés (routes 1 à 9)
+## Épisodes livrés (routes 1 à 18 + la Ligue)
 
 | Route | Sons | Vocabulaire Pokémon | Récompense |
 |---|---|---|---|
 | 1 | a i o u é e m l r t s n tt ss | Otaria, Rattata, Ramoloss, Amonita, Morsure, Normal | Rattata |
 | 2 | p d | Doduo, Dodrio, Nidorina, Paras, Tornade | Doduo |
 | 3 | f v | Mélofée, Évoli, Nosferapti, Fée, Vol, Vitesse | Évoli |
+| ★ | *révision de tout* | **Arène de Glace** · Badge Glace | **Artikodin** |
 | 4 | b c | Abo, Sabelette, Caninos, Cascade, Croc | Caninos |
 | 5 | ou oo | Roucool, Miaouss, Poudre, Roc, Coupe | Roucool |
 | 6 | ch è k | **Pikachu**, Salamèche, Machoc, Sacha, Charme | Pikachu |
+| ★ | *révision de tout* | **Arène de l'Orage** · Badge Orage | **Électhor** |
 | 7 | on om x | Ronflex, Rondoudou, Bombe, Ombre, Bonbon | Ronflex |
 | 8 | an am | Chenipan, Nidoran, Plante, Tranche, Danse | Chenipan |
 | 9 | g ge gi | Goupix, Grodoudou, Magicarpe, Charge, Rage | Goupix |
-| ★ | *révision de tout* | **Arène de Glace** | **Artikodin** (après la route 3) |
-| ★ | *révision de tout* | **Arène de l'Orage** | **Électhor** (après la route 6) |
-| ★ | *révision de tout* | **Arène Psy** | **Mewtwo** (après la route 9) |
+| ★ | *révision de tout* | **Arène Psy** · Badge Psy | **Mewtwo** |
+| 10 | en | Tentacool, Tentacule, Encore, Tente | Tentacool |
+| 11 | eu au eau | **Dracaufeu**, Feu, Eau, Bateau, Cadeau, Chaleur | Dracaufeu |
+| 12 | z rr nn | **Bulbizarre**, Tonnerre, Gazon, Zéro | Bulbizarre |
+| ★ | *révision de tout* | **Arène du Volcan** · Badge Volcan | **Sulfura** |
+| 13 | oi | Poissirène, Mimitoss, Étoile, Miroir, Poire, Soir | Poissirène |
+| 14 | qu | Attaque, Vive-Attaque, Casque, Quatre | Aquali |
+| 15 | in ain | Insécateur, Insecte, Matin, Lapin, Main, Train | Insécateur |
+| ★ | *révision de tout* | **Arène de la Mer** · Badge Marée | **Lugia** |
+| 16 | gn ill | Montagne, Papillon, Torgnole, Grognon (boss : Aspicot) | Papilusion |
+| 17 | ph y | Métamorph, Photo, Stylo, Trophée | Ponyta |
+| 18 | ce ci | **Carapuce**, Racine, Cercle, Crabe, Pouce | Carapuce |
+| ★ | *révision de tout* | **Arène Arc-en-ciel** · Badge Arc-en-ciel | **Ho-Oh** |
+| ★ | *Conseil des 4, 1/4* | combat légendaire | **Suicune** |
+| ★ | *Conseil des 4, 2/4* | combat légendaire | **Entei** |
+| ★ | *Conseil des 4, 3/4* | combat légendaire | **Celebi** |
+| ★ | *Conseil des 4, 4/4* | combat légendaire | **Zoroark** |
+| 🏆 | *tout* | **Le Champion** · Trophée du Champion | **Mew** |
 
-## Suite à écrire (semaines 3–4)
+### Après la Ligue : les Îles Lointaines (routes 19 à 24)
 
-| Route | Sons | Cibles Pokémon |
-|---|---|---|
-| 10 | en | Tentacool |
-| 11 | eu au eau | **Dracaufeu**, type Feu |
-| 12 | z rr nn | **Bulbizarre**, attaque Tonnerre |
-| 13 | oi | Poissirène, Boîte |
-| 14 | qu | Aquali, Vive-Attaque |
-| 15 | in ain | Insécateur, Poing |
-| 16 | ill gn | Papilusion, Torgnole |
-| 17 | ph y | Métamorph, Ponyta |
-| 18 | ce ci | **Carapuce**, Insécateur |
+Le post-game, comme dans les vrais jeux — et le thème est **l'évolution** : les
+Pokémon attrapés au début de l'aventure ont grandi avec le lecteur.
 
-Les graphèmes sont déjà tous définis dans `data/graphemes.json` : il n'y a que
-des fichiers d'épisode à écrire, et `pokecontent check` refusera tout mot qu'il
-ne peut pas encore lire.
+| Île | Sons | Vocabulaire | Récompense |
+|---|---|---|---|
+| 1 | j | Judo, Pyjama, Jeudi, Journal, Joie | **Jirachi** |
+| 2 | ai ei ê | Baie, Reine, Pêche, Aile, Neige | **Roucarnage** (Roucool a évolué) |
+| 3 | mm pp ll ff | Flammèche, Pomme, Balle, Griffe | **Mackogneur** (Machoc) |
+| 4 | oin ien | Gardien, Pointu, Lointain, Chien, Soin | **Arcanin** (Caninos) |
+| 5 | h ui | Parapluie, Buisson, Ruisseau, Pluie, Huit | **Léviator** (Magicarpe !) |
+| 6 | er | Rocher, Panier, Chanter | **Florizarre** (Bulbizarre) |
+| ★ | *tout* | **Tour du Ciel** · Badge du Ciel | **Rayquaza** |
+
+### Difficulté progressive, alignée CP
+
+Les exercices durcissent avec la progression, par tiers du parcours :
+
+| | Choix par question | Pièges dans le combat | Mots par combat |
+|---|---|---|---|
+| Routes 1–9 | 3 | 1 syllabe intruse | 4 |
+| Routes 10–18 | 4 | 1 | 4 |
+| Ligue et Îles | 4 | 2 | 5 (6 en arène) |
+
+Côté programme : une fois les Îles terminées, l'inventaire couvre **tous les
+graphèmes du CP** — voyelles, consonnes, digraphes (`ou oi on an en in au eu
+ai ei ch gn qu ce ci ge gi er`), trigraphes (`eau ain oin ien ill`), lettres
+muettes (`e`, `h`) et doubles consonnes. L'**ordre** s'écarte de la progression
+CP classique pour débloquer du vocabulaire Pokémon au plus vite (choix assumé,
+voir « Le principe ») ; le **niveau**, lui, reste strictement CP : mots courts
+réguliers, phrases sujet-verbe-complément, aucune notion de CE1 (pas de
+`s`=/z/ entre voyelles, pas de `ti`=/si/, pas d'exceptions du `ill`).
+
+### Rejouable : chromatiques et Tour de Combat
+
+- **Pokémon chromatiques ✨** : rejouer un épisode déjà terminé donne 1 chance
+  sur 6 d'attraper la version chromatique (recolorée) de sa récompense — une
+  seconde collection, plus lente, par-dessus le Pokédex. Compteur ✨ sur
+  l'accueil.
+- **🗼 Tour de Combat** : dès le premier épisode terminé, un mode combat sans
+  fin sur l'accueil — huit mots tirés de *tout* ce qui a été appris, contre un
+  Pokémon de son propre Pokédex, avec bouton REVANCHE. Aucune progression n'y
+  est accordée, mais chaque mot lu alimente la répétition espacée : c'est de
+  l'entraînement déguisé en défi.
+- **Rotation des rediffusions** : quand tout est terminé, JOUER relance
+  l'épisode le moins récemment joué.
+
+Pièges de la progression, gérés dans le contenu : « Poing » et « Boîte »
+(lettre finale muette / `oî`), « Chenille » (le `en` glouton après la route 10),
+« Aquali » et « Ponyta » comme *mots à lire* (`qu` = /kw/, `on` glouton) — ils
+n'apparaissent que comme récompenses, dont le nom est lu **à** l'enfant.
+« Tonnerre » est découpé `To-nnerre` pour que le `o` ne colle pas au `n`.
+
+Quand tout est terminé, « JOUER » relance l'épisode **le moins récemment
+joué** : la fin du parcours devient une rotation de révision, pas une impasse.
+
+## Jeux bonus
+
+Après chaque séance terminée, un bouton **🎮 JEU BONUS** propose au hasard un
+des deux mini-jeux — zéro lecture, pure récompense, construits avec **ses
+propres captures** (remplir le Pokédex enrichit les jeux) :
+
+- **Memory Pokémon** : trois paires de ses Pokémon, face cachée.
+- **Attrape-les !** : les Pokémon surgissent des hautes herbes, il faut les
+  toucher avant qu'ils se cachent.
+
+Rien n'y est enregistré comme progression : c'est le dessert, pas le repas.
 
 ---
 

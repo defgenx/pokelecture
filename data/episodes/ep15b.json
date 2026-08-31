@@ -1,0 +1,18 @@
+{
+  "id": "ep15b",
+  "route": 0,
+  "title": "Arène de la Mer — Lugia",
+  "story": "La mer se soulève et le vent hurle. Une ombre immense monte des profondeurs : Lugia, le gardien légendaire de la mer ! Lis tes mots pour calmer la tempête, et le Badge Marée est à toi.",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "badge": {"id": "maree", "name": "Badge Marée"},
+  "reward_pokemon": 249,
+  "boss": {
+    "pokemon": 249,
+    "hp": 5,
+    "taunt": "Lugia déploie ses ailes géantes ! La mer gronde. Lis pour la calmer !"
+  }
+}

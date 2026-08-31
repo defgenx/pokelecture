@@ -1,0 +1,27 @@
+{
+  "id": "ep13",
+  "route": 13,
+  "title": "Route 13 — le son oi",
+  "story": "Route 13, la nuit tombe. Le o et le i ensemble chantent oi, comme dans roi ! Ce soir, la mer brille sous les étoiles : une reine des poissons nage entre les reflets de la lune...",
+  "new_graphemes": ["oi"],
+  "syllables": ["boi", "doi", "foi", "loi", "moi", "noi", "poi", "roi", "soi", "toi", "voi", "choi"],
+  "words": [
+    {"text": "Poissirène", "pokemon": 118, "syllables": ["Poi", "ssi", "rène"]},
+    {"text": "Étoile", "icon": "star", "syllables": ["É", "toi", "le"]},
+    {"text": "Miroir", "icon": "mirror", "syllables": ["Mi", "roir"]},
+    {"text": "Poire", "emoji": "🍐", "syllables": ["Poi", "re"]},
+    {"text": "Soir", "emoji": "🌙", "syllables": ["Soir"]},
+    {"text": "Mimitoss", "pokemon": 48, "syllables": ["Mi", "mi", "toss"]}
+  ],
+  "sentences": [
+    {"text": "Poissirène nage le soir.", "pokemon": 118},
+    {"text": "Mimitoss regarde l'étoile.", "pokemon": 48},
+    {"text": "Miaouss adore le miroir.", "pokemon": 52}
+  ],
+  "reward_pokemon": 118,
+  "boss": {
+    "pokemon": 118,
+    "hp": 3,
+    "taunt": "Poissirène tourbillonne dans l'eau ! Montre-lui tes mots !"
+  }
+}

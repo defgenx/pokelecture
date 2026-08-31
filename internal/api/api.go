@@ -75,6 +75,14 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("PUT /api/record/{key}", s.handleRecordPut)
 	mux.HandleFunc("DELETE /api/record/{key}", s.handleRecordDelete)
 
+	// Parent-side administration: inspect and repair the savegame.
+	mux.HandleFunc("GET /api/admin/summary", s.handleAdminSummary)
+	mux.HandleFunc("POST /api/admin/name", s.handleAdminName)
+	mux.HandleFunc("POST /api/admin/reset", s.handleAdminReset)
+	mux.HandleFunc("POST /api/admin/episodes/{id}/reset", s.handleAdminEpisodeReset)
+	mux.HandleFunc("POST /api/admin/episodes/{id}/complete", s.handleAdminEpisodeComplete)
+	mux.HandleFunc("POST /api/admin/pokedex/{id}", s.handleAdminPokedex)
+
 	// Must sit in front of the file server so a recording can shadow the
 	// generated file behind the same URL.
 	mux.HandleFunc("GET /audio/{file}", s.handleAudio)
@@ -83,6 +91,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /{$}", s.handlePage)
 	mux.HandleFunc("GET /index.html", s.handlePage)
 	mux.HandleFunc("GET /parent.html", s.handlePage)
+	mux.HandleFunc("GET /admin.html", s.handlePage)
 	mux.HandleFunc("GET /manifest.webmanifest", s.handlePage)
 
 	mux.Handle("/", noStore(s.web))
@@ -99,6 +108,13 @@ type episodeView struct {
 	Reward    int      `json:"reward_pokemon"`
 	Sounds    []string `json:"sounds"`
 	Legendary bool     `json:"legendary,omitempty"`
+	Badge     string   `json:"badge,omitempty"`
+}
+
+type badgeView struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Done bool   `json:"done"`
 }
 
 type pokemonView struct {
@@ -112,25 +128,30 @@ type pokemonView struct {
 	Sprite    string   `json:"sprite"`
 	Art       string   `json:"art"`
 	Caught    bool     `json:"caught"`
+	Shiny     bool     `json:"shiny,omitempty"`
 }
 
 type stateView struct {
-	Name     string        `json:"name"`
-	Stars    int           `json:"stars"`
-	Streak   int           `json:"streak"`
-	NextID   string        `json:"next_episode"`
-	Episodes []episodeView `json:"episodes"`
-	Pokedex  []pokemonView `json:"pokedex"`
+	Name     string            `json:"name"`
+	Stars    int               `json:"stars"`
+	Streak   int               `json:"streak"`
+	NextID   string            `json:"next_episode"`
+	AllDone  bool              `json:"all_done"`
+	Tower    bool              `json:"tower"` // Tour de Combat unlocked (≥1 episode done)
+	Episodes []episodeView     `json:"episodes"`
+	Pokedex  []pokemonView     `json:"pokedex"`
+	Badges   []badgeView       `json:"badges"`
+	UI       map[string]string `json:"ui"`
 }
 
 func (s *Server) state() stateView {
 	st := s.store.Snapshot()
 
-	out := stateView{Name: st.Name, Stars: st.Stars, Streak: st.Streak}
+	out := stateView{Name: st.Name, Stars: st.Stars, Streak: st.Streak, UI: curriculum.UIAudio()}
 	unlocked := true
 	for _, ep := range s.cur.Episodes {
 		stat := st.Episodes[ep.ID]
-		out.Episodes = append(out.Episodes, episodeView{
+		v := episodeView{
 			ID:        ep.ID,
 			Route:     ep.Route,
 			Title:     ep.Title,
@@ -140,20 +161,46 @@ func (s *Server) state() stateView {
 			Reward:    ep.RewardPokemon,
 			Sounds:    ep.NewGraphemes,
 			Legendary: ep.Legendary,
-		})
+		}
+		if ep.Badge != nil {
+			v.Badge = ep.Badge.ID
+			out.Badges = append(out.Badges, badgeView{
+				ID:   ep.Badge.ID,
+				Name: ep.Badge.Name,
+				Done: stat.Completions > 0,
+			})
+		}
+		out.Episodes = append(out.Episodes, v)
+		if stat.Completions > 0 {
+			out.Tower = true
+		}
 		if unlocked && out.NextID == "" && stat.Completions == 0 {
 			out.NextID = ep.ID
 		}
 		unlocked = unlocked && stat.Completions > 0
 	}
 	if out.NextID == "" && len(s.cur.Episodes) > 0 {
-		// Everything done: replay the last one rather than dead-ending.
-		out.NextID = s.cur.Episodes[len(s.cur.Episodes)-1].ID
+		// Everything done: replay the least recently played episode, so the
+		// long tail of replays rotates through the whole course instead of
+		// hammering the finale.
+		out.AllDone = true
+		oldest := s.cur.Episodes[0].ID
+		oldestAt := st.Episodes[oldest].LastPlayed
+		for _, ep := range s.cur.Episodes[1:] {
+			if at := st.Episodes[ep.ID].LastPlayed; at.Before(oldestAt) {
+				oldest, oldestAt = ep.ID, at
+			}
+		}
+		out.NextID = oldest
 	}
 
 	caught := map[int]bool{}
 	for _, id := range st.Pokedex {
 		caught[id] = true
+	}
+	shiny := map[int]bool{}
+	for _, id := range st.Shiny {
+		shiny[id] = true
 	}
 	ids := make([]int, 0, len(s.cur.Pokemon))
 	for id := range s.cur.Pokemon {
@@ -169,10 +216,13 @@ func (s *Server) state() stateView {
 			Types:     p.Types,
 			Dex:       p.Dex,
 			DexAudio:  speech.URL(p.Dex, speech.StyleNormal),
-			NameAudio: speech.URL(p.Name, speech.StyleWord),
+			// Spoken(), not Name: the audio file was generated from the phonetic
+			// respelling ("Pikatchou"), and the plain-name URL does not exist.
+			NameAudio: speech.URL(p.Spoken(), speech.StyleWord),
 			Sprite:    fmt.Sprintf("sprites/art/%d.png", p.ID),
 			Art:       fmt.Sprintf("sprites/art/%d.png", p.ID),
 			Caught:    caught[p.ID],
+			Shiny:     shiny[p.ID],
 		})
 	}
 	return out
@@ -186,6 +236,15 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "next" {
 		id = s.state().NextID
+	}
+	if id == curriculum.TowerID {
+		sess, ok := s.cur.BuildTower(s.store.Snapshot(), time.Now())
+		if !ok {
+			http.Error(w, "la Tour ouvre après le premier épisode terminé", http.StatusConflict)
+			return
+		}
+		writeJSON(w, http.StatusOK, sess)
+		return
 	}
 	ep, ok := s.cur.Episode(id)
 	if !ok {
@@ -203,21 +262,33 @@ type resultRequest struct {
 	} `json:"items"`
 	Stars     int  `json:"stars"`
 	Completed bool `json:"completed"`
+	// Shiny reports that the session's reward was rolled shiny (the roll lives
+	// in the session payload; a family app can trust its own client).
+	Shiny bool `json:"shiny"`
 }
 
 type resultResponse struct {
-	Caught   bool      `json:"caught"`
-	NewCatch bool      `json:"new_catch"`
-	Pokemon  int       `json:"pokemon"`
-	State    stateView `json:"state"`
+	// NewCatches lists every Pokémon this completion added to the Pokédex: the
+	// reward, the boss and everything read in the episode — reading a name is
+	// catching it, which is what makes the Pokédex completable.
+	NewCatches []int     `json:"new_catches"`
+	State      stateView `json:"state"`
 }
 
 func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	ep, ok := s.cur.Episode(id)
-	if !ok {
-		http.Error(w, "épisode inconnu", http.StatusNotFound)
-		return
+
+	// The tower is practice, not progression: answers feed the spaced review
+	// boxes and nothing else — no completion, no stars, no catch.
+	isTower := id == curriculum.TowerID
+	var ep *curriculum.Episode
+	if !isTower {
+		var ok bool
+		ep, ok = s.cur.Episode(id)
+		if !ok {
+			http.Error(w, "épisode inconnu", http.StatusNotFound)
+			return
+		}
 	}
 
 	var req resultRequest
@@ -233,14 +304,17 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	res := resultResponse{}
-	if req.Completed {
+	res := resultResponse{NewCatches: []int{}}
+	if !isTower && req.Completed {
 		stars := max(0, min(3, req.Stars))
 		s.store.CompleteEpisode(ep.ID, stars, now)
-		if ep.RewardPokemon != 0 {
-			res.Caught = true
-			res.Pokemon = ep.RewardPokemon
-			res.NewCatch = s.store.Catch(ep.RewardPokemon)
+		for _, id := range ep.CatchablePokemon() {
+			if s.store.Catch(id) {
+				res.NewCatches = append(res.NewCatches, id)
+			}
+		}
+		if req.Shiny && ep.RewardPokemon != 0 {
+			s.store.MarkShiny(ep.RewardPokemon)
 		}
 	}
 	if err := s.store.Save(); err != nil {

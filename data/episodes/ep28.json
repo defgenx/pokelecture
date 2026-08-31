@@ -1,0 +1,27 @@
+{
+  "id": "ep28",
+  "route": 23,
+  "title": "Île 5 — le h muet et le son ui",
+  "story": "Cinquième île, sous la pluie. Le u et le i ensemble font le son ui, comme dans pluie. Et voici le h : il ne fait aucun bruit, il se cache au début de huit ! Dans le ruisseau qui déborde, quelque chose d'énorme remonte le courant... Magicarpe, c'est toi ?",
+  "new_graphemes": ["h", "ui"],
+  "syllables": ["bui", "cui", "lui", "nui", "pui", "rui", "sui", "tui", "hui"],
+  "words": [
+    {"text": "Léviator", "pokemon": 130, "syllables": ["Lé", "vi", "a", "tor"]},
+    {"text": "Parapluie", "emoji": "☂️", "syllables": ["Pa", "ra", "pluie"]},
+    {"text": "Buisson", "emoji": "🌳", "syllables": ["Buis", "son"]},
+    {"text": "Ruisseau", "emoji": "💧", "syllables": ["Ruis", "seau"]},
+    {"text": "Pluie", "emoji": "🌧️", "syllables": ["Pluie"]},
+    {"text": "Huit", "emoji": "8️⃣", "syllables": ["Huit"]}
+  ],
+  "sentences": [
+    {"text": "Léviator adore la pluie.", "pokemon": 130},
+    {"text": "Le parapluie tombe.", "emoji": "☂️"},
+    {"text": "Le buisson bouge.", "emoji": "🌳"}
+  ],
+  "reward_pokemon": 130,
+  "boss": {
+    "pokemon": 130,
+    "hp": 3,
+    "taunt": "Magicarpe a évolué ! Léviator jaillit du ruisseau dans un mur d'eau !"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "ep12b",
+  "route": 0,
+  "title": "Arène du Volcan — Sulfura",
+  "story": "L'air devient brûlant. Un oiseau de flammes descend du volcan : Sulfura, le Pokémon légendaire du feu ! Il ne veut pas de nouveaux sons : il veut voir tout ce que tu sais déjà lire. Gagne ce combat, et le Badge Volcan est à toi !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "badge": {"id": "volcan", "name": "Badge Volcan"},
+  "reward_pokemon": 146,
+  "boss": {
+    "pokemon": 146,
+    "hp": 5,
+    "taunt": "Sulfura enflamme le ciel ! Six mots pour gagner le Badge Volcan !"
+  }
+}

@@ -2,7 +2,7 @@
   "id": "ep04",
   "route": 4,
   "title": "Route 4 — b et c",
-  "story": "Route 4 : le b et le c arrivent. Ba, be, bi, bo, bu... ca, co, cu ! Tu vas pouvoir lire le nom d'un Pokémon qui n'a que deux syllabes, et le nom d'une attaque d'eau.",
+  "story": "Route 4 : le b et le c arrivent. Ba, bé, bi, bo, bu... ca, co, cu ! Tu vas pouvoir lire le nom d'un Pokémon qui n'a que deux syllabes, et le nom d'une attaque d'eau.",
   "new_graphemes": [
     "b",
     "c"
@@ -55,6 +55,7 @@
     },
     {
       "text": "Croc",
+      "say_as": "croque",
       "syllables": [
         "Croc"
       ],

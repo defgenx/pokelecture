@@ -1,0 +1,17 @@
+{
+  "id": "ep20",
+  "route": 0,
+  "title": "Conseil des 4 — Entei",
+  "story": "Deuxième porte du Conseil des 4 ! La salle est pleine de fumée, et un grondement fait trembler le sol sous tes pieds : Entei, le Pokémon volcan, s'avance vers toi. Respire un grand coup... et lis !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 244,
+  "boss": {
+    "pokemon": 244,
+    "hp": 6,
+    "taunt": "Entei rugit et le sol tremble ! Garde ton calme et lis !"
+  }
+}

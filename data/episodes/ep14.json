@@ -1,0 +1,25 @@
+{
+  "id": "ep14",
+  "route": 14,
+  "title": "Route 14 — le son qu",
+  "story": "Route 14, au bord du lac. Le q et le u sont toujours ensemble, comme deux meilleurs amis, et ils font le son k. Évoli s'approche de l'eau, la touche... et se met à briller de mille couleurs !",
+  "new_graphemes": ["qu"],
+  "syllables": ["qua", "qui", "quo", "qué", "quan"],
+  "words": [
+    {"text": "Attaque", "icon": "impact", "syllables": ["A", "tta", "que"]},
+    {"text": "Vive-Attaque", "icon": "speed", "syllables": ["Vive-", "Atta", "que"]},
+    {"text": "Casque", "emoji": "⛑️", "syllables": ["Cas", "que"]},
+    {"text": "Quatre", "emoji": "4️⃣", "syllables": ["Qua", "tre"]}
+  ],
+  "sentences": [
+    {"text": "Évoli utilise Vive-Attaque.", "pokemon": 133},
+    {"text": "Machoc porte le casque.", "pokemon": 66},
+    {"text": "Pikachu évite l'attaque.", "pokemon": 25}
+  ],
+  "reward_pokemon": 134,
+  "boss": {
+    "pokemon": 134,
+    "hp": 3,
+    "taunt": "Évoli a évolué ! Aquali jaillit de l'eau, rapide comme l'éclair !"
+  }
+}

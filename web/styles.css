@@ -61,6 +61,14 @@
 
 html, body { margin: 0; min-height: 100%; overscroll-behavior: none; }
 
+/* Tablet-proofing, for the small fingers this is actually played with:
+   pan-x/pan-y (not `manipulation`) also blocks pinch-zoom, the callout kills
+   iPadOS's long-press "save image" sheet mid-exercise, and user-drag stops a
+   sprite from lifting off as a drag ghost. */
+html { touch-action: pan-x pan-y; }
+body { -webkit-touch-callout: none; }
+img { -webkit-user-drag: none; }
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   font-feature-settings: "ss01", "cv01";
@@ -159,6 +167,8 @@ body::after {
 
 .screen {
   min-height: 100vh;
+  /* Safari's URL bar makes 100vh taller than the visible area; dvh tracks it. */
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -230,6 +240,9 @@ body::after {
   align-items: center;
   gap: 12px;
   padding: 12px 18px;
+  /* Installed on an iPad the page runs under the status bar; on newer Androids
+     under the camera cutout. Zero everywhere else. */
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
   background: rgba(255, 255, 255, .68);
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
@@ -262,7 +275,12 @@ body::after {
   box-shadow: var(--lift-1);
 }
 
-.page { padding: 20px 16px 48px; max-width: 900px; margin: 0 auto; }
+.page {
+  padding: 20px 16px 48px;
+  padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
+  max-width: 900px;
+  margin: 0 auto;
+}
 
 /* --------------------------------------------------------------- buttons --- */
 
@@ -386,6 +404,8 @@ body::after {
   max-width: 780px;
 }
 .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* Four choices (the harder tier) go 2×2, so the targets stay finger-sized. */
+.grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 620px; }
 
 .tile {
   background: var(--glass-solid);
@@ -734,7 +754,7 @@ body::after {
 .mascot {
   position: fixed;
   left: 12px;
-  bottom: 10px;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   width: 104px;
   height: 104px;
   object-fit: contain;
@@ -795,6 +815,194 @@ body::after {
 
 .loading { display: grid; place-items: center; min-height: 70vh; }
 
+/* ---------------------------------------------------------------- badges --- */
+/* The badge case on the home screen and the ceremony after an arena victory.
+   Unearned badges are grey silhouettes: the case itself says what is left. */
+
+.badgecase {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 18px;
+  background: var(--glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: var(--r-md);
+  box-shadow: var(--lift-1);
+  padding: 12px 16px;
+}
+.badgeslot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 52px;
+}
+.badgeslot small { font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+
+.badge-icon { display: grid; place-items: center; width: 44px; height: 44px; line-height: 0; }
+.badge-icon svg { width: 100%; height: 100%; display: block; }
+.badge-icon.earned svg { filter: drop-shadow(0 3px 4px rgba(20, 24, 34, .25)); }
+.badge-icon.unearned svg { filter: grayscale(1) brightness(1.15) opacity(.35); }
+
+.route-badge { flex: 0 0 auto; display: grid; place-items: center; }
+.route-badge .badge-icon { width: 34px; height: 34px; }
+
+.badge-hero {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 203, 5, .5), transparent 70%);
+}
+.badge-big { display: grid; place-items: center; width: min(46vw, 200px); height: min(46vw, 200px); line-height: 0; }
+.badge-big svg { width: 100%; height: 100%; animation: reveal 1s cubic-bezier(.2, 1.4, .4, 1); filter: drop-shadow(0 16px 20px rgba(20, 24, 34, .3)); }
+
+/* --------------------------------------------------------- end-of-session --- */
+
+.newcatch { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.catchrow { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.catchrow img {
+  width: 72px; height: 72px; object-fit: contain;
+  filter: drop-shadow(0 5px 6px rgba(20, 24, 34, .2));
+  animation: reveal .8s cubic-bezier(.2, 1.4, .4, 1);
+}
+
+/* ------------------------------------------------------------- battle v2 --- */
+
+.vs-splash {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: 100%;
+  min-height: 190px;
+}
+.vs-splash img {
+  width: min(30vw, 150px); height: min(30vw, 150px); object-fit: contain;
+  filter: drop-shadow(0 10px 12px rgba(20, 24, 34, .25));
+}
+.vs-splash .vs-ally { animation: slide-in-left .5s cubic-bezier(.2, 1.3, .4, 1) both; }
+.vs-splash .vs-foe { animation: slide-in-right .5s cubic-bezier(.2, 1.3, .4, 1) both; }
+.vs-mark {
+  font-size: clamp(40px, 11vw, 76px);
+  font-weight: 900;
+  font-style: italic;
+  color: var(--yellow);
+  text-shadow:
+    -3px -3px 0 var(--red-lo), 3px -3px 0 var(--red-lo),
+    -3px 3px 0 var(--red-lo), 3px 3px 0 var(--red-lo),
+    0 7px 0 #6b0a0a;
+  animation: slam .6s cubic-bezier(.2, 1.6, .4, 1) .25s both;
+}
+
+.arena img.lunge { animation: lunge .5s ease; }
+.arena img.flinch { animation: shake .45s ease; }
+
+.shout.crit {
+  color: #fff;
+  text-shadow:
+    -3px -3px 0 var(--blue-lo), 3px -3px 0 var(--blue-lo),
+    -3px 3px 0 var(--blue-lo), 3px 3px 0 var(--blue-lo),
+    0 8px 0 #131a45, 0 0 34px rgba(255, 203, 5, .9);
+}
+
+/* ------------------------------------------------------------ bonus games --- */
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+  max-width: 560px;
+}
+.memory-card {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 108px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  perspective: 500px;
+  font-family: inherit;
+}
+.memory-card .face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-md);
+  background: var(--glass-solid);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--lift-2);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: transform .45s cubic-bezier(.3, .9, .3, 1);
+}
+.memory-card .back { background: linear-gradient(180deg, #ff4a4a 0%, var(--red) 100%); }
+.memory-card .front { transform: rotateY(180deg); }
+.memory-card .front img { width: 84%; height: 84%; object-fit: contain; }
+.memory-card.up .back { transform: rotateY(-180deg); }
+.memory-card.up .front { transform: rotateY(0); }
+.memory-card.won .front {
+  background: linear-gradient(180deg, #eafff0 0%, #c9f6d6 100%);
+  box-shadow: 0 0 0 3px #49c46a, var(--lift-2);
+}
+
+.chase-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+  max-width: 560px;
+}
+.chase-hole {
+  aspect-ratio: 1;
+  min-height: 100px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 10px;
+  background:
+    radial-gradient(circle at 50% 82%, rgba(20, 40, 12, .35), transparent 55%),
+    linear-gradient(180deg, #bfe8a4 0%, #8ed06b 100%);
+  box-shadow: inset 0 4px 10px rgba(20, 40, 12, .28), var(--lift-1);
+  overflow: hidden;
+}
+.chase-hole img {
+  width: 100%; height: 100%; object-fit: contain;
+  transform: translateY(120%);
+  transition: transform .18s cubic-bezier(.2, 1.2, .4, 1);
+  pointer-events: none;
+}
+.chase-hole.show img { transform: translateY(0); }
+
+.chase-tally { display: flex; gap: 8px; justify-content: center; }
+.chase-tally i {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(26, 29, 36, .14);
+  transition: background .2s ease, transform .2s ease;
+}
+.chase-tally i.got {
+  background: linear-gradient(180deg, var(--red) 0 47%, #23262e 47% 53%, #fff 53% 100%);
+  transform: scale(1.15);
+}
+
+/* ---------------------------------------------------------------- shiny --- */
+/* A shiny is the same artwork wearing different colours — the games' own
+   recolor trick, done here with a hue rotation so it costs zero assets. */
+
+img.shiny { filter: hue-rotate(300deg) saturate(1.3) brightness(1.06) drop-shadow(0 0 14px rgba(255, 203, 5, .8)); }
+.dexcell .shinymark, .reveal .shinymark {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--gold-lo);
+}
+.dexcell { position: relative; }
+.dexcell .shinymark { position: absolute; top: 6px; right: 8px; font-size: 17px; }
+
 /* ------------------------------------------------------------ animations --- */
 
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -843,6 +1051,18 @@ body::after {
 @keyframes pulse-glow {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.045); }
+}
+@keyframes lunge {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(-26px, 14px) scale(1.12); }
+}
+@keyframes slide-in-left {
+  0% { transform: translateX(-70vw); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes slide-in-right {
+  0% { transform: translateX(70vw); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

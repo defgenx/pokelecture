@@ -1,0 +1,25 @@
+{
+  "id": "ep10",
+  "route": 10,
+  "title": "Route 10 — le son en",
+  "story": "Route 10, au bord de la mer. Le e et le n se collent : ensemble, ils font le son an ! Entre les vagues, quelque chose de presque transparent flotte doucement. Ses tentacules bougent... Approche-toi et lis son nom.",
+  "new_graphemes": ["en"],
+  "syllables": ["ben", "den", "len", "men", "pen", "ren", "sen", "ten", "ven"],
+  "words": [
+    {"text": "Tentacool", "pokemon": 72, "syllables": ["Ten", "ta", "cool"]},
+    {"text": "Tentacule", "emoji": "🐙", "syllables": ["Ten", "ta", "cu", "le"]},
+    {"text": "Encore", "emoji": "🔁", "syllables": ["En", "co", "re"]},
+    {"text": "Tente", "emoji": "⛺", "syllables": ["Ten", "te"]}
+  ],
+  "sentences": [
+    {"text": "Tentacool utilise Encore.", "pokemon": 72},
+    {"text": "Le tentacule bouge.", "emoji": "🐙"},
+    {"text": "Rattata monte sur la tente.", "pokemon": 19}
+  ],
+  "reward_pokemon": 72,
+  "boss": {
+    "pokemon": 72,
+    "hp": 3,
+    "taunt": "Un Tentacool sort de l'eau ! Ses tentacules s'agitent. Lis vite !"
+  }
+}

@@ -106,20 +106,29 @@ Dans le bloc `server { listen 443 ssl; }`, **avant** le `location /` :
     }
 ```
 
-## 4 bis. Protéger le studio voix
+## 4 bis. Protéger le studio voix et l'administration
 
 Le jeu reste ouvert (pas de mot de passe devant un enfant de cinq ans), mais le
-studio est public sinon : n'importe qui pourrait écraser ta voix. Protéger
-`parent.html` seul ne suffirait pas — le studio écrit via `api/record/`, qu'on
-atteint directement en `curl` sans jamais charger la page. Il faut donc les trois
-emplacements, **avant** `location /pokelecture/` :
+studio et l'administration sont publics sinon : n'importe qui pourrait écraser
+ta voix — ou **effacer la sauvegarde** via `api/admin/reset`. Protéger les pages
+seules ne suffirait pas — elles écrivent via `api/record/` et `api/admin/`,
+qu'on atteint directement en `curl` sans jamais charger la page. Il faut donc
+tous ces emplacements, **avant** `location /pokelecture/` :
 
 ```nginx
     location = /pokelecture/parent.html {
         include /etc/nginx/conf.d/studio-auth.inc;
     }
 
+    location = /pokelecture/admin.html {
+        include /etc/nginx/conf.d/studio-auth.inc;
+    }
+
     location ^~ /pokelecture/api/record/ {
+        include /etc/nginx/conf.d/studio-auth.inc;
+    }
+
+    location ^~ /pokelecture/api/admin/ {
         include /etc/nginx/conf.d/studio-auth.inc;
     }
 
@@ -130,8 +139,8 @@ emplacements, **avant** `location /pokelecture/` :
 
 `studio-auth.inc` porte l'`auth_basic`, le `proxy_pass` et le
 `client_max_body_size 12m` (les enregistrements montent à ~8 Mo). Un seul realm
-pour les trois, afin que le navigateur réutilise les identifiants saisis sur
-`parent.html` quand la page appelle ensuite `api/texts` et `api/record/`.
+pour tous, afin que le navigateur réutilise les identifiants saisis sur
+`parent.html` ou `admin.html` quand la page appelle ensuite ses endpoints.
 
 Crée le fichier d'identifiants **sur le serveur** (jamais versionné) :
 
@@ -167,8 +176,9 @@ curl -s -o /dev/null -w '%{http_code} %{content_type}\n' \
 
 ## Notes
 
-- Le studio voix est derrière `auth_basic` (étape 4 bis) : page **et** endpoints
-  d'écriture. Le micro exige un contexte sécurisé, ce que HTTPS fournit.
+- Le studio voix **et l'administration** sont derrière `auth_basic` (étape
+  4 bis) : pages **et** endpoints d'écriture — `api/admin/reset` efface toute la
+  sauvegarde. Le micro exige un contexte sécurisé, ce que HTTPS fournit.
 - Le Pokédex, la progression et les étoiles sont **globaux** : une seule
   sauvegarde, pas de comptes. C'est voulu (un seul enfant), mais ça veut dire que
   n'importe quel visiteur fait avancer sa progression. Même remarque : si l'URL

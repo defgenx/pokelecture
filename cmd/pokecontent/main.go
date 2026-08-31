@@ -9,6 +9,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/png"
 	"io"
 	"log"
 	"net/http"
@@ -52,6 +56,9 @@ func main() {
 		}
 	case "sprites":
 		if err := genSprites(cur, *root, *force); err != nil {
+			log.Fatal(err)
+		}
+		if err := genIcons(*root); err != nil {
 			log.Fatal(err)
 		}
 	case "prune":
@@ -270,6 +277,91 @@ func genSprites(cur *curriculum.Curriculum, root string, force bool) error {
 	}
 	fmt.Printf("  ✓ %d sprite(s) téléchargés, %d déjà présents\n", got, skipped)
 	return nil
+}
+
+// genIcons composes the app icons from Pikachu's artwork on the brand yellow.
+// Tablets need real icons: iOS shows apple-touch-icon on the home screen (a
+// transparent PNG gets a black plate), and Android wants a maskable icon whose
+// subject survives the launcher cropping it to a circle.
+func genIcons(root string) error {
+	src := filepath.Join(root, "web", "sprites", "art", "25.png")
+	f, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("icônes: %w (lance `pokecontent sprites` d'abord)", err)
+	}
+	art, err := png.Decode(f)
+	f.Close()
+	if err != nil {
+		return fmt.Errorf("icônes: %s: %w", src, err)
+	}
+
+	brand := color.RGBA{R: 0xff, G: 0xcb, B: 0x05, A: 0xff}
+	targets := []struct {
+		name string
+		size int
+		art  int // the artwork's box inside the icon; small for maskable safe zone
+	}{
+		{"icon-180.png", 180, 150},
+		{"icon-512.png", 512, 448},
+		{"icon-mask.png", 512, 300},
+	}
+	for _, t := range targets {
+		dst := image.NewRGBA(image.Rect(0, 0, t.size, t.size))
+		draw.Draw(dst, dst.Bounds(), image.NewUniform(brand), image.Point{}, draw.Src)
+		scaled := scaleBox(art, t.art, t.art)
+		off := (t.size - t.art) / 2
+		draw.Draw(dst, image.Rect(off, off, off+t.art, off+t.art), scaled, image.Point{}, draw.Over)
+
+		out, err := os.Create(filepath.Join(root, "web", t.name))
+		if err != nil {
+			return err
+		}
+		if err := png.Encode(out, dst); err != nil {
+			out.Close()
+			return err
+		}
+		if err := out.Close(); err != nil {
+			return err
+		}
+	}
+	fmt.Printf("  ✓ %d icône(s) d'application générées\n", len(targets))
+	return nil
+}
+
+// scaleBox downscales with a box filter — the right filter for shrinking, and
+// small enough to keep the zero-dependency rule.
+func scaleBox(src image.Image, w, h int) *image.RGBA {
+	sb := src.Bounds()
+	dst := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		y0 := sb.Min.Y + y*sb.Dy()/h
+		y1 := sb.Min.Y + (y+1)*sb.Dy()/h
+		if y1 == y0 {
+			y1 = y0 + 1
+		}
+		for x := 0; x < w; x++ {
+			x0 := sb.Min.X + x*sb.Dx()/w
+			x1 := sb.Min.X + (x+1)*sb.Dx()/w
+			if x1 == x0 {
+				x1 = x0 + 1
+			}
+			var r, g, b, a, n uint64
+			for sy := y0; sy < y1; sy++ {
+				for sx := x0; sx < x1; sx++ {
+					pr, pg, pb, pa := src.At(sx, sy).RGBA()
+					r += uint64(pr)
+					g += uint64(pg)
+					b += uint64(pb)
+					a += uint64(pa)
+					n++
+				}
+			}
+			dst.Set(x, y, color.RGBA64{
+				R: uint16(r / n), G: uint16(g / n), B: uint16(b / n), A: uint16(a / n),
+			})
+		}
+	}
+	return dst
 }
 
 func download(client *http.Client, url, path string) error {

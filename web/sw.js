@@ -7,7 +7,9 @@
 // loaded the game while the voice track was missing from the server pinned a
 // 404 for every /audio/ URL and kept replaying it from cache. Renaming the
 // cache is what evicts those.
-const CACHE = 'pokelecture-v2';
+// v3: badges, bonus games, Conseil des 4 — evict the pre-league app shell.
+// v4: Îles arc, Tour de Combat, shiny, tablet metas — same reason.
+const CACHE = 'pokelecture-v4';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './app.js', './styles.css', './icons.js', './sfx.js'])));

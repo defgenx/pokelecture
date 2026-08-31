@@ -58,6 +58,13 @@ header {
 }
 .toggle { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
 
+.linkbtn {
+  font: inherit; font-weight: 600; text-decoration: none;
+  padding: 8px 14px; border-radius: 9px;
+  border: 1px solid var(--line); background: #fff; color: var(--ink);
+}
+.linkbtn:hover { border-color: #c9cedb; }
+
 .warn {
   margin: 0; padding: 12px 20px;
   background: #fff6e5; border-bottom: 1px solid #f0dcb0; color: #7a5300; font-size: 14px;

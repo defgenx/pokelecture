@@ -8,6 +8,7 @@
   "words": [],
   "sentences": [],
   "legendary": true,
+  "badge": {"id": "orage", "name": "Badge Orage"},
   "reward_pokemon": 145,
   "boss": {
     "pokemon": 145,

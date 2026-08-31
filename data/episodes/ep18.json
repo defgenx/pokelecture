@@ -1,0 +1,26 @@
+{
+  "id": "ep18",
+  "route": 18,
+  "title": "Route 18 — ce et ci",
+  "story": "Route 18, la dernière route ! Le c est malin : devant un e ou un i, il fait le son s, comme dans Carapuce. Après cette route, les portes de la Ligue Pokémon s'ouvriront devant toi. Un dernier Pokémon t'attend au bord de la rivière...",
+  "new_graphemes": ["ce", "ci"],
+  "syllables": ["ce", "ci", "ance", "once", "ince", "ouce"],
+  "words": [
+    {"text": "Carapuce", "pokemon": 7, "syllables": ["Ca", "ra", "puce"]},
+    {"text": "Racine", "emoji": "🌱", "syllables": ["Ra", "ci", "ne"]},
+    {"text": "Cercle", "emoji": "⭕", "syllables": ["Cer", "cle"]},
+    {"text": "Crabe", "emoji": "🦀", "syllables": ["Cra", "be"]},
+    {"text": "Pouce", "emoji": "👍", "syllables": ["Pou", "ce"]}
+  ],
+  "sentences": [
+    {"text": "Carapuce utilise Cascade.", "pokemon": 7},
+    {"text": "Le crabe pince Caninos.", "pokemon": 58},
+    {"text": "Grodoudou trace le cercle.", "pokemon": 40}
+  ],
+  "reward_pokemon": 7,
+  "boss": {
+    "pokemon": 7,
+    "hp": 3,
+    "taunt": "Carapuce rentre dans sa carapace et tourne comme une toupie ! Lis pour l'arrêter !"
+  }
+}

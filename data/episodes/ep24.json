@@ -1,0 +1,26 @@
+{
+  "id": "ep24",
+  "route": 19,
+  "title": "Île 1 — le son j",
+  "story": "Champion, une nouvelle aventure commence : les Îles Lointaines ! Sur la première île, une étoile filante traverse le ciel de la nuit. On dit que si tu lis ton vœu à voix haute, un Pokémon très rare l'entendra... Voici le son j, comme dans jungle.",
+  "new_graphemes": ["j"],
+  "syllables": ["ja", "ji", "jo", "ju", "jé", "jou", "jan", "jon"],
+  "words": [
+    {"text": "Judo", "emoji": "🥋", "syllables": ["Ju", "do"]},
+    {"text": "Pyjama", "emoji": "🛌", "syllables": ["Py", "ja", "ma"]},
+    {"text": "Jeudi", "emoji": "📅", "syllables": ["Jeu", "di"]},
+    {"text": "Journal", "emoji": "📰", "syllables": ["Jour", "nal"]},
+    {"text": "Joie", "emoji": "😄", "syllables": ["Joie"]}
+  ],
+  "sentences": [
+    {"text": "Jirachi danse de joie.", "pokemon": 385},
+    {"text": "Pikachu porte le pyjama.", "pokemon": 25},
+    {"text": "Miaouss regarde le journal.", "pokemon": 52}
+  ],
+  "reward_pokemon": 385,
+  "boss": {
+    "pokemon": 385,
+    "hp": 3,
+    "taunt": "Jirachi se réveille ! Lis les mots, et ton vœu sera exaucé !"
+  }
+}

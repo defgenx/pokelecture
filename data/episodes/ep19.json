@@ -1,0 +1,17 @@
+{
+  "id": "ep19",
+  "route": 0,
+  "title": "Conseil des 4 — Suicune",
+  "story": "Bienvenue à la Ligue Pokémon ! Devant toi, quatre portes immenses : c'est le Conseil des 4, les quatre dresseurs les plus forts de la région. Derrière la première porte, une salle d'eau claire... et Suicune, le Pokémon qui court sur l'eau. Bonne chance !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 245,
+  "boss": {
+    "pokemon": 245,
+    "hp": 6,
+    "taunt": "Suicune file comme le vent du nord ! Montre au Conseil des 4 comme tu lis bien !"
+  }
+}

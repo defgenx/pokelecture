@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="__BASE__">
+  <title>Pokélecture — administration</title>
+  <link rel="stylesheet" href="parent.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="pokeball" aria-hidden="true"></span>
+      <div>
+        <h1>Administration</h1>
+        <p id="tally">…</p>
+      </div>
+    </div>
+    <div class="tools">
+      <a class="linkbtn" href="parent.html">🎙 Studio voix</a>
+      <a class="linkbtn" href="./">▶ Le jeu</a>
+    </div>
+  </header>
+
+  <p id="warn" class="warn" hidden></p>
+
+  <nav id="tabs" class="tabs"></nav>
+  <main id="list"></main>
+
+  <footer>
+    <p>Tout se joue sur <code>var/progress.json</code> : chaque action est
+      enregistrée immédiatement. « Rejouer comme neuf » efface les stats d'un
+      épisode (les étoiles déjà gagnées restent acquises) ; « Marquer terminé »
+      débloque la suite et remplit le Pokédex comme une vraie victoire.</p>
+    <p>⚠️ Cette page n'a aucune authentification — sur une URL publique, mets un
+      <code>auth_basic</code> devant (voir le guide de déploiement).</p>
+  </footer>
+
+  <script src="admin.js"></script>
+</body>
+</html>

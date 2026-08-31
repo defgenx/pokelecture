@@ -47,9 +47,51 @@ const ICONS = {
   speed: { c: '#4d90d5', b: '<path d="M4 14h26M10 24h22M4 34h26" stroke="#4d90d5" stroke-width="5" fill="none" stroke-linecap="round"/><path d="m32 10 12 14-12 14Z" fill="#4d90d5"/>' },
   bulb: { c: '#63bb5b', b: '<circle cx="24" cy="18" r="13"/><path d="M24 31v13" stroke="#2f7a2c" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24 38c-6 0-9-3-9-8 5 0 9 3 9 8ZM24 38c6 0 9-3 9-8-5 0-9 3-9 8Z" fill="#2f7a2c"/>' },
   normal: { c: '#9099a1', b: '<circle cx="24" cy="24" r="19"/><circle cx="24" cy="24" r="8" fill="#fff"/>' },
+  // A hand mirror: oval glass with a diagonal glint, short handle.
+  mirror: { c: '#8fa9de', b: '<ellipse cx="24" cy="19" rx="14" ry="16" fill="#6b86c4"/><ellipse cx="24" cy="19" rx="10" ry="12" fill="#dcecff"/><path d="m18 24 10-12" stroke="#fff" stroke-width="3" stroke-linecap="round"/><rect x="21" y="34" width="6" height="11" rx="3" fill="#6b86c4"/>' },
+  // The Insecte type: a round bug, two antennae, folded wings.
+  bug: { c: '#90c12c', b: '<circle cx="24" cy="27" r="15"/><path d="M24 12v30M17 5l5 8M31 5l-5 8" stroke="#5d7f16" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="18" cy="24" rx="4" ry="6" fill="#d9efae"/><ellipse cx="30" cy="24" rx="4" ry="6" fill="#d9efae"/>' },
   psy: { c: '#f97176', b: '<circle cx="24" cy="24" r="19" fill="#f97176"/><path d="M24 34c-6 0-9-4-9-9s4-9 9-9 8 3 8 7-3 6-6 6-4-2-4-4" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>' },
   ice: { c: '#74cec0', b: '<path d="M24 3v42M6 12l36 24M42 12 6 36" stroke="#37b3a2" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M24 9l-5-5M24 9l5-5M24 39l-5 5M24 39l5 5M11 16l-6-1M11 16l1-6M37 32l6 1M37 32l-1 6M37 16l6-1M37 16l-1-6M11 32l-6 1M11 32l1 6" stroke="#37b3a2" stroke-width="3.5" stroke-linecap="round" fill="none"/>' },
 };
+
+/* Gym badges, in the same inline-SVG spirit. Each id must exist in
+   curriculum.Badges on the Go side so a typo fails `pokecontent check`.
+   Drawn as little enamel medals: a coloured field, a white symbol, a rim. */
+
+const BADGES = {
+  // Snowflake on an ice-blue octagon.
+  glace: { c: '#74cec0', b: '<path d="M24 2 39 8l7 16-7 16-15 6L9 40 2 24 9 8Z" fill="#74cec0" stroke="#37b3a2" stroke-width="2"/><path d="M24 10v28M12 17l24 14M36 17 12 31" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/><circle cx="24" cy="24" r="4" fill="#fff"/>' },
+  // Lightning bolt on a storm-yellow shield.
+  orage: { c: '#f4d23c', b: '<path d="M24 2 44 9v14c0 12-9 20-20 23C13 43 4 35 4 23V9L24 2Z" fill="#f4d23c" stroke="#c99b00" stroke-width="2"/><path d="M27 8 14 26h8l-3 14 15-19h-9l2-13Z" fill="#fff"/>' },
+  // Psychic spiral on a pink circle.
+  psy: { c: '#f97176', b: '<circle cx="24" cy="24" r="21" fill="#f97176" stroke="#c2444e" stroke-width="2"/><path d="M24 36c-7 0-11-5-11-11s5-11 11-11 10 4 10 9-4 8-8 8-6-3-6-6" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>' },
+  // Flame on an ember-orange triangle medal.
+  volcan: { c: '#ff9d55', b: '<path d="M24 3 45 40H3Z" fill="#ff7a2f" stroke="#c2571a" stroke-width="2"/><path d="M24 15c5 6 8 10 8 14a8 8 0 0 1-16 0c0-4 3-8 8-14Z" fill="#ffd23c"/>' },
+  // Wave on a deep-sea drop.
+  maree: { c: '#4d90d5', b: '<path d="M24 2c9 12 15 20 15 28a15 15 0 0 1-30 0C9 22 15 14 24 2Z" fill="#4d90d5" stroke="#2b6cae" stroke-width="2"/><path d="M13 30c3-3 6-3 9 0s6 3 9 0" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>' },
+  // Rainbow arc on a golden sun disc.
+  arcenciel: { c: '#ffcb05', b: '<circle cx="24" cy="24" r="21" fill="#ffe17a" stroke="#c99f00" stroke-width="2"/><path d="M8 32a16 16 0 0 1 32 0" fill="none" stroke="#ee1515" stroke-width="4"/><path d="M13 32a11 11 0 0 1 22 0" fill="none" stroke="#63bb5b" stroke-width="4"/><path d="M18 32a6 6 0 0 1 12 0" fill="none" stroke="#3b4cca" stroke-width="4"/>' },
+  // The champion trophy.
+  champion: { c: '#ffcb05', b: '<path d="M12 6h24v10a12 12 0 0 1-24 0Z" fill="#ffcb05" stroke="#c99f00" stroke-width="2"/><path d="M12 9H5c0 8 4 12 9 13M36 9h7c0 8-4 12-9 13" fill="none" stroke="#c99f00" stroke-width="3"/><path d="M21 27h6l1 8h-8Z" fill="#ffcb05"/><rect x="15" y="35" width="18" height="7" rx="2" fill="#c99f00"/><path d="m24 10 2 4 5 1-4 3 1 5-4-3-4 3 1-5-4-3 5-1Z" fill="#fff"/>' },
+  // The Tour du Ciel: an emerald diamond with a white wind spiral.
+  ciel: { c: '#63bb5b', b: '<path d="M24 2 46 24 24 46 2 24Z" fill="#2f9e6e" stroke="#1d6b49" stroke-width="2"/><path d="M24 34c-6 0-10-4-10-9s4-9 10-9 9 3 9 7-3 7-7 7-5-2-5-5 2-4 4-4" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>' },
+};
+
+/* badgeEl draws a badge medal; grey and hollow while it is not yet earned, so
+   the badge case itself tells the child what is left to win. */
+function badgeEl(id, earned, cls) {
+  const bd = BADGES[id];
+  const wrap = document.createElement('span');
+  wrap.className = `${cls || 'badge-icon'} ${earned ? 'earned' : 'unearned'}`;
+  if (!bd) {
+    console.warn(`[pokelecture] badge inconnu: ${id}`);
+    return wrap;
+  }
+  wrap.innerHTML =
+    `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${bd.b}</svg>`;
+  return wrap;
+}
 
 /* iconEl builds the SVG node. An unknown name falls back to a star and shouts in
    the console rather than leaving an empty tile — the exact bug this file exists

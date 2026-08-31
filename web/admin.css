@@ -1,0 +1,48 @@
+/* Administration — additions on top of parent.css, same plain adult-tool tone. */
+
+.section { margin-bottom: 26px; }
+.section h2 { font-size: 16px; margin: 18px 0 10px; }
+
+.statrow { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.stat {
+  background: #fff; border: 1px solid var(--line); border-radius: 11px;
+  padding: 10px 16px; min-width: 110px;
+}
+.stat b { display: block; font-size: 20px; }
+.stat span { color: var(--muted); font-size: 12px; }
+
+.namebox { display: flex; gap: 8px; align-items: center; }
+.namebox input {
+  font: inherit; padding: 8px 12px; min-width: 180px;
+  border: 1px solid var(--line); border-radius: 9px; background: #fff;
+}
+
+.row .meta { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.row .locked-tag { color: var(--muted); }
+.row .stars { color: #c99b00; letter-spacing: 1px; }
+.row button.small { font-size: 13px; padding: 6px 10px; }
+.row button.danger { border-color: #f0b9b9; color: var(--red); }
+.row button.danger:hover { border-color: var(--red); }
+
+.dexline { display: flex; align-items: center; gap: 10px; }
+.dexline img { width: 34px; height: 34px; object-fit: contain; }
+.dexline .off img { filter: grayscale(1) opacity(.4); }
+
+.itembar {
+  height: 8px; border-radius: 999px; background: #edf0f6;
+  overflow: hidden; width: 120px;
+}
+.itembar i { display: block; height: 100%; background: var(--ok); border-radius: 999px; }
+.itembar.weak i { background: var(--red); }
+
+.dangerzone {
+  border: 1px solid #f0b9b9; border-radius: 11px;
+  background: #fff7f7; padding: 14px 16px;
+}
+.dangerzone button {
+  font: inherit; font-weight: 600; padding: 9px 14px;
+  border-radius: 9px; border: 1px solid var(--red);
+  background: #fff; color: var(--red); cursor: pointer;
+}
+.dangerzone button:hover { background: var(--red); color: #fff; }
+.dangerzone p { margin: 0 0 10px; color: #7a1d1d; font-size: 13px; }

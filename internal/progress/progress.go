@@ -47,9 +47,12 @@ type EpisodeStat struct {
 
 // State is the whole savegame.
 type State struct {
-	Name      string                 `json:"name"`
-	Stars     int                    `json:"stars"`
-	Pokedex   []int                  `json:"pokedex"`
+	Name    string `json:"name"`
+	Stars   int    `json:"stars"`
+	Pokedex []int  `json:"pokedex"`
+	// Shiny lists Pokémon caught in their rare recolored form on a replay —
+	// a second, slower collection layered over the Pokédex.
+	Shiny     []int                  `json:"shiny,omitempty"`
 	Episodes  map[string]EpisodeStat `json:"episodes"`
 	Items     map[string]Item        `json:"items"`
 	Streak    int                    `json:"streak"`
@@ -140,6 +143,7 @@ func (s *Store) Snapshot() State {
 func (s *Store) copyLocked() State {
 	out := s.state
 	out.Pokedex = append([]int(nil), s.state.Pokedex...)
+	out.Shiny = append([]int(nil), s.state.Shiny...)
 	out.Episodes = make(map[string]EpisodeStat, len(s.state.Episodes))
 	for k, v := range s.state.Episodes {
 		out.Episodes[k] = v
@@ -210,6 +214,73 @@ func (s *Store) Catch(id int) bool {
 	s.state.Pokedex = append(s.state.Pokedex, id)
 	sort.Ints(s.state.Pokedex)
 	return true
+}
+
+// Uncatch removes a Pokémon from the Pokédex (admin repair tool).
+func (s *Store) Uncatch(id int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	out := s.state.Pokedex[:0]
+	for _, got := range s.state.Pokedex {
+		if got != id {
+			out = append(out, got)
+		}
+	}
+	s.state.Pokedex = out
+
+	sh := s.state.Shiny[:0]
+	for _, got := range s.state.Shiny {
+		if got != id {
+			sh = append(sh, got)
+		}
+	}
+	s.state.Shiny = sh
+}
+
+// MarkShiny records that a Pokémon was caught in its shiny form.
+func (s *Store) MarkShiny(id int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, got := range s.state.Shiny {
+		if got == id {
+			return
+		}
+	}
+	s.state.Shiny = append(s.state.Shiny, id)
+	sort.Ints(s.state.Shiny)
+}
+
+// Rename changes the child's name without touching anything else.
+func (s *Store) Rename(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if name != "" {
+		s.state.Name = name
+	}
+}
+
+// Reset wipes the whole savegame, keeping only the name.
+func (s *Store) Reset() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	name := s.state.Name
+	s.state = State{
+		Name:     name,
+		Episodes: map[string]EpisodeStat{},
+		Items:    map[string]Item{},
+	}
+}
+
+// ResetEpisode forgets one episode's stats, so it plays as new again. Stars
+// already banked stay banked: taking stars away from a five-year-old is not a
+// feature. The spaced-review items are shared across episodes and stay too.
+func (s *Store) ResetEpisode(id string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.state.Episodes, id)
 }
 
 // Save persists the current state atomically.

@@ -37,7 +37,9 @@ const Mic = {
   },
 
   pickMime() {
-    const wanted = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+    // AAC first: an .m4a recording plays everywhere, iPad included, while
+    // iPads refuse WebM/Opus and would fall back to the synthetic voice.
+    const wanted = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
     return wanted.find((m) => MediaRecorder.isTypeSupported(m)) || '';
   },
 

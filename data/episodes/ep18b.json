@@ -1,0 +1,18 @@
+{
+  "id": "ep18b",
+  "route": 0,
+  "title": "Arène Arc-en-ciel — Ho-Oh",
+  "story": "Un arc-en-ciel traverse le ciel tout entier. Au bout de l'arc-en-ciel vole un oiseau aux plumes dorées : Ho-Oh ! Gagne le Badge Arc-en-ciel, et la Ligue Pokémon ouvrira ses portes devant toi.",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "badge": {"id": "arcenciel", "name": "Badge Arc-en-ciel"},
+  "reward_pokemon": 250,
+  "boss": {
+    "pokemon": 250,
+    "hp": 5,
+    "taunt": "Ho-Oh descend de l'arc-en-ciel ! Ses plumes brillent de mille couleurs !"
+  }
+}

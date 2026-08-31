@@ -96,6 +96,31 @@ const Sfx = {
   // A little arpeggio for the catch — the single most rewarding moment.
   catch_()  { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, i * 0.11, 0.3, { gain: 0.8 })); },
 
+  // Critical hit: the attack whoosh plus a bright double ping on top.
+  crit() {
+    this.attack();
+    this.tone(1568, 0.12, 0.18, { gain: 0.9 });
+    this.tone(2093, 0.24, 0.26, { gain: 0.8 });
+  },
+
+  // The foe's counterattack on a miss: a low thud, no melody — menace, not defeat.
+  thud() {
+    this.noise(0, 0.16, { freq: 240, q: 0.8, gain: 0.9, slideTo: 90 });
+    this.tone(90, 0, 0.18, { type: 'square', gain: 0.35, slideTo: 55 });
+  },
+
+  // Card flip in the bonus memory game.
+  flip() { this.tone(520, 0, 0.06, { type: 'sine', gain: 0.45, slideTo: 760 }); },
+
+  // A sprite pops out of its hole in the chase game.
+  pop() { this.tone(340, 0, 0.09, { type: 'sine', gain: 0.55, slideTo: 620 }); },
+
+  // Badge ceremony: a solemn rising fourth then the shine.
+  badge() {
+    [[392, 0], [523, 0.16], [659, 0.32], [784, 0.44], [1047, 0.56]].forEach(([f, t]) =>
+      this.tone(f, t, 0.4, { gain: 0.8 }));
+  },
+
   fanfare() {
     [[523, 0], [523, 0.12], [784, 0.24], [1047, 0.42]].forEach(([f, t]) =>
       this.tone(f, t, 0.34, { gain: 0.85 }));

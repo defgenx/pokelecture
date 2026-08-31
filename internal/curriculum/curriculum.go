@@ -60,7 +60,7 @@ var Icons = map[string]bool{
 	"trainer": true, "heart": true, "fall": true, "bomb": true, "shadow": true,
 	"cocoon": true, "candy": true, "slash": true, "dance": true, "sand": true,
 	"impact": true, "rage": true, "speed": true, "sparkle": true, "bulb": true,
-	"normal": true, "psy": true, "ice": true,
+	"normal": true, "psy": true, "ice": true, "mirror": true, "bug": true,
 }
 
 // Grapheme is one written sign mapped to one sound: "m", "ou", "ch".
@@ -132,6 +132,20 @@ type Boss struct {
 	Taunt   string `json:"taunt"`
 }
 
+// BadgeDecl marks an episode as awarding a gym badge (or the champion trophy).
+// The id must exist in Badges so a typo fails validation instead of rendering
+// an empty medal.
+type BadgeDecl struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// Badges the frontend knows how to draw (web/icons.js, BADGES map).
+var Badges = map[string]bool{
+	"glace": true, "orage": true, "psy": true, "volcan": true,
+	"maree": true, "arcenciel": true, "champion": true, "ciel": true,
+}
+
 // Episode is one ~12 minute session: a declaration of content, not a script.
 // The playable activity list is generated from it by BuildSession.
 type Episode struct {
@@ -149,8 +163,36 @@ type Episode struct {
 	// review and as the moment a legendary Pokémon joins the Pokédex.
 	Legendary bool `json:"legendary,omitempty"`
 
+	// Badge, when set, is awarded after the episode's fight — the arenas hand
+	// out gym badges, the champion episode hands out the trophy.
+	Badge *BadgeDecl `json:"badge,omitempty"`
+
 	RewardPokemon int  `json:"reward_pokemon"`
 	Boss          Boss `json:"boss"`
+}
+
+// CatchablePokemon lists every Pokémon completing this episode adds to the
+// Pokédex: the featured reward, the boss, and every Pokémon whose name or
+// picture the child met in a word or a sentence. Catching everything that was
+// read is what makes the Pokédex completable.
+func (e Episode) CatchablePokemon() []int {
+	seen := map[int]bool{}
+	var out []int
+	add := func(id int) {
+		if id != 0 && !seen[id] {
+			seen[id] = true
+			out = append(out, id)
+		}
+	}
+	add(e.RewardPokemon)
+	add(e.Boss.Pokemon)
+	for _, w := range e.Words {
+		add(w.Pokemon)
+	}
+	for _, s := range e.Sentences {
+		add(s.Pokemon)
+	}
+	return out
 }
 
 // Pokemon is a curated Pokédex entry. Names are shown syllable-split and read
@@ -403,6 +445,34 @@ func (c *Curriculum) Validate() []error {
 					errs = append(errs, fmt.Errorf("%s: pokémon #%d absent de pokemon.json", ep.ID, id))
 				}
 			}
+		}
+		if ep.Badge != nil {
+			if !Badges[ep.Badge.ID] {
+				errs = append(errs, fmt.Errorf("%s: badge inconnu %q", ep.ID, ep.Badge.ID))
+			}
+			if ep.Badge.Name == "" {
+				errs = append(errs, fmt.Errorf("%s: badge %q sans nom", ep.ID, ep.Badge.ID))
+			}
+		}
+	}
+	errs = append(errs, c.checkPokedexCompletable()...)
+	return errs
+}
+
+// checkPokedexCompletable fails when a Pokémon of pokemon.json can never enter
+// the Pokédex — a silhouette the child could stare at forever is exactly the
+// kind of dead end this game must not have.
+func (c *Curriculum) checkPokedexCompletable() []error {
+	catchable := map[int]bool{}
+	for _, ep := range c.Episodes {
+		for _, id := range ep.CatchablePokemon() {
+			catchable[id] = true
+		}
+	}
+	var errs []error
+	for _, id := range c.PokemonOrder {
+		if !catchable[id] {
+			errs = append(errs, fmt.Errorf("pokédex: %s (#%d) n'est attrapable dans aucun épisode", c.Pokemon[id].Name, id))
 		}
 	}
 	return errs

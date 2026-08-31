@@ -1,0 +1,26 @@
+{
+  "id": "ep26",
+  "route": 21,
+  "title": "Île 3 — les lettres doubles",
+  "story": "Troisième île : mm, pp, ll, ff — deux lettres collées, un seul son, comme dans pomme et dans l'attaque Flammèche. Au sommet de la falaise, quelqu'un s'entraîne en soulevant des rochers énormes... avec quatre bras !",
+  "new_graphemes": ["mm", "pp", "ll", "ff"],
+  "syllables": ["elle", "alle", "appe", "iffe", "olle", "ouffe"],
+  "words": [
+    {"text": "Mackogneur", "pokemon": 68, "syllables": ["Mac", "ko", "gneur"]},
+    {"text": "Flammèche", "icon": "flame", "syllables": ["Fla", "mmè", "che"]},
+    {"text": "Pomme", "emoji": "🍎", "syllables": ["Po", "mme"]},
+    {"text": "Balle", "icon": "ball", "syllables": ["Bal", "le"]},
+    {"text": "Griffe", "emoji": "🐾", "syllables": ["Grif", "fe"]}
+  ],
+  "sentences": [
+    {"text": "Mackogneur soulève le roc.", "pokemon": 68},
+    {"text": "Salamèche utilise Flammèche.", "pokemon": 4},
+    {"text": "La balle roule sur le sable.", "icon": "ball"}
+  ],
+  "reward_pokemon": 68,
+  "boss": {
+    "pokemon": 68,
+    "hp": 3,
+    "taunt": "Machoc a évolué ! Mackogneur croise ses quatre bras. Lis sans trembler !"
+  }
+}

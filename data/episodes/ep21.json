@@ -1,0 +1,17 @@
+{
+  "id": "ep21",
+  "route": 0,
+  "title": "Conseil des 4 — Celebi",
+  "story": "Troisième porte du Conseil des 4 ! Cette salle est une forêt magique où les fleurs poussent en une seconde. Le temps s'arrête... Celebi, le voyageur du temps, apparaît juste devant toi. Reste bien concentré !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 251,
+  "boss": {
+    "pokemon": 251,
+    "hp": 6,
+    "taunt": "Celebi fait tourner le temps autour de toi ! Lis chaque mot, sans te presser !"
+  }
+}

@@ -5,11 +5,13 @@
   "start_url": "__BASE__",
   "scope": "__BASE__",
   "display": "fullscreen",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#ffd166",
   "theme_color": "#e3350d",
   "lang": "fr",
   "icons": [
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-mask.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
     { "src": "sprites/art/25.png", "sizes": "475x475", "type": "image/png", "purpose": "any" }
   ]
 }

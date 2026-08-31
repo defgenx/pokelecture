@@ -1,0 +1,17 @@
+{
+  "id": "ep22",
+  "route": 0,
+  "title": "Conseil des 4 — Zoroark",
+  "story": "Dernière porte du Conseil des 4 ! La salle est toute noire. Cent Pokémon apparaissent autour de toi... mais ce sont des illusions ! Le vrai s'appelle Zoroark, le maître des tours de magie. Seuls les vrais lecteurs voient la vérité.",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 571,
+  "boss": {
+    "pokemon": 571,
+    "hp": 6,
+    "taunt": "Zoroark multiplie les illusions ! Lis les vrais mots pour percer ses tours !"
+  }
+}

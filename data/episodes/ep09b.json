@@ -8,6 +8,7 @@
   "words": [],
   "sentences": [],
   "legendary": true,
+  "badge": {"id": "psy", "name": "Badge Psy"},
   "reward_pokemon": 150,
   "boss": {
     "pokemon": 150,

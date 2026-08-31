@@ -16,11 +16,20 @@ import (
 // five-year-old learns sounds far better from a voice he knows, and no TTS
 // pronounces invented Pokémon names correctly.
 //
-// Recordings land in web/audio/recorded/<key>.webm (what MediaRecorder produces
-// in Chrome) and are served under the existing /audio/<key>.m4a URL, so nothing
-// else in the app needs to know they exist.
+// Recordings land in web/audio/recorded/<key>.<ext> and are served under the
+// existing /audio/<key>.m4a URL, so nothing else in the app needs to know they
+// exist. The extension follows what MediaRecorder produced: .m4a for AAC
+// (recent Chrome, Safari — plays everywhere including iPads), .webm for Opus
+// (older Chrome — iPads refuse it and the game falls back to the synthetic
+// voice there, so AAC is preferred at capture time in parent.js).
 
 const recordedDir = "recorded"
+
+// recordingExts, best first: an .m4a shadows a leftover .webm of the same line.
+var recordingExts = []struct{ ext, ctype string }{
+	{".m4a", "audio/mp4"},
+	{".webm", "audio/webm"},
+}
 
 // maxRecording caps an upload; a spoken sentence is a few tens of kilobytes.
 const maxRecording = 8 << 20
@@ -68,13 +77,20 @@ func groupOf(it curriculum.SpeechItem) string {
 	}
 }
 
-func (s *Server) recordingPath(key string) string {
-	return filepath.Join(s.webDir, "audio", recordedDir, key+".webm")
+// recordingFile finds the stored recording for a key, if any, and its MIME type.
+func (s *Server) recordingFile(key string) (path, ctype string, ok bool) {
+	for _, e := range recordingExts {
+		p := filepath.Join(s.webDir, "audio", recordedDir, key+e.ext)
+		if st, err := os.Stat(p); err == nil && st.Size() > 0 {
+			return p, e.ctype, true
+		}
+	}
+	return "", "", false
 }
 
 func (s *Server) hasRecording(key string) bool {
-	st, err := os.Stat(s.recordingPath(key))
-	return err == nil && st.Size() > 0
+	_, _, ok := s.recordingFile(key)
+	return ok
 }
 
 // safeKey rejects anything that could escape the audio directory.
@@ -115,7 +131,13 @@ func (s *Server) handleRecordPut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dst := s.recordingPath(key)
+	// Extension by what the browser recorded; a new take replaces any previous
+	// take in the *other* container too, or the stale one would keep shadowing.
+	ext := ".webm"
+	if ct := r.Header.Get("Content-Type"); strings.HasPrefix(ct, "audio/mp4") || strings.HasPrefix(ct, "audio/aac") {
+		ext = ".m4a"
+	}
+	dst := filepath.Join(dir, key+ext)
 	tmp := dst + ".tmp"
 	if err := os.WriteFile(tmp, data, 0o644); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -124,6 +146,11 @@ func (s *Server) handleRecordPut(w http.ResponseWriter, r *http.Request) {
 	if err := os.Rename(tmp, dst); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	for _, e := range recordingExts {
+		if e.ext != ext {
+			_ = os.Remove(filepath.Join(dir, key+e.ext))
+		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"key": key, "bytes": len(data), "recorded": true})
 }
@@ -134,9 +161,12 @@ func (s *Server) handleRecordDelete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "clé invalide", http.StatusBadRequest)
 		return
 	}
-	if err := os.Remove(s.recordingPath(key)); err != nil && !os.IsNotExist(err) {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	for _, e := range recordingExts {
+		p := filepath.Join(s.webDir, "audio", recordedDir, key+e.ext)
+		if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"key": key, "recorded": false})
 }
@@ -148,8 +178,8 @@ func (s *Server) handleAudio(w http.ResponseWriter, r *http.Request) {
 	stem := strings.TrimSuffix(name, filepath.Ext(name))
 
 	if key, ok := safeKey(stem); ok {
-		if p := s.recordingPath(key); s.hasRecording(key) {
-			w.Header().Set("Content-Type", "audio/webm")
+		if p, ctype, found := s.recordingFile(key); found {
+			w.Header().Set("Content-Type", ctype)
 			// Recordings change while the parent is iterating, so never cache.
 			w.Header().Set("Cache-Control", "no-store")
 			http.ServeFile(w, r, p)
