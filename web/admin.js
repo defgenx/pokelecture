@@ -210,7 +210,7 @@ function dangerTab(list) {
   ));
 
   // Progression policy: what "done enough to move on" means is the parent's call.
-  const set = s.settings || { min_stars: 0, free_play: false };
+  const set = s.settings || { min_stars: 0, free_play: false, battle_lives: 3 };
   const minStars = el('select', {},
     [['0', 'Terminer l\'épisode suffit'], ['1', 'Au moins ★'], ['2', 'Au moins ★★'], ['3', '★★★ obligatoires']]
       .map(([v, label]) => {
@@ -221,12 +221,22 @@ function dangerTab(list) {
   );
   const freePlay = el('input', { type: 'checkbox' });
   freePlay.checked = !!set.free_play;
+  const lives = el('select', {},
+    [['-1', 'Illimitées (jamais de défaite)'], ['2', '2 vies'], ['3', '3 vies'], ['4', '4 vies'], ['5', '5 vies']]
+      .map(([v, label]) => {
+        const o = el('option', { value: v }, label);
+        if (Number(v) === (set.battle_lives || 3)) o.selected = true;
+        return o;
+      }),
+  );
   const apply = () => act('api/admin/settings', {
     min_stars: Number(minStars.value),
     free_play: freePlay.checked,
+    battle_lives: Number(lives.value),
   });
   minStars.addEventListener('change', apply);
   freePlay.addEventListener('change', apply);
+  lives.addEventListener('change', apply);
   list.append(el('div', { class: 'section' },
     el('h2', {}, 'Déblocage des épisodes'),
     el('div', { class: 'namebox' },
@@ -242,15 +252,37 @@ function dangerTab(list) {
       'avoir son propre seuil dans l\'onglet Épisodes (« ★ pour la suite »).'),
   ));
 
+  list.append(el('div', { class: 'section' },
+    el('h2', {}, 'Vies en combat'),
+    el('div', { class: 'namebox' },
+      el('label', {}, 'Erreurs permises avant la défaite : '), lives,
+    ),
+    el('p', { style: 'color:#6a7180;font-size:13px;margin-top:8px' },
+      'Chaque syllabe fausse en combat coûte un cœur. À zéro : défaite, et ' +
+      'l\'épisode recommence du début (l\'étage, pour la Tour). « Illimitées » ' +
+      'revient à l\'ancien mode sans enjeu.'),
+  ));
+
   const recs = s.records || {};
-  const recNames = { memory: '🃏 Memory (temps)', chasse: '🌿 La chasse', lecture: '📖 Lis et attrape', oreille: '👂 L\'oreille fine' };
+  const recNames = {
+    memory: '🃏 Memory (temps)', chasse: '🌿 La chasse', lecture: '📖 Lis et attrape',
+    oreille: '👂 L\'oreille fine', atelier: '⚒️ L\'atelier des mots',
+    mystere: '❓ Pokémon mystère', paires: '🔤 Paires mot-image (temps)',
+  };
+  const recRows = Object.entries(recs).map(([g, v]) =>
+    el('div', { class: 'namebox', style: 'margin-top:6px' },
+      el('label', { style: 'min-width:220px' }, `${recNames[g] || g} : ${v}`),
+      el('button', { class: 'linkbtn', onclick: () => act('api/admin/records/reset', { game: g }) }, '↺ Effacer'),
+    ));
   list.append(el('div', { class: 'section' },
     el('h2', {}, 'Tour de Combat et mini-jeux'),
     el('p', { style: 'color:#6a7180;font-size:13px' },
-      `🗼 Étage atteint : ${s.tower_floor || 0} · prochain défi : étage ${(s.tower_floor || 0) + 1}. ` +
-      (Object.keys(recs).length
-        ? 'Records : ' + Object.entries(recs).map(([g, v]) => `${recNames[g] || g} : ${v}`).join(' · ')
-        : 'Aucun record de mini-jeu pour le moment.')),
+      `🗼 Étage atteint : ${s.tower_floor || 0} · prochain défi : étage ${(s.tower_floor || 0) + 1}.`),
+    recRows.length ? el('div', {}, recRows,
+      el('div', { class: 'namebox', style: 'margin-top:10px' },
+        el('button', { class: 'linkbtn', onclick: () => act('api/admin/records/reset', { game: '' }) },
+          '🗑 Effacer tous les records')),
+    ) : el('p', { style: 'color:#6a7180;font-size:13px' }, 'Aucun record de mini-jeu pour le moment.'),
   ));
 
   list.append(el('div', { class: 'section' },

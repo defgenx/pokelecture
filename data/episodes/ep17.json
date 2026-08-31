@@ -2,19 +2,70 @@
   "id": "ep17",
   "route": 17,
   "title": "Route 17 — ph et y",
+  "region": "Vallée Arc-en-ciel",
   "story": "Route 17 : deux lettres déguisées ! Le p et le h ensemble font le son f, comme dans photo. Et le y, c'est un i qui porte un costume, comme dans Ponyta. Un Ponyta galope sur la route... mais attention : rien n'est ce qu'il semble être ici !",
-  "new_graphemes": ["ph", "y"],
-  "syllables": ["pha", "phi", "pho", "phé", "ny", "py", "ty", "my"],
+  "new_graphemes": [
+    "ph",
+    "y"
+  ],
+  "syllables": [
+    "pha",
+    "phi",
+    "pho",
+    "phé",
+    "ny",
+    "py",
+    "ty",
+    "my"
+  ],
   "words": [
-    {"text": "Métamorph", "pokemon": 132, "syllables": ["Mé", "ta", "morph"]},
-    {"text": "Photo", "emoji": "📷", "syllables": ["Pho", "to"]},
-    {"text": "Stylo", "emoji": "🖊️", "syllables": ["Sty", "lo"]},
-    {"text": "Trophée", "emoji": "🏆", "syllables": ["Tro", "phée"]}
+    {
+      "text": "Métamorph",
+      "pokemon": 132,
+      "syllables": [
+        "Mé",
+        "ta",
+        "morph"
+      ]
+    },
+    {
+      "text": "Photo",
+      "emoji": "📷",
+      "syllables": [
+        "Pho",
+        "to"
+      ]
+    },
+    {
+      "text": "Stylo",
+      "emoji": "🖊️",
+      "syllables": [
+        "Sty",
+        "lo"
+      ]
+    },
+    {
+      "text": "Trophée",
+      "emoji": "🏆",
+      "syllables": [
+        "Tro",
+        "phée"
+      ]
+    }
   ],
   "sentences": [
-    {"text": "Métamorph imite Pikachu.", "pokemon": 132},
-    {"text": "Sacha regarde la photo.", "icon": "trainer"},
-    {"text": "Le stylo tombe.", "emoji": "🖊️"}
+    {
+      "text": "Métamorph imite Pikachu.",
+      "pokemon": 132
+    },
+    {
+      "text": "Sacha regarde la photo.",
+      "icon": "trainer"
+    },
+    {
+      "text": "Le stylo tombe.",
+      "emoji": "🖊️"
+    }
   ],
   "reward_pokemon": 77,
   "boss": {

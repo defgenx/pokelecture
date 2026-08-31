@@ -2,21 +2,91 @@
   "id": "ep11",
   "route": 11,
   "title": "Route 11 — eu, au, eau",
+  "region": "Volcan Rougeoyant",
   "story": "Route 11 : trois nouvelles façons d'écrire des sons ! Le e et le u font eu, comme dans feu. Le a et le u font o, comme dans Dracaufeu. Et e-a-u aussi, comme dans bateau ! Là-haut dans le ciel, un immense dragon orange crache des flammes...",
-  "new_graphemes": ["eu", "au", "eau"],
-  "syllables": ["feu", "deu", "leu", "meu", "neu", "peu", "reu", "seu", "teu", "veu", "tau", "fau", "mau", "sau"],
+  "new_graphemes": [
+    "eu",
+    "au",
+    "eau"
+  ],
+  "syllables": [
+    "feu",
+    "deu",
+    "leu",
+    "meu",
+    "neu",
+    "peu",
+    "reu",
+    "seu",
+    "teu",
+    "veu",
+    "tau",
+    "fau",
+    "mau",
+    "sau"
+  ],
   "words": [
-    {"text": "Dracaufeu", "pokemon": 6, "syllables": ["Dra", "cau", "feu"]},
-    {"text": "Feu", "icon": "flame", "syllables": ["Feu"]},
-    {"text": "Eau", "icon": "water", "syllables": ["Eau"]},
-    {"text": "Bateau", "emoji": "⛵", "syllables": ["Ba", "teau"]},
-    {"text": "Cadeau", "emoji": "🎁", "syllables": ["Ca", "deau"]},
-    {"text": "Chaleur", "emoji": "☀️", "syllables": ["Cha", "leur"]}
+    {
+      "text": "Dracaufeu",
+      "pokemon": 6,
+      "syllables": [
+        "Dra",
+        "cau",
+        "feu"
+      ]
+    },
+    {
+      "text": "Feu",
+      "icon": "flame",
+      "syllables": [
+        "Feu"
+      ]
+    },
+    {
+      "text": "Eau",
+      "icon": "water",
+      "syllables": [
+        "Eau"
+      ]
+    },
+    {
+      "text": "Bateau",
+      "emoji": "⛵",
+      "syllables": [
+        "Ba",
+        "teau"
+      ]
+    },
+    {
+      "text": "Cadeau",
+      "emoji": "🎁",
+      "syllables": [
+        "Ca",
+        "deau"
+      ]
+    },
+    {
+      "text": "Chaleur",
+      "emoji": "☀️",
+      "syllables": [
+        "Cha",
+        "leur"
+      ]
+    }
   ],
   "sentences": [
-    {"text": "Dracaufeu adore le feu.", "pokemon": 6},
-    {"text": "Otaria saute sur le bateau.", "pokemon": 86},
-    {"text": "Mélofée porte le cadeau.", "pokemon": 35}
+    {
+      "text": "Dracaufeu adore le feu.",
+      "pokemon": 6
+    },
+    {
+      "text": "Otaria saute sur le bateau.",
+      "pokemon": 86
+    },
+    {
+      "text": "Mélofée porte le cadeau.",
+      "pokemon": 35
+    }
   ],
   "reward_pokemon": 6,
   "boss": {

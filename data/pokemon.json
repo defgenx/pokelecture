@@ -1,81 +1,1366 @@
 [
-  {"id": 1,   "name": "Bulbizarre", "syllables": ["Bul","bi","zarre"], "types": ["Plante","Poison"], "dex": "Il porte un bulbe sur le dos. Le bulbe grandit quand il reste au soleil."},
-  {"id": 3,   "name": "Florizarre", "syllables": ["Flo","ri","zarre"], "types": ["Plante","Poison"], "dex": "L'évolution finale de Bulbizarre. La grande fleur sur son dos parfume tout le jardin."},
-  {"id": 4,   "name": "Salamèche",  "syllables": ["Sa","la","mè","che"], "types": ["Feu"], "dex": "Sa queue brûle depuis sa naissance. Quand il est content, la flamme danse."},
-  {"id": 6,   "name": "Dracaufeu",  "syllables": ["Dra","cau","feu"], "types": ["Feu","Vol"], "dex": "Il vole très haut dans le ciel et crache un feu bleu très chaud."},
-  {"id": 7,   "name": "Carapuce",   "syllables": ["Ca","ra","puce"], "types": ["Eau"], "dex": "Sa carapace le protège. Il envoie de l'eau très loin, comme un tuyau."},
-  {"id": 10,  "name": "Chenipan",   "syllables": ["Che","ni","pan"], "types": ["Insecte"], "dex": "Il mange des feuilles toute la journée pour devenir plus grand."},
-  {"id": 12,  "name": "Papilusion", "say_as": "Papiluzion", "syllables": ["Pa","pi","lu","sion"], "types": ["Insecte","Vol"], "dex": "C'est l'évolution de Chenipan. Ses grandes ailes lancent une poudre qui endort."},
-  {"id": 13,  "name": "Aspicot",    "say_as": "Aspico", "syllables": ["As","pi","cot"], "types": ["Insecte","Poison"], "dex": "Il a un dard sur la tête. Il sent très bien les feuilles qu'il préfère."},
-  {"id": 16,  "name": "Roucool",    "say_as": "Roukoul", "syllables": ["Rou","cool"], "types": ["Normal","Vol"], "dex": "Il bat des ailes si vite qu'il soulève un nuage de sable."},
-  {"id": 18,  "name": "Roucarnage", "syllables": ["Rou","car","nage"], "types": ["Normal","Vol"], "dex": "L'évolution finale de Roucool. Il vole plus vite qu'un train et voit une baie à deux kilomètres."},
-  {"id": 19,  "name": "Rattata",    "syllables": ["Rat","ta","ta"], "types": ["Normal"], "dex": "Ses dents poussent sans arrêt. Il grignote tout ce qu'il trouve."},
-  {"id": 23,  "name": "Abo",        "syllables": ["A","bo"], "types": ["Poison"], "dex": "Il ouvre très grand la bouche pour avaler son repas d'un seul coup."},
-  {"id": 25,  "name": "Pikachu",    "say_as": "Pikatchou", "syllables": ["Pi","ka","chu"], "types": ["Électrik"], "dex": "Ses joues gardent de l'électricité. Il envoie des éclairs quand il a peur."},
-  {"id": 27,  "name": "Sabelette",  "syllables": ["Sa","be","lette"], "types": ["Sol"], "dex": "Il se roule en boule pour se protéger. Il creuse des tunnels dans le sable."},
-  {"id": 29,  "name": "Nidoran",    "syllables": ["Ni","do","ran"], "types": ["Poison"], "dex": "Ses grandes oreilles bougent tout le temps pour écouter autour de lui."},
-  {"id": 30,  "name": "Nidorina",   "syllables": ["Ni","do","ri","na"], "types": ["Poison"], "dex": "Elle rentre ses piquants quand elle joue avec les petits."},
-  {"id": 35,  "name": "Mélofée",    "syllables": ["Mé","lo","fée"], "types": ["Fée"], "dex": "Elle danse au clair de lune. Elle adore la musique douce."},
-  {"id": 37,  "name": "Goupix",     "say_as": "Goupixe", "syllables": ["Gou","pix"], "types": ["Feu"], "dex": "Il naît avec une seule queue blanche. Elle se sépare en six en grandissant."},
-  {"id": 39,  "name": "Rondoudou",  "syllables": ["Ron","dou","dou"], "types": ["Normal","Fée"], "dex": "Il chante une berceuse si douce que tout le monde s'endort."},
-  {"id": 40,  "name": "Grodoudou",  "syllables": ["Gro","dou","dou"], "types": ["Normal","Fée"], "dex": "Sa fourrure est très douce. Il peut se gonfler comme un ballon."},
-  {"id": 41,  "name": "Nosferapti", "syllables": ["Nos","fe","rap","ti"], "types": ["Poison","Vol"], "dex": "Il dort le jour et vole la nuit. Il se guide avec des ultrasons."},
-  {"id": 46,  "name": "Paras",      "say_as": "Parass", "syllables": ["Pa","ras"], "types": ["Insecte","Plante"], "dex": "Un champignon pousse sur son dos et lui donne toute sa force."},
-  {"id": 48,  "name": "Mimitoss",   "syllables": ["Mi","mi","toss"], "types": ["Insecte","Poison"], "dex": "Ses grands yeux voient dans le noir. Ses poils sentent le moindre souffle."},
-  {"id": 52,  "name": "Miaouss",    "syllables": ["Mia","ouss"], "types": ["Normal"], "dex": "Il ramasse les pièces qui brillent et les cache dans un coin secret."},
-  {"id": 58,  "name": "Caninos",    "say_as": "Caninoss", "syllables": ["Ca","ni","nos"], "types": ["Feu"], "dex": "Très fidèle, il aboie fort et crache des flammes pour protéger sa maison."},
-  {"id": 59,  "name": "Arcanin",    "syllables": ["Ar","ca","nin"], "types": ["Feu"], "dex": "L'évolution de Caninos. On l'appelle le chien légendaire : rapide, fier et fidèle."},
-  {"id": 66,  "name": "Machoc",     "say_as": "Machok", "syllables": ["Ma","choc"], "types": ["Combat"], "dex": "Il soulève des rochers pour s'entraîner. Il est bien plus fort qu'il en a l'air."},
-  {"id": 68,  "name": "Mackogneur", "say_as": "Makogneur", "syllables": ["Mac","ko","gneur"], "types": ["Combat"], "dex": "L'évolution finale de Machoc. Avec ses quatre bras, il soulève des montagnes."},
-  {"id": 72,  "name": "Tentacool",  "say_as": "Tentacoul", "syllables": ["Ten","ta","cool"], "types": ["Eau","Poison"], "dex": "Son corps est presque transparent. On le voit à peine dans la mer."},
-  {"id": 77,  "name": "Ponyta",     "say_as": "Ponita", "syllables": ["Po","ny","ta"], "types": ["Feu"], "dex": "Sa crinière est en flammes. Il court plus vite que le vent."},
-  {"id": 79,  "name": "Ramoloss",   "syllables": ["Ra","mo","loss"], "types": ["Eau","Psy"], "dex": "Il est très lent. Il oublie souvent ce qu'il était en train de faire."},
-  {"id": 84,  "name": "Doduo",      "syllables": ["Do","du","o"], "types": ["Normal","Vol"], "dex": "Il a deux têtes qui ne dorment jamais en même temps."},
-  {"id": 85,  "name": "Dodrio",     "syllables": ["Do","dri","o"], "types": ["Normal","Vol"], "dex": "Ses trois têtes pensent chacune à autre chose. Il court très vite."},
-  {"id": 86,  "name": "Otaria",     "syllables": ["O","ta","ri","a"], "types": ["Eau"], "dex": "Il adore l'eau très froide. Il casse la glace avec sa corne."},
-  {"id": 118, "name": "Poissirène", "syllables": ["Poi","ssi","rène"], "types": ["Eau"], "dex": "Ses nageoires flottent comme une robe. On l'appelle la reine de l'eau."},
-  {"id": 123, "name": "Insécateur", "syllables": ["In","sé","ca","teur"], "types": ["Insecte","Vol"], "dex": "Ses bras sont des lames très coupantes. Il est rapide comme l'éclair."},
-  {"id": 129, "name": "Magicarpe",  "syllables": ["Ma","gi","carpe"], "types": ["Eau"], "dex": "Il saute sans arrêt et il est très faible. Un jour, il deviendra énorme."},
-  {"id": 130, "name": "Léviator",   "syllables": ["Lé","vi","a","tor"], "types": ["Eau","Vol"], "dex": "Le petit Magicarpe devient ce géant. Sous la pluie, il danse dans les vagues."},
-  {"id": 132, "name": "Métamorph",  "syllables": ["Mé","ta","morph"], "types": ["Normal"], "dex": "Il peut prendre la forme de n'importe quel Pokémon. Parfois, il se trompe un peu."},
-  {"id": 133, "name": "Évoli",      "syllables": ["É","vo","li"], "types": ["Normal"], "dex": "Il peut évoluer de plusieurs façons. Personne ne sait laquelle il choisira."},
-  {"id": 134, "name": "Aquali",     "syllables": ["A","qua","li"], "types": ["Eau"], "dex": "Une évolution d'Évoli. Son corps est fait d'eau, il nage comme un poisson."},
-  {"id": 138, "name": "Amonita",    "syllables": ["A","mo","ni","ta"], "types": ["Roche","Eau"], "dex": "Il vivait il y a très très longtemps. Sa coquille tourne en spirale."},
-  {"id": 143, "name": "Ronflex",    "say_as": "Ronflexe", "syllables": ["Ron","flex"], "types": ["Normal"], "dex": "Il mange, puis il dort. Presque rien ne peut le réveiller."},
-
-  {"id": 144, "name": "Artikodin", "legendary": true, "syllables": ["Ar","ti","ko","din"], "types": ["Glace","Vol"], "dex": "Un oiseau légendaire. Quand il ouvre ses grandes ailes, la neige se met à tomber."},
-  {"id": 145, "name": "Électhor", "say_as": "Élecktor", "legendary": true, "syllables": ["É","lec","thor"], "types": ["Électrik","Vol"], "dex": "Un oiseau légendaire qui vit dans les nuages d'orage. Ses ailes lancent des éclairs."},
-  {"id": 146, "name": "Sulfura", "legendary": true, "syllables": ["Sul","fu","ra"], "types": ["Feu","Vol"], "dex": "Un oiseau légendaire aux ailes de flammes. Quand il est fatigué, il plonge dans un volcan."},
-  {"id": 150, "name": "Mewtwo", "say_as": "Mioutou", "legendary": true, "syllables": ["Mew","two"], "types": ["Psy"], "dex": "Le Pokémon le plus puissant de tous. Il déplace les objets par la pensée."},
-  {"id": 151, "name": "Mew", "say_as": "Miou", "legendary": true, "syllables": ["Mew"], "types": ["Psy"], "dex": "Si rare que beaucoup pensent qu'il n'existe pas. On dit qu'il connaît toutes les attaques."},
-  {"id": 243, "name": "Raikou", "say_as": "Raïkou", "legendary": true, "syllables": ["Rai","kou"], "types": ["Électrik"], "dex": "Le tigre légendaire de la foudre. Il court avec les nuages d'orage sur son dos."},
-  {"id": 244, "name": "Entei", "say_as": "Ène-té-i", "legendary": true, "syllables": ["En","tei"], "types": ["Feu"], "dex": "Quand il aboie, un volcan se réveille, dit-on. Il court sans jamais s'arrêter."},
-  {"id": 245, "name": "Suicune", "say_as": "Souikoune", "legendary": true, "syllables": ["Sui","cune"], "types": ["Eau"], "dex": "Il court sur l'eau sans faire une seule vague. Il rend l'eau pure et claire."},
-  {"id": 249, "name": "Lugia", "legendary": true, "syllables": ["Lu","gi","a"], "types": ["Psy","Vol"], "dex": "Il dort tout au fond de la mer. Quand il bat des ailes, la tempête se lève."},
-  {"id": 250, "name": "Ho-Oh", "say_as": "Ho Oh", "legendary": true, "syllables": ["Ho","Oh"], "types": ["Feu","Vol"], "dex": "Un arc-en-ciel suit son vol. Celui qui le voit devient très heureux."},
-  {"id": 251, "name": "Celebi", "say_as": "Célébi", "legendary": true, "syllables": ["Ce","le","bi"], "types": ["Psy","Plante"], "dex": "Il voyage dans le temps. Partout où il passe, les plantes se remettent à pousser."},
-  {"id": 384, "name": "Rayquaza", "say_as": "Rékouaza", "legendary": true, "syllables": ["Ray","qua","za"], "types": ["Dragon","Vol"], "dex": "Le gardien du ciel. Il vit tout en haut, au-dessus des nuages, et calme les tempêtes."},
-  {"id": 385, "name": "Jirachi", "legendary": true, "syllables": ["Ji","ra","chi"], "types": ["Acier","Psy"], "dex": "Il dort presque tout le temps. Quand il se réveille, il réalise les vœux."},
-  {"id": 571, "name": "Zoroark", "legendary": true, "syllables": ["Zo","ro","ark"], "types": ["Ténèbres"], "dex": "Il crée des images qui ne sont pas vraies pour tromper ceux qui le suivent."},
-
-  {"id": 54,  "name": "Psykokwak", "say_as": "Psikokouak", "tower": true, "syllables": ["Psy","ko","kwak"], "types": ["Eau"], "dex": "Il a toujours mal à la tête. Quand ça empire, il lance des pouvoirs étranges."},
-  {"id": 60,  "name": "Ptitard", "say_as": "Petitar", "tower": true, "syllables": ["Pti","tard"], "types": ["Eau"], "dex": "On voit une spirale sur son ventre. Il nage en remuant sa queue toute fine."},
-  {"id": 56,  "name": "Férosinge", "say_as": "Férossinge", "tower": true, "syllables": ["Fé","ro","singe"], "types": ["Combat"], "dex": "Il se met en colère pour un rien. Quand il court, personne ne peut l'arrêter."},
-  {"id": 98,  "name": "Krabby", "say_as": "Krabi", "tower": true, "syllables": ["Kra","bby"], "types": ["Eau"], "dex": "Ses pinces repoussent quand elles se cassent. Il creuse son trou sur la plage."},
-  {"id": 63,  "name": "Abra", "tower": true, "syllables": ["A","bra"], "types": ["Psy"], "dex": "Il dort presque toute la journée. Même endormi, il peut disparaître d'un coup."},
-  {"id": 74,  "name": "Racaillou", "say_as": "Racaïou", "tower": true, "syllables": ["Ra","caillou"], "types": ["Roche","Sol"], "dex": "Il ressemble à un caillou rond. Regarde bien où tu marches sur les chemins !"},
-  {"id": 100, "name": "Voltorbe", "tower": true, "syllables": ["Vol","torbe"], "types": ["Électrik"], "dex": "On dirait une Poké Ball. Mais si on le touche, il fait des étincelles !"},
-  {"id": 81,  "name": "Magnéti", "tower": true, "syllables": ["Ma","gné","ti"], "types": ["Électrik","Acier"], "dex": "Il flotte dans les airs grâce à ses aimants. Il adore l'électricité."},
-  {"id": 104, "name": "Osselait", "say_as": "Osselè", "tower": true, "syllables": ["O","sse","lait"], "types": ["Sol"], "dex": "Il porte un casque d'os. Il ne le retire jamais, même pour dormir."},
-  {"id": 108, "name": "Excelangue", "say_as": "Excélangue", "tower": true, "syllables": ["Ex","ce","langue"], "types": ["Normal"], "dex": "Sa langue est deux fois plus longue que son corps. Elle attrape tout !"},
-  {"id": 92,  "name": "Fantominus", "say_as": "Fantominusse", "tower": true, "syllables": ["Fan","to","mi","nus"], "types": ["Spectre","Poison"], "dex": "Un petit nuage de gaz avec des yeux. Il adore faire des farces la nuit."},
-  {"id": 95,  "name": "Onix", "say_as": "Onixe", "tower": true, "syllables": ["O","nix"], "types": ["Roche","Sol"], "dex": "Un serpent géant fait de rochers. Il creuse des tunnels à toute vitesse."},
-  {"id": 111, "name": "Rhinocorne", "say_as": "Rinocorne", "tower": true, "syllables": ["Rhi","no","corne"], "types": ["Sol","Roche"], "dex": "Il fonce droit devant lui sans réfléchir. Sa peau est dure comme la pierre."},
-  {"id": 116, "name": "Hypotrempe", "say_as": "Ipotrempe", "tower": true, "syllables": ["Hy","po","trempe"], "types": ["Eau"], "dex": "Il nage en s'enroulant dans les vagues. Il crache de l'encre pour se sauver."},
-  {"id": 5,   "name": "Reptincel", "tower": true, "syllables": ["Rep","tin","cel"], "types": ["Feu"], "dex": "L'évolution de Salamèche. Sa griffe devient brûlante quand il se bat."},
-  {"id": 9,   "name": "Tortank", "tower": true, "syllables": ["Tor","tank"], "types": ["Eau"], "dex": "L'évolution finale de Carapuce. Des canons à eau sortent de sa carapace."},
-  {"id": 94,  "name": "Ectoplasma", "tower": true, "syllables": ["Ec","to","plas","ma"], "types": ["Spectre","Poison"], "dex": "Il se cache dans les ombres. Son sourire fait frissonner... mais il est joueur."},
-  {"id": 131, "name": "Lokhlass", "say_as": "Loklass", "tower": true, "syllables": ["Lo","khlass"], "types": ["Eau","Glace"], "dex": "Il transporte les voyageurs sur son dos, d'une île à l'autre. Très gentil."},
-  {"id": 147, "name": "Minidraco", "tower": true, "syllables": ["Mi","ni","dra","co"], "types": ["Dragon"], "dex": "Un bébé dragon très rare. Il change de peau plusieurs fois en grandissant."},
-  {"id": 149, "name": "Dracolosse", "tower": true, "syllables": ["Dra","co","losse"], "types": ["Dragon","Vol"], "dex": "Le dragon gardien des mers. On dit qu'il vole plus vite que le son."}
+  {
+    "id": 1,
+    "name": "Bulbizarre",
+    "syllables": [
+      "Bul",
+      "bi",
+      "zarre"
+    ],
+    "types": [
+      "Plante",
+      "Poison"
+    ],
+    "dex": "Il porte un bulbe sur le dos. Le bulbe grandit quand il reste au soleil."
+  },
+  {
+    "id": 3,
+    "name": "Florizarre",
+    "syllables": [
+      "Flo",
+      "ri",
+      "zarre"
+    ],
+    "types": [
+      "Plante",
+      "Poison"
+    ],
+    "dex": "L'évolution finale de Bulbizarre. La grande fleur sur son dos parfume tout le jardin."
+  },
+  {
+    "id": 4,
+    "name": "Salamèche",
+    "syllables": [
+      "Sa",
+      "la",
+      "mè",
+      "che"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Sa queue brûle depuis sa naissance. Quand il est content, la flamme danse."
+  },
+  {
+    "id": 6,
+    "name": "Dracaufeu",
+    "syllables": [
+      "Dra",
+      "cau",
+      "feu"
+    ],
+    "types": [
+      "Feu",
+      "Vol"
+    ],
+    "dex": "Il vole très haut dans le ciel et crache un feu bleu très chaud."
+  },
+  {
+    "id": 7,
+    "name": "Carapuce",
+    "syllables": [
+      "Ca",
+      "ra",
+      "puce"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Sa carapace le protège. Il envoie de l'eau très loin, comme un tuyau."
+  },
+  {
+    "id": 10,
+    "name": "Chenipan",
+    "syllables": [
+      "Che",
+      "ni",
+      "pan"
+    ],
+    "types": [
+      "Insecte"
+    ],
+    "dex": "Il mange des feuilles toute la journée pour devenir plus grand."
+  },
+  {
+    "id": 12,
+    "name": "Papilusion",
+    "say_as": "Papiluzion",
+    "syllables": [
+      "Pa",
+      "pi",
+      "lu",
+      "sion"
+    ],
+    "types": [
+      "Insecte",
+      "Vol"
+    ],
+    "dex": "C'est l'évolution de Chenipan. Ses grandes ailes lancent une poudre qui endort."
+  },
+  {
+    "id": 13,
+    "name": "Aspicot",
+    "say_as": "Aspico",
+    "syllables": [
+      "As",
+      "pi",
+      "cot"
+    ],
+    "types": [
+      "Insecte",
+      "Poison"
+    ],
+    "dex": "Il a un dard sur la tête. Il sent très bien les feuilles qu'il préfère."
+  },
+  {
+    "id": 16,
+    "name": "Roucool",
+    "say_as": "Roukoul",
+    "syllables": [
+      "Rou",
+      "cool"
+    ],
+    "types": [
+      "Normal",
+      "Vol"
+    ],
+    "dex": "Il bat des ailes si vite qu'il soulève un nuage de sable."
+  },
+  {
+    "id": 18,
+    "name": "Roucarnage",
+    "syllables": [
+      "Rou",
+      "car",
+      "nage"
+    ],
+    "types": [
+      "Normal",
+      "Vol"
+    ],
+    "dex": "L'évolution finale de Roucool. Il vole plus vite qu'un train et voit une baie à deux kilomètres."
+  },
+  {
+    "id": 19,
+    "name": "Rattata",
+    "syllables": [
+      "Rat",
+      "ta",
+      "ta"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Ses dents poussent sans arrêt. Il grignote tout ce qu'il trouve."
+  },
+  {
+    "id": 23,
+    "name": "Abo",
+    "syllables": [
+      "A",
+      "bo"
+    ],
+    "types": [
+      "Poison"
+    ],
+    "dex": "Il ouvre très grand la bouche pour avaler son repas d'un seul coup."
+  },
+  {
+    "id": 25,
+    "name": "Pikachu",
+    "say_as": "Pikatchou",
+    "syllables": [
+      "Pi",
+      "ka",
+      "chu"
+    ],
+    "types": [
+      "Électrik"
+    ],
+    "dex": "Ses joues gardent de l'électricité. Il envoie des éclairs quand il a peur."
+  },
+  {
+    "id": 27,
+    "name": "Sabelette",
+    "syllables": [
+      "Sa",
+      "be",
+      "lette"
+    ],
+    "types": [
+      "Sol"
+    ],
+    "dex": "Il se roule en boule pour se protéger. Il creuse des tunnels dans le sable."
+  },
+  {
+    "id": 29,
+    "name": "Nidoran",
+    "syllables": [
+      "Ni",
+      "do",
+      "ran"
+    ],
+    "types": [
+      "Poison"
+    ],
+    "dex": "Ses grandes oreilles bougent tout le temps pour écouter autour de lui."
+  },
+  {
+    "id": 30,
+    "name": "Nidorina",
+    "syllables": [
+      "Ni",
+      "do",
+      "ri",
+      "na"
+    ],
+    "types": [
+      "Poison"
+    ],
+    "dex": "Elle rentre ses piquants quand elle joue avec les petits."
+  },
+  {
+    "id": 35,
+    "name": "Mélofée",
+    "syllables": [
+      "Mé",
+      "lo",
+      "fée"
+    ],
+    "types": [
+      "Fée"
+    ],
+    "dex": "Elle danse au clair de lune. Elle adore la musique douce."
+  },
+  {
+    "id": 37,
+    "name": "Goupix",
+    "say_as": "Goupixe",
+    "syllables": [
+      "Gou",
+      "pix"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Il naît avec une seule queue blanche. Elle se sépare en six en grandissant."
+  },
+  {
+    "id": 39,
+    "name": "Rondoudou",
+    "syllables": [
+      "Ron",
+      "dou",
+      "dou"
+    ],
+    "types": [
+      "Normal",
+      "Fée"
+    ],
+    "dex": "Il chante une berceuse si douce que tout le monde s'endort."
+  },
+  {
+    "id": 40,
+    "name": "Grodoudou",
+    "syllables": [
+      "Gro",
+      "dou",
+      "dou"
+    ],
+    "types": [
+      "Normal",
+      "Fée"
+    ],
+    "dex": "Sa fourrure est très douce. Il peut se gonfler comme un ballon."
+  },
+  {
+    "id": 41,
+    "name": "Nosferapti",
+    "syllables": [
+      "Nos",
+      "fe",
+      "rap",
+      "ti"
+    ],
+    "types": [
+      "Poison",
+      "Vol"
+    ],
+    "dex": "Il dort le jour et vole la nuit. Il se guide avec des ultrasons."
+  },
+  {
+    "id": 46,
+    "name": "Paras",
+    "say_as": "Parass",
+    "syllables": [
+      "Pa",
+      "ras"
+    ],
+    "types": [
+      "Insecte",
+      "Plante"
+    ],
+    "dex": "Un champignon pousse sur son dos et lui donne toute sa force."
+  },
+  {
+    "id": 48,
+    "name": "Mimitoss",
+    "syllables": [
+      "Mi",
+      "mi",
+      "toss"
+    ],
+    "types": [
+      "Insecte",
+      "Poison"
+    ],
+    "dex": "Ses grands yeux voient dans le noir. Ses poils sentent le moindre souffle."
+  },
+  {
+    "id": 52,
+    "name": "Miaouss",
+    "syllables": [
+      "Mia",
+      "ouss"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Il ramasse les pièces qui brillent et les cache dans un coin secret."
+  },
+  {
+    "id": 58,
+    "name": "Caninos",
+    "say_as": "Caninoss",
+    "syllables": [
+      "Ca",
+      "ni",
+      "nos"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Très fidèle, il aboie fort et crache des flammes pour protéger sa maison."
+  },
+  {
+    "id": 59,
+    "name": "Arcanin",
+    "syllables": [
+      "Ar",
+      "ca",
+      "nin"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "L'évolution de Caninos. On l'appelle le chien légendaire : rapide, fier et fidèle."
+  },
+  {
+    "id": 66,
+    "name": "Machoc",
+    "say_as": "Machok",
+    "syllables": [
+      "Ma",
+      "choc"
+    ],
+    "types": [
+      "Combat"
+    ],
+    "dex": "Il soulève des rochers pour s'entraîner. Il est bien plus fort qu'il en a l'air."
+  },
+  {
+    "id": 68,
+    "name": "Mackogneur",
+    "say_as": "Makogneur",
+    "syllables": [
+      "Mac",
+      "ko",
+      "gneur"
+    ],
+    "types": [
+      "Combat"
+    ],
+    "dex": "L'évolution finale de Machoc. Avec ses quatre bras, il soulève des montagnes."
+  },
+  {
+    "id": 72,
+    "name": "Tentacool",
+    "say_as": "Tentacoul",
+    "syllables": [
+      "Ten",
+      "ta",
+      "cool"
+    ],
+    "types": [
+      "Eau",
+      "Poison"
+    ],
+    "dex": "Son corps est presque transparent. On le voit à peine dans la mer."
+  },
+  {
+    "id": 77,
+    "name": "Ponyta",
+    "say_as": "Ponita",
+    "syllables": [
+      "Po",
+      "ny",
+      "ta"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Sa crinière est en flammes. Il court plus vite que le vent."
+  },
+  {
+    "id": 79,
+    "name": "Ramoloss",
+    "syllables": [
+      "Ra",
+      "mo",
+      "loss"
+    ],
+    "types": [
+      "Eau",
+      "Psy"
+    ],
+    "dex": "Il est très lent. Il oublie souvent ce qu'il était en train de faire."
+  },
+  {
+    "id": 84,
+    "name": "Doduo",
+    "syllables": [
+      "Do",
+      "du",
+      "o"
+    ],
+    "types": [
+      "Normal",
+      "Vol"
+    ],
+    "dex": "Il a deux têtes qui ne dorment jamais en même temps."
+  },
+  {
+    "id": 85,
+    "name": "Dodrio",
+    "syllables": [
+      "Do",
+      "dri",
+      "o"
+    ],
+    "types": [
+      "Normal",
+      "Vol"
+    ],
+    "dex": "Ses trois têtes pensent chacune à autre chose. Il court très vite."
+  },
+  {
+    "id": 86,
+    "name": "Otaria",
+    "syllables": [
+      "O",
+      "ta",
+      "ri",
+      "a"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Il adore l'eau très froide. Il casse la glace avec sa corne."
+  },
+  {
+    "id": 118,
+    "name": "Poissirène",
+    "syllables": [
+      "Poi",
+      "ssi",
+      "rène"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Ses nageoires flottent comme une robe. On l'appelle la reine de l'eau."
+  },
+  {
+    "id": 123,
+    "name": "Insécateur",
+    "syllables": [
+      "In",
+      "sé",
+      "ca",
+      "teur"
+    ],
+    "types": [
+      "Insecte",
+      "Vol"
+    ],
+    "dex": "Ses bras sont des lames très coupantes. Il est rapide comme l'éclair."
+  },
+  {
+    "id": 129,
+    "name": "Magicarpe",
+    "syllables": [
+      "Ma",
+      "gi",
+      "carpe"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Il saute sans arrêt et il est très faible. Un jour, il deviendra énorme."
+  },
+  {
+    "id": 130,
+    "name": "Léviator",
+    "syllables": [
+      "Lé",
+      "vi",
+      "a",
+      "tor"
+    ],
+    "types": [
+      "Eau",
+      "Vol"
+    ],
+    "dex": "Le petit Magicarpe devient ce géant. Sous la pluie, il danse dans les vagues."
+  },
+  {
+    "id": 132,
+    "name": "Métamorph",
+    "syllables": [
+      "Mé",
+      "ta",
+      "morph"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Il peut prendre la forme de n'importe quel Pokémon. Parfois, il se trompe un peu."
+  },
+  {
+    "id": 133,
+    "name": "Évoli",
+    "syllables": [
+      "É",
+      "vo",
+      "li"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Il peut évoluer de plusieurs façons. Personne ne sait laquelle il choisira."
+  },
+  {
+    "id": 134,
+    "name": "Aquali",
+    "syllables": [
+      "A",
+      "qua",
+      "li"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Une évolution d'Évoli. Son corps est fait d'eau, il nage comme un poisson."
+  },
+  {
+    "id": 138,
+    "name": "Amonita",
+    "syllables": [
+      "A",
+      "mo",
+      "ni",
+      "ta"
+    ],
+    "types": [
+      "Roche",
+      "Eau"
+    ],
+    "dex": "Il vivait il y a très très longtemps. Sa coquille tourne en spirale."
+  },
+  {
+    "id": 143,
+    "name": "Ronflex",
+    "say_as": "Ronflexe",
+    "syllables": [
+      "Ron",
+      "flex"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Il mange, puis il dort. Presque rien ne peut le réveiller."
+  },
+  {
+    "id": 144,
+    "name": "Artikodin",
+    "legendary": true,
+    "syllables": [
+      "Ar",
+      "ti",
+      "ko",
+      "din"
+    ],
+    "types": [
+      "Glace",
+      "Vol"
+    ],
+    "dex": "Un oiseau légendaire. Quand il ouvre ses grandes ailes, la neige se met à tomber."
+  },
+  {
+    "id": 145,
+    "name": "Électhor",
+    "say_as": "Élecktor",
+    "legendary": true,
+    "syllables": [
+      "É",
+      "lec",
+      "thor"
+    ],
+    "types": [
+      "Électrik",
+      "Vol"
+    ],
+    "dex": "Un oiseau légendaire qui vit dans les nuages d'orage. Ses ailes lancent des éclairs."
+  },
+  {
+    "id": 146,
+    "name": "Sulfura",
+    "legendary": true,
+    "syllables": [
+      "Sul",
+      "fu",
+      "ra"
+    ],
+    "types": [
+      "Feu",
+      "Vol"
+    ],
+    "dex": "Un oiseau légendaire aux ailes de flammes. Quand il est fatigué, il plonge dans un volcan."
+  },
+  {
+    "id": 150,
+    "name": "Mewtwo",
+    "say_as": "Mioutou",
+    "legendary": true,
+    "syllables": [
+      "Mew",
+      "two"
+    ],
+    "types": [
+      "Psy"
+    ],
+    "dex": "Le Pokémon le plus puissant de tous. Il déplace les objets par la pensée."
+  },
+  {
+    "id": 151,
+    "name": "Mew",
+    "say_as": "Miou",
+    "legendary": true,
+    "syllables": [
+      "Mew"
+    ],
+    "types": [
+      "Psy"
+    ],
+    "dex": "Si rare que beaucoup pensent qu'il n'existe pas. On dit qu'il connaît toutes les attaques."
+  },
+  {
+    "id": 243,
+    "name": "Raikou",
+    "say_as": "Raïkou",
+    "legendary": true,
+    "syllables": [
+      "Rai",
+      "kou"
+    ],
+    "types": [
+      "Électrik"
+    ],
+    "dex": "Le tigre légendaire de la foudre. Il court avec les nuages d'orage sur son dos."
+  },
+  {
+    "id": 244,
+    "name": "Entei",
+    "say_as": "Ène-té-i",
+    "legendary": true,
+    "syllables": [
+      "En",
+      "tei"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Quand il aboie, un volcan se réveille, dit-on. Il court sans jamais s'arrêter."
+  },
+  {
+    "id": 245,
+    "name": "Suicune",
+    "say_as": "Souikoune",
+    "legendary": true,
+    "syllables": [
+      "Sui",
+      "cune"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Il court sur l'eau sans faire une seule vague. Il rend l'eau pure et claire."
+  },
+  {
+    "id": 249,
+    "name": "Lugia",
+    "legendary": true,
+    "syllables": [
+      "Lu",
+      "gi",
+      "a"
+    ],
+    "types": [
+      "Psy",
+      "Vol"
+    ],
+    "dex": "Il dort tout au fond de la mer. Quand il bat des ailes, la tempête se lève."
+  },
+  {
+    "id": 250,
+    "name": "Ho-Oh",
+    "say_as": "Ho Oh",
+    "legendary": true,
+    "syllables": [
+      "Ho",
+      "Oh"
+    ],
+    "types": [
+      "Feu",
+      "Vol"
+    ],
+    "dex": "Un arc-en-ciel suit son vol. Celui qui le voit devient très heureux."
+  },
+  {
+    "id": 251,
+    "name": "Celebi",
+    "say_as": "Célébi",
+    "legendary": true,
+    "syllables": [
+      "Ce",
+      "le",
+      "bi"
+    ],
+    "types": [
+      "Psy",
+      "Plante"
+    ],
+    "dex": "Il voyage dans le temps. Partout où il passe, les plantes se remettent à pousser."
+  },
+  {
+    "id": 384,
+    "name": "Rayquaza",
+    "say_as": "Rékouaza",
+    "legendary": true,
+    "syllables": [
+      "Ray",
+      "qua",
+      "za"
+    ],
+    "types": [
+      "Dragon",
+      "Vol"
+    ],
+    "dex": "Le gardien du ciel. Il vit tout en haut, au-dessus des nuages, et calme les tempêtes."
+  },
+  {
+    "id": 385,
+    "name": "Jirachi",
+    "legendary": true,
+    "syllables": [
+      "Ji",
+      "ra",
+      "chi"
+    ],
+    "types": [
+      "Acier",
+      "Psy"
+    ],
+    "dex": "Il dort presque tout le temps. Quand il se réveille, il réalise les vœux."
+  },
+  {
+    "id": 571,
+    "name": "Zoroark",
+    "legendary": true,
+    "syllables": [
+      "Zo",
+      "ro",
+      "ark"
+    ],
+    "types": [
+      "Ténèbres"
+    ],
+    "dex": "Il crée des images qui ne sont pas vraies pour tromper ceux qui le suivent."
+  },
+  {
+    "id": 54,
+    "name": "Psykokwak",
+    "say_as": "Psikokouak",
+    "tower": true,
+    "syllables": [
+      "Psy",
+      "ko",
+      "kwak"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Il a toujours mal à la tête. Quand ça empire, il lance des pouvoirs étranges."
+  },
+  {
+    "id": 60,
+    "name": "Ptitard",
+    "say_as": "Petitar",
+    "tower": true,
+    "syllables": [
+      "Pti",
+      "tard"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "On voit une spirale sur son ventre. Il nage en remuant sa queue toute fine."
+  },
+  {
+    "id": 56,
+    "name": "Férosinge",
+    "say_as": "Férossinge",
+    "tower": true,
+    "syllables": [
+      "Fé",
+      "ro",
+      "singe"
+    ],
+    "types": [
+      "Combat"
+    ],
+    "dex": "Il se met en colère pour un rien. Quand il court, personne ne peut l'arrêter."
+  },
+  {
+    "id": 98,
+    "name": "Krabby",
+    "say_as": "Krabi",
+    "tower": true,
+    "syllables": [
+      "Kra",
+      "bby"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Ses pinces repoussent quand elles se cassent. Il creuse son trou sur la plage."
+  },
+  {
+    "id": 63,
+    "name": "Abra",
+    "tower": true,
+    "syllables": [
+      "A",
+      "bra"
+    ],
+    "types": [
+      "Psy"
+    ],
+    "dex": "Il dort presque toute la journée. Même endormi, il peut disparaître d'un coup."
+  },
+  {
+    "id": 74,
+    "name": "Racaillou",
+    "say_as": "Racaïou",
+    "tower": true,
+    "syllables": [
+      "Ra",
+      "caillou"
+    ],
+    "types": [
+      "Roche",
+      "Sol"
+    ],
+    "dex": "Il ressemble à un caillou rond. Regarde bien où tu marches sur les chemins !"
+  },
+  {
+    "id": 100,
+    "name": "Voltorbe",
+    "tower": true,
+    "syllables": [
+      "Vol",
+      "torbe"
+    ],
+    "types": [
+      "Électrik"
+    ],
+    "dex": "On dirait une Poké Ball. Mais si on le touche, il fait des étincelles !"
+  },
+  {
+    "id": 81,
+    "name": "Magnéti",
+    "tower": true,
+    "syllables": [
+      "Ma",
+      "gné",
+      "ti"
+    ],
+    "types": [
+      "Électrik",
+      "Acier"
+    ],
+    "dex": "Il flotte dans les airs grâce à ses aimants. Il adore l'électricité."
+  },
+  {
+    "id": 104,
+    "name": "Osselait",
+    "say_as": "Osselè",
+    "tower": true,
+    "syllables": [
+      "O",
+      "sse",
+      "lait"
+    ],
+    "types": [
+      "Sol"
+    ],
+    "dex": "Il porte un casque d'os. Il ne le retire jamais, même pour dormir."
+  },
+  {
+    "id": 108,
+    "name": "Excelangue",
+    "say_as": "Excélangue",
+    "tower": true,
+    "syllables": [
+      "Ex",
+      "ce",
+      "langue"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Sa langue est deux fois plus longue que son corps. Elle attrape tout !"
+  },
+  {
+    "id": 92,
+    "name": "Fantominus",
+    "say_as": "Fantominusse",
+    "tower": true,
+    "syllables": [
+      "Fan",
+      "to",
+      "mi",
+      "nus"
+    ],
+    "types": [
+      "Spectre",
+      "Poison"
+    ],
+    "dex": "Un petit nuage de gaz avec des yeux. Il adore faire des farces la nuit."
+  },
+  {
+    "id": 95,
+    "name": "Onix",
+    "say_as": "Onixe",
+    "tower": true,
+    "syllables": [
+      "O",
+      "nix"
+    ],
+    "types": [
+      "Roche",
+      "Sol"
+    ],
+    "dex": "Un serpent géant fait de rochers. Il creuse des tunnels à toute vitesse."
+  },
+  {
+    "id": 111,
+    "name": "Rhinocorne",
+    "say_as": "Rinocorne",
+    "tower": true,
+    "syllables": [
+      "Rhi",
+      "no",
+      "corne"
+    ],
+    "types": [
+      "Sol",
+      "Roche"
+    ],
+    "dex": "Il fonce droit devant lui sans réfléchir. Sa peau est dure comme la pierre."
+  },
+  {
+    "id": 116,
+    "name": "Hypotrempe",
+    "say_as": "Ipotrempe",
+    "tower": true,
+    "syllables": [
+      "Hy",
+      "po",
+      "trempe"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Il nage en s'enroulant dans les vagues. Il crache de l'encre pour se sauver."
+  },
+  {
+    "id": 5,
+    "name": "Reptincel",
+    "tower": true,
+    "syllables": [
+      "Rep",
+      "tin",
+      "cel"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "L'évolution de Salamèche. Sa griffe devient brûlante quand il se bat."
+  },
+  {
+    "id": 9,
+    "name": "Tortank",
+    "tower": true,
+    "syllables": [
+      "Tor",
+      "tank"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "L'évolution finale de Carapuce. Des canons à eau sortent de sa carapace."
+  },
+  {
+    "id": 94,
+    "name": "Ectoplasma",
+    "tower": true,
+    "syllables": [
+      "Ec",
+      "to",
+      "plas",
+      "ma"
+    ],
+    "types": [
+      "Spectre",
+      "Poison"
+    ],
+    "dex": "Il se cache dans les ombres. Son sourire fait frissonner... mais il est joueur."
+  },
+  {
+    "id": 131,
+    "name": "Lokhlass",
+    "say_as": "Loklass",
+    "tower": true,
+    "syllables": [
+      "Lo",
+      "khlass"
+    ],
+    "types": [
+      "Eau",
+      "Glace"
+    ],
+    "dex": "Il transporte les voyageurs sur son dos, d'une île à l'autre. Très gentil."
+  },
+  {
+    "id": 147,
+    "name": "Minidraco",
+    "tower": true,
+    "syllables": [
+      "Mi",
+      "ni",
+      "dra",
+      "co"
+    ],
+    "types": [
+      "Dragon"
+    ],
+    "dex": "Un bébé dragon très rare. Il change de peau plusieurs fois en grandissant."
+  },
+  {
+    "id": 149,
+    "name": "Dracolosse",
+    "tower": true,
+    "syllables": [
+      "Dra",
+      "co",
+      "losse"
+    ],
+    "types": [
+      "Dragon",
+      "Vol"
+    ],
+    "dex": "Le dragon gardien des mers. On dit qu'il vole plus vite que le son."
+  },
+  {
+    "id": 252,
+    "name": "Arcko",
+    "say_as": "Arko",
+    "syllables": [
+      "Ar",
+      "cko"
+    ],
+    "types": [
+      "Plante"
+    ],
+    "dex": "Le lézard des forêts de Hoenn. Il grimpe aux murs et adore les baies bien sucrées."
+  },
+  {
+    "id": 255,
+    "name": "Poussifeu",
+    "syllables": [
+      "Pou",
+      "ssi",
+      "feu"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Un poussin tout chaud de Hoenn. Il crache de petites flammes quand il s'entraîne."
+  },
+  {
+    "id": 258,
+    "name": "Gobou",
+    "syllables": [
+      "Go",
+      "bou"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Il vit dans la boue au bord de l'eau. Sa nageoire sent tout ce qui bouge."
+  },
+  {
+    "id": 393,
+    "name": "Tiplouf",
+    "syllables": [
+      "Ti",
+      "plouf"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Le pingouin fier de Sinnoh. Il n'aime pas qu'on l'aide, mais il glisse très bien."
+  },
+  {
+    "id": 498,
+    "name": "Gruikui",
+    "syllables": [
+      "Grui",
+      "kui"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Le cochon de feu d'Unys. Il fait griller des baies avec les flammes de son nez."
+  },
+  {
+    "id": 501,
+    "name": "Moustillon",
+    "syllables": [
+      "Mous",
+      "tillon"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "La loutre d'Unys. Elle lance la coquille de son ventre comme une épée."
+  },
+  {
+    "id": 722,
+    "name": "Brindibou",
+    "syllables": [
+      "Brin",
+      "di",
+      "bou"
+    ],
+    "types": [
+      "Plante",
+      "Vol"
+    ],
+    "dex": "La petite chouette d'Alola. Le jour, elle dort ; le soir, elle vole sans un bruit."
+  },
+  {
+    "id": 725,
+    "name": "Flamiaou",
+    "syllables": [
+      "Fla",
+      "miaou"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Le chaton de feu d'Alola. Il fait semblant d'être sage, mais il adore les bêtises."
+  },
+  {
+    "id": 728,
+    "name": "Otaquin",
+    "syllables": [
+      "O",
+      "ta",
+      "quin"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "L'otarie clown d'Alola. Elle fait des ballons d'eau avec son nez pour jongler."
+  },
+  {
+    "id": 813,
+    "name": "Flambino",
+    "syllables": [
+      "Flam",
+      "bi",
+      "no"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Le lapin footballeur de Galar. Il court partout et tape dans tout ce qui roule."
+  },
+  {
+    "id": 816,
+    "name": "Larméléon",
+    "syllables": [
+      "Lar",
+      "mé",
+      "lé",
+      "on"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Le petit lézard timide de Galar. Quand il pleure, il devient invisible dans l'eau."
+  },
+  {
+    "id": 906,
+    "name": "Poussacha",
+    "syllables": [
+      "Pou",
+      "ssa",
+      "cha"
+    ],
+    "types": [
+      "Plante"
+    ],
+    "dex": "Le chaton vert de Paldea. Son poil sent la menthe quand il est content."
+  },
+  {
+    "id": 909,
+    "name": "Chochodile",
+    "syllables": [
+      "Cho",
+      "cho",
+      "di",
+      "le"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Le crocodile de feu de Paldea. Il chante faux, mais avec tout son cœur."
+  },
+  {
+    "id": 912,
+    "name": "Coiffeton",
+    "syllables": [
+      "Coi",
+      "ffe",
+      "ton"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Le caneton coquet de Paldea. Il passe des heures à lisser sa coiffure."
+  },
+  {
+    "id": 483,
+    "name": "Dialga",
+    "legendary": true,
+    "syllables": [
+      "Dial",
+      "ga"
+    ],
+    "types": [
+      "Acier",
+      "Dragon"
+    ],
+    "dex": "Le dragon du temps. Quand il rugit, les secondes ralentissent ou s'envolent."
+  },
+  {
+    "id": 484,
+    "name": "Palkia",
+    "legendary": true,
+    "syllables": [
+      "Pal",
+      "kia"
+    ],
+    "types": [
+      "Eau",
+      "Dragon"
+    ],
+    "dex": "Le dragon de l'espace. D'un battement d'ailes, il plie les distances."
+  },
+  {
+    "id": 487,
+    "name": "Giratina",
+    "say_as": "Guiratina",
+    "legendary": true,
+    "syllables": [
+      "Gi",
+      "ra",
+      "ti",
+      "na"
+    ],
+    "types": [
+      "Spectre",
+      "Dragon"
+    ],
+    "dex": "Il vit dans le monde inversé, où tout est à l'envers. Il veille depuis les ombres."
+  },
+  {
+    "id": 791,
+    "name": "Solgaleo",
+    "legendary": true,
+    "syllables": [
+      "Sol",
+      "ga",
+      "le",
+      "o"
+    ],
+    "types": [
+      "Psy",
+      "Acier"
+    ],
+    "dex": "Le lion du soleil. Sa crinière brille si fort qu'on dirait un petit matin."
+  },
+  {
+    "id": 792,
+    "name": "Lunala",
+    "legendary": true,
+    "syllables": [
+      "Lu",
+      "na",
+      "la"
+    ],
+    "types": [
+      "Psy",
+      "Spectre"
+    ],
+    "dex": "La chauve-souris de la lune. Ses ailes ressemblent à un croissant dans la nuit."
+  },
+  {
+    "id": 800,
+    "name": "Necrozma",
+    "say_as": "Nécrozma",
+    "legendary": true,
+    "syllables": [
+      "Ne",
+      "croz",
+      "ma"
+    ],
+    "types": [
+      "Psy"
+    ],
+    "dex": "On dit qu'il a volé la lumière du monde. Qui le calme la rend aux étoiles."
+  }
 ]

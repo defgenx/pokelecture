@@ -1,0 +1,85 @@
+{
+  "id": "ep32",
+  "route": 27,
+  "title": "Terres Nouvelles — Galar et Paldea",
+  "region": "Terres Nouvelles",
+  "story": "Dernière escale : Galar et Paldea, les terres les plus lointaines ! Un lapin de feu tape dans une balle, un petit chat vert sent la menthe, et un crocodile rouge chante affreusement faux — mais avec tout son cœur.",
+  "new_graphemes": [],
+  "syllables": [
+    "flam",
+    "bino",
+    "pou",
+    "ssa",
+    "cha",
+    "ton"
+  ],
+  "words": [
+    {
+      "text": "Flambino",
+      "pokemon": 813,
+      "syllables": [
+        "Flam",
+        "bi",
+        "no"
+      ]
+    },
+    {
+      "text": "Larméléon",
+      "pokemon": 816,
+      "syllables": [
+        "Lar",
+        "mé",
+        "lé",
+        "on"
+      ]
+    },
+    {
+      "text": "Poussacha",
+      "pokemon": 906,
+      "syllables": [
+        "Pou",
+        "ssa",
+        "cha"
+      ]
+    },
+    {
+      "text": "Chochodile",
+      "pokemon": 909,
+      "syllables": [
+        "Cho",
+        "cho",
+        "di",
+        "le"
+      ]
+    },
+    {
+      "text": "Coiffeton",
+      "pokemon": 912,
+      "syllables": [
+        "Coi",
+        "ffe",
+        "ton"
+      ]
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Flambino tape la balle.",
+      "pokemon": 813
+    },
+    {
+      "text": "Chochodile chante bien.",
+      "pokemon": 909
+    },
+    {
+      "text": "Poussacha monte sur l'arbre.",
+      "pokemon": 906
+    }
+  ],
+  "reward_pokemon": 906,
+  "boss": {
+    "pokemon": 909,
+    "hp": 3,
+    "taunt": "Chochodile chante à pleine voix ! Couvre sa chanson avec tes mots !"
+  }
+}

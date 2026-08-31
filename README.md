@@ -281,7 +281,9 @@ Quatre onglets, tout agit sur `var/progress.json` immédiatement :
   prime sur la règle globale ; l'étage de la Tour et les records des
   mini-jeux ; et la remise à zéro complète (le prénom et ces réglages sont
   conservés). « Rejouer comme neuf » retire du total les étoiles de l'épisode
-  remis à zéro — elles se regagnent en le rejouant, jamais en double.
+  remis à zéro **et ses Pokémon quittent le Pokédex** (sauf si un autre
+  épisode terminé ou la Tour les justifie) — tout se regagne en rejouant,
+  jamais en double. Les **vies en combat** se règlent ici aussi.
 
 Comme le studio voix, la page n'a **aucune authentification** : en public,
 mets un `auth_basic` devant.
@@ -393,9 +395,43 @@ ensuite**, et le Champion en toute fin de parcours.
 | 🏆 | *tout* | **Le Champion** · Trophée du Champion | **Mew** |
 
 Les routes 19–24 sont **les Îles Lointaines**, sur le thème de l'évolution :
-les Pokémon attrapés au début de l'aventure ont grandi avec le lecteur. La
-carte de l'accueil est découpée en trois régions (Lecturia, Îles, Ligue) et la
-prochaine étape brille en rouge.
+les Pokémon attrapés au début de l'aventure ont grandi avec le lecteur.
+
+### Les régions et la carte du monde
+
+Chaque épisode déclare sa **région** (`"region": "Forêt Émeraude"`) : Forêt
+Émeraude, Colline Azur, Grotte Violette, Volcan Rougeoyant, Côte Saphir,
+Vallée Arc-en-ciel, Îles du Levant, Îles du Couchant, Plateau de la Ligue —
+puis, après le Champion, **Terres Nouvelles** et **Failles Ultra**. La liste
+de l'accueil est groupée par région, et le bouton **🗺️ Carte** ouvre la carte
+du monde : une carte par région, ses épisodes en sentier de Poké Balls
+(colorée = terminé, dorée qui pulse = prochaine étape, grise = verrouillé).
+
+### Après le Champion : Terres Nouvelles et Failles Ultra
+
+Du contenu de **consolidation** (aucun nouveau son : tout l'inventaire CP est
+déjà là) organisé **par jeu Pokémon** — les starters de Hoenn/Sinnoh,
+Unys/Alola et Galar/Paldea (Poussifeu, Gobou, Tiplouf, Moustillon, Brindibou,
+Flamiaou, Flambino, Poussacha, Chochodile…) — puis trois **Failles Ultra**,
+des combats légendaires doubles : Dialga **et** Palkia, Lunala **et**
+Solgaleo, Giratina **et** Necrozma entrent au Pokédex.
+
+### Perdre existe : les vies en combat
+
+Chaque syllabe fausse en combat coûte un cœur (❤️ ×3 par défaut). À zéro :
+**DÉFAITE** — l'allié tombe, et l'épisode recommence du début (l'étage, pour
+la Tour). Les erreurs comptent quand même pour la répétition espacée.
+Configurable dans l'admin : illimitées (l'ancien mode sans enjeu) ou 2 à 5
+vies. Et au dernier point de vie d'une arène, le boss **GIGAMAX** : le sprite
+devient géant pour le dernier mot.
+
+### Les exercices, plus vivants
+
+Les écrans d'entraînement empruntent aux meilleures apps du genre : **pips de
+progression** (des Poké Balls qui se remplissent : on voit ce qui reste),
+**combo 🔥** de bonnes réponses d'affilée avec mini-feu d'artifice tous les
+trois, et le tempo des réponses a été resserré (le mot confirmé remplace le
+« Bravo » parlé).
 
 ### Difficulté progressive, alignée CP
 
@@ -451,14 +487,23 @@ jeux chronométrés, chacun avec **un record enregistré à battre** — nouveau
 record = feux d'artifice. Deux sont de la pure récompense, deux sont de la
 lecture déguisée :
 
-- **🃏 Memory Pokémon** : six paires de ses propres captures, le record est le
-  temps.
-- **🌿 La chasse** : 45 secondes, les Pokémon surgissent des hautes herbes de
-  plus en plus vite.
+- **⚒️ L'atelier des mots** : le mécanisme du combat en course contre la
+  montre — reconstruire un maximum de mots en 90 secondes (alimente la
+  répétition espacée).
 - **📖 Lis et attrape** : lire le mot, toucher la bonne image, 60 secondes —
   chaque réponse alimente la répétition espacée.
 - **👂 L'oreille fine** : entendre la syllabe, la toucher parmi quatre,
   60 secondes — pareil.
+- **❓ Pokémon mystère** : une silhouette de son propre Pokédex, quatre noms
+  écrits — lire les noms de Pokémon, le fantasme du jeu distillé.
+- **🔤 Les paires mot-image** : un memory où une carte sur deux est le mot
+  ÉCRIT et l'autre son image — lire pour apparier, le record est le temps.
+- **🃏 Memory Pokémon** : six paires de ses propres captures, le record est le
+  temps.
+- **🌿 La chasse** : 45 secondes, les Pokémon surgissent des hautes herbes de
+  plus en plus vite.
+
+Les records se gèrent dans l'admin (effacer un record, ou tous).
 
 Le matériel vient de `GET /api/arcade` (tout ce qui a été appris), les records
 vivent dans la sauvegarde (`POST /api/records`).

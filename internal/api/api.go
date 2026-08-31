@@ -88,6 +88,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /api/admin/pokedex/{id}", s.handleAdminPokedex)
 	mux.HandleFunc("POST /api/admin/settings", s.handleAdminSettings)
 	mux.HandleFunc("POST /api/admin/episodes/{id}/stars", s.handleAdminEpisodeStars)
+	mux.HandleFunc("POST /api/admin/records/reset", s.handleAdminRecordsReset)
 
 	// Must sit in front of the file server so a recording can shadow the
 	// generated file behind the same URL.
@@ -108,6 +109,7 @@ type episodeView struct {
 	ID        string   `json:"id"`
 	Route     int      `json:"route"`
 	Title     string   `json:"title"`
+	Region    string   `json:"region"`
 	Unlocked  bool     `json:"unlocked"`
 	Stars     int      `json:"stars"`
 	Done      int      `json:"done"`
@@ -166,6 +168,7 @@ func (s *Server) state() stateView {
 			ID:        ep.ID,
 			Route:     ep.Route,
 			Title:     ep.Title,
+			Region:    ep.Region,
 			Unlocked:  unlocked || st.Settings.FreePlay,
 			Stars:     stat.BestStars,
 			Done:      stat.Completions,

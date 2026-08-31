@@ -2,6 +2,7 @@
   "id": "ep01",
   "route": 1,
   "title": "Route 1 — les premiers sons",
+  "region": "Forêt Émeraude",
   "story": "Bienvenue à Lecturia ! Le professeur te confie un Pokédex magique : chaque son que tu apprends fait apparaître un Pokémon. Dès aujourd'hui, tu vas lire ton premier nom de Pokémon tout seul. Attention, quelque chose bouge dans les hautes herbes...",
   "new_graphemes": [
     "a",

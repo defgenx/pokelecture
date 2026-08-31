@@ -1,0 +1,80 @@
+{
+  "id": "ep31",
+  "route": 26,
+  "title": "Terres Nouvelles — Unys et Alola",
+  "region": "Terres Nouvelles",
+  "story": "Deuxième escale : Unys, puis les îles d'Alola ! Une loutre lance sa coquille, un cochon de feu renifle ton sac, et dans le palmier, une chouette toute ronde te regarde en penchant la tête.",
+  "new_graphemes": [],
+  "syllables": [
+    "mous",
+    "tillon",
+    "kui",
+    "brin",
+    "miaou",
+    "quin"
+  ],
+  "words": [
+    {
+      "text": "Moustillon",
+      "pokemon": 501,
+      "syllables": [
+        "Mous",
+        "tillon"
+      ]
+    },
+    {
+      "text": "Gruikui",
+      "pokemon": 498,
+      "syllables": [
+        "Grui",
+        "kui"
+      ]
+    },
+    {
+      "text": "Brindibou",
+      "pokemon": 722,
+      "syllables": [
+        "Brin",
+        "di",
+        "bou"
+      ]
+    },
+    {
+      "text": "Flamiaou",
+      "pokemon": 725,
+      "syllables": [
+        "Fla",
+        "miaou"
+      ]
+    },
+    {
+      "text": "Otaquin",
+      "pokemon": 728,
+      "syllables": [
+        "O",
+        "ta",
+        "quin"
+      ]
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Moustillon lance la coquille.",
+      "pokemon": 501
+    },
+    {
+      "text": "Flamiaou bouge la queue.",
+      "pokemon": 725
+    },
+    {
+      "text": "Brindibou vole le soir.",
+      "pokemon": 722
+    }
+  ],
+  "reward_pokemon": 722,
+  "boss": {
+    "pokemon": 725,
+    "hp": 3,
+    "taunt": "Flamiaou sort ses griffes en ronronnant ! Montre-lui tes mots !"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "ep33",
+  "route": 0,
+  "title": "Faille du Temps — Dialga et Palkia",
+  "region": "Failles Ultra",
+  "story": "Une déchirure s'ouvre dans le ciel des Terres Nouvelles : une Faille Ultra ! À l'intérieur, le temps et l'espace se mélangent. Deux dragons immenses s'y affrontent depuis toujours : Dialga, maître du temps, et Palkia, maître de l'espace. Calme-les avec tes mots !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 484,
+  "boss": {
+    "pokemon": 483,
+    "hp": 6,
+    "taunt": "Dialga fait trembler le temps ! Chaque mot lu le calme un peu. Vas-y !"
+  }
+}

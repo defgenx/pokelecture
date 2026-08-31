@@ -56,7 +56,14 @@ type Settings struct {
 	// EpisodeStars overrides MinStars for specific episodes: the stars THAT
 	// episode must have earned before the following one unlocks.
 	EpisodeStars map[string]int `json:"episode_stars,omitempty"`
+	// BattleLives is how many wrong taps a battle forgives before it is lost
+	// and the episode restarts: -1 = unlimited, otherwise 2–5. The zero value
+	// means "never configured" and is migrated to the default at Open().
+	BattleLives int `json:"battle_lives,omitempty"`
 }
+
+// DefaultBattleLives is the battle heart count on a fresh (or pre-lives) save.
+const DefaultBattleLives = 3
 
 // MinStarsFor is the threshold in force for one episode: its own override if
 // set, the global policy otherwise.
@@ -110,6 +117,7 @@ func Open(path string, name string) (*Store, error) {
 		Name:     name,
 		Episodes: map[string]EpisodeStat{},
 		Items:    map[string]Item{},
+		Settings: Settings{BattleLives: DefaultBattleLives},
 	}}
 
 	b, err := os.ReadFile(path)
@@ -133,6 +141,11 @@ func Open(path string, name string) (*Store, error) {
 	}
 	if s.state.Items == nil {
 		s.state.Items = map[string]Item{}
+	}
+
+	// A save from before the lives system (or a fresh one) gets the default.
+	if s.state.Settings.BattleLives == 0 {
+		s.state.Settings.BattleLives = DefaultBattleLives
 	}
 
 	// Persist right away rather than waiting for the next Save(): the name is
@@ -315,11 +328,25 @@ func (s *Store) Record(game string, score int, lowerBetter bool) bool {
 
 // UpdateSettings replaces the global progression policy. The per-episode
 // overrides are managed by SetEpisodeStars and survive this call.
-func (s *Store) UpdateSettings(minStars int, freePlay bool) {
+func (s *Store) UpdateSettings(minStars int, freePlay bool, battleLives int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.state.Settings.MinStars = max(0, min(3, minStars))
 	s.state.Settings.FreePlay = freePlay
+	if battleLives == -1 || (battleLives >= 2 && battleLives <= 5) {
+		s.state.Settings.BattleLives = battleLives
+	}
+}
+
+// ResetRecords wipes one mini-game's best score, or all of them ("").
+func (s *Store) ResetRecords(game string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if game == "" {
+		s.state.Records = map[string]int{}
+		return
+	}
+	delete(s.state.Records, game)
 }
 
 // SetEpisodeStars sets (0–3) or clears (negative) one episode's own star

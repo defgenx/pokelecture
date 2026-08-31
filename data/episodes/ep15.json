@@ -2,21 +2,89 @@
   "id": "ep15",
   "route": 15,
   "title": "Route 15 — les sons in et ain",
+  "region": "Côte Saphir",
   "story": "Route 15, dans la forêt de sapins. Le son in sort par le nez, et il sait se déguiser : a-i-n fait le même son, comme dans main ! Écoute... clic, clac ! Un Pokémon aux bras coupants s'entraîne depuis le matin.",
-  "new_graphemes": ["in", "ain"],
-  "syllables": ["bin", "din", "fin", "lin", "min", "pin", "tin", "vin", "bain", "main", "pain"],
+  "new_graphemes": [
+    "in",
+    "ain"
+  ],
+  "syllables": [
+    "bin",
+    "din",
+    "fin",
+    "lin",
+    "min",
+    "pin",
+    "tin",
+    "vin",
+    "bain",
+    "main",
+    "pain"
+  ],
   "words": [
-    {"text": "Insécateur", "pokemon": 123, "syllables": ["In", "sé", "ca", "teur"]},
-    {"text": "Insecte", "icon": "bug", "syllables": ["In", "sec", "te"]},
-    {"text": "Matin", "emoji": "🌅", "syllables": ["Ma", "tin"]},
-    {"text": "Lapin", "emoji": "🐰", "syllables": ["La", "pin"]},
-    {"text": "Main", "emoji": "✋", "syllables": ["Main"]},
-    {"text": "Train", "emoji": "🚂", "syllables": ["Train"]}
+    {
+      "text": "Insécateur",
+      "pokemon": 123,
+      "syllables": [
+        "In",
+        "sé",
+        "ca",
+        "teur"
+      ]
+    },
+    {
+      "text": "Insecte",
+      "icon": "bug",
+      "syllables": [
+        "In",
+        "sec",
+        "te"
+      ]
+    },
+    {
+      "text": "Matin",
+      "emoji": "🌅",
+      "syllables": [
+        "Ma",
+        "tin"
+      ]
+    },
+    {
+      "text": "Lapin",
+      "emoji": "🐰",
+      "syllables": [
+        "La",
+        "pin"
+      ]
+    },
+    {
+      "text": "Main",
+      "emoji": "✋",
+      "syllables": [
+        "Main"
+      ]
+    },
+    {
+      "text": "Train",
+      "emoji": "🚂",
+      "syllables": [
+        "Train"
+      ]
+    }
   ],
   "sentences": [
-    {"text": "Insécateur coupe le sapin.", "pokemon": 123},
-    {"text": "Le lapin saute le matin.", "emoji": "🐰"},
-    {"text": "Rattata monte sur le train.", "pokemon": 19}
+    {
+      "text": "Insécateur coupe le sapin.",
+      "pokemon": 123
+    },
+    {
+      "text": "Le lapin saute le matin.",
+      "emoji": "🐰"
+    },
+    {
+      "text": "Rattata monte sur le train.",
+      "pokemon": 19
+    }
   ],
   "reward_pokemon": 123,
   "boss": {

@@ -151,9 +151,12 @@ var Badges = map[string]bool{
 // Episode is one ~12 minute session: a declaration of content, not a script.
 // The playable activity list is generated from it by BuildSession.
 type Episode struct {
-	ID           string     `json:"id"`
-	Route        int        `json:"route"`
-	Title        string     `json:"title"`
+	ID    string `json:"id"`
+	Route int    `json:"route"`
+	Title string `json:"title"`
+	// Region groups episodes on the world map ("Forêt Émeraude", "Îles du
+	// Levant"…). Purely presentational; the play order stays the file order.
+	Region       string     `json:"region"`
 	Story        string     `json:"story"`
 	NewGraphemes []string   `json:"new_graphemes"`
 	Syllables    []string   `json:"syllables"`
@@ -324,6 +327,11 @@ func Load(dir string) (*Curriculum, error) {
 
 	if len(c.Episodes) == 0 {
 		return nil, fmt.Errorf("curriculum: no episode found in %s/episodes", dir)
+	}
+	for i := range c.Episodes {
+		if c.Episodes[i].Region == "" {
+			c.Episodes[i].Region = "Lecturia"
+		}
 	}
 	return c, nil
 }

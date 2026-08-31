@@ -2,13 +2,17 @@
   "id": "ep21b",
   "route": 0,
   "title": "Arène du Tonnerre — Raikou",
+  "region": "Îles du Levant",
   "story": "Un orage éclate sur les îles. Entre deux éclairs bondit un tigre légendaire, la crinière pleine de foudre : Raikou ! C'est l'heure du septième badge. Il ne veut pas de nouveaux sons : il veut voir tout ce que tu sais lire. En garde !",
   "new_graphemes": [],
   "syllables": [],
   "words": [],
   "sentences": [],
   "legendary": true,
-  "badge": {"id": "tonnerre", "name": "Badge Tonnerre"},
+  "badge": {
+    "id": "tonnerre",
+    "name": "Badge Tonnerre"
+  },
   "reward_pokemon": 243,
   "boss": {
     "pokemon": 243,

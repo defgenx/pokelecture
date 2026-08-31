@@ -1,0 +1,18 @@
+{
+  "id": "ep34",
+  "route": 0,
+  "title": "Faille du Soleil — Solgaleo et Lunala",
+  "region": "Failles Ultra",
+  "story": "Une deuxième Faille Ultra s'ouvre, baignée de lumière. Le soleil et la lune s'y croisent : Solgaleo, le lion du soleil, et Lunala, la chauve-souris de la lune. Lis tes mots du lever au coucher du soleil !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 791,
+  "boss": {
+    "pokemon": 792,
+    "hp": 6,
+    "taunt": "Lunala déploie ses ailes de lune ! La nuit tombe. Lis pour rallumer le soleil !"
+  }
+}

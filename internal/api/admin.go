@@ -153,11 +153,37 @@ func (s *Server) handleAdminReset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAdminEpisodeReset(w http.ResponseWriter, r *http.Request) {
-	if _, ok := s.cur.Episode(r.PathValue("id")); !ok {
+	ep, ok := s.cur.Episode(r.PathValue("id"))
+	if !ok {
 		http.Error(w, "épisode inconnu", http.StatusNotFound)
 		return
 	}
-	s.store.ResetEpisode(r.PathValue("id"))
+	s.store.ResetEpisode(ep.ID)
+
+	// The episode's catches leave with it — unless another still-completed
+	// episode (or a cleared tower floor) justifies them. Its stars already
+	// left the total in ResetEpisode; badges derive from completion and
+	// revert on their own.
+	st := s.store.Snapshot()
+	keep := map[int]bool{}
+	for i := range s.cur.Episodes {
+		other := &s.cur.Episodes[i]
+		if other.ID != ep.ID && st.Episodes[other.ID].Completions > 0 {
+			for _, id := range other.CatchablePokemon() {
+				keep[id] = true
+			}
+		}
+	}
+	for i, id := range s.cur.TowerLadder {
+		if st.TowerFloor >= 2*(i+1) {
+			keep[id] = true
+		}
+	}
+	for _, id := range ep.CatchablePokemon() {
+		if !keep[id] {
+			s.store.Uncatch(id)
+		}
+	}
 	s.adminDone(w)
 }
 
@@ -206,14 +232,31 @@ func (s *Server) handleAdminPokedex(w http.ResponseWriter, r *http.Request) {
 // episode needs before the next one unlocks, or free play (all unlocked).
 func (s *Server) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		MinStars int  `json:"min_stars"`
-		FreePlay bool `json:"free_play"`
+		MinStars    int  `json:"min_stars"`
+		FreePlay    bool `json:"free_play"`
+		BattleLives int  `json:"battle_lives"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.MinStars < 0 || req.MinStars > 3 {
+	err := json.NewDecoder(r.Body).Decode(&req)
+	livesOK := req.BattleLives == -1 || (req.BattleLives >= 2 && req.BattleLives <= 5)
+	if err != nil || req.MinStars < 0 || req.MinStars > 3 || !livesOK {
 		http.Error(w, "réglages invalides", http.StatusBadRequest)
 		return
 	}
-	s.store.UpdateSettings(req.MinStars, req.FreePlay)
+	s.store.UpdateSettings(req.MinStars, req.FreePlay, req.BattleLives)
+	s.adminDone(w)
+}
+
+// handleAdminRecordsReset wipes one mini-game record ({"game": "memory"}) or
+// all of them ({"game": ""}).
+func (s *Server) handleAdminRecordsReset(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Game string `json:"game"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "requête invalide", http.StatusBadRequest)
+		return
+	}
+	s.store.ResetRecords(req.Game)
 	s.adminDone(w)
 }
 

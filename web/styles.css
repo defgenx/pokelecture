@@ -1116,6 +1116,123 @@ body::after {
   box-shadow: 0 0 0 2px #49c46a, var(--lift-1);
 }
 
+/* ------------------------------------------------------------ world map --- */
+/* One themed card per region, its episodes as a winding trail of waypoints. */
+
+.world { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; }
+.region {
+  border-radius: var(--r-lg);
+  box-shadow: var(--lift-2);
+  padding: 16px 18px 22px;
+  overflow: hidden;
+}
+.region.theme-0 { background: linear-gradient(135deg, #d7f5d0, #a5dd82); }
+.region.theme-1 { background: linear-gradient(135deg, #d5e8ff, #9fc4f2); }
+.region.theme-2 { background: linear-gradient(135deg, #e8dcf5, #c3a8e8); }
+.region.theme-3 { background: linear-gradient(135deg, #ffe1c9, #f3a878); }
+.region.theme-4 { background: linear-gradient(135deg, #d1f0f5, #8fd4e2); }
+.region.theme-5 { background: linear-gradient(135deg, #fff0c9, #f5d67a); }
+.region-name {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: .4px;
+  color: rgba(20, 24, 34, .75);
+  margin-bottom: 12px;
+}
+.trail { display: flex; flex-wrap: wrap; gap: 18px 22px; align-items: flex-start; }
+.waypoint {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+/* Alternate heights: the trail winds instead of sitting on a ruler. */
+.trail .waypoint:nth-child(even) { margin-top: 22px; }
+.waypoint .pokeball { --size: 46px; }
+.waypoint.locked .pokeball { filter: grayscale(1) opacity(.45); }
+.waypoint.locked .wp-reward { filter: brightness(0) opacity(.25); }
+.waypoint.next .pokeball { animation: next-pulse 1.8s ease-in-out infinite; border-radius: 50%; }
+.waypoint small {
+  font-size: 12px; font-weight: 800;
+  color: rgba(20, 24, 34, .65);
+  background: rgba(255, 255, 255, .65);
+  border-radius: 7px; padding: 1px 7px;
+}
+.wp-reward {
+  position: absolute;
+  top: -14px; right: -10px;
+  width: 34px; height: 34px; object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(20, 24, 34, .25));
+}
+
+/* -------------------------------------------------------- battle stakes --- */
+
+.hearts {
+  font-size: 22px;
+  letter-spacing: 2px;
+  filter: drop-shadow(0 2px 2px rgba(20, 24, 34, .2));
+  min-height: 26px;
+}
+.shout.defeat {
+  color: #cfd4dd;
+  text-shadow:
+    -3px -3px 0 #3f4552, 3px -3px 0 #3f4552,
+    -3px 3px 0 #3f4552, 3px 3px 0 #3f4552,
+    0 8px 0 #23262e;
+}
+/* GIGAMAX: the independent `scale` property, so hit/lunge keyframes (which own
+   transform) do not wipe the growth out. */
+.arena img.giga {
+  scale: 1.65;
+  transform-origin: bottom center;
+  transition: scale .8s cubic-bezier(.2, 1.3, .4, 1);
+  filter: drop-shadow(0 10px 24px rgba(238, 21, 21, .55)) saturate(1.3);
+}
+
+/* ------------------------------------------------------- drill dynamics --- */
+
+.meter-row { display: flex; align-items: center; gap: 14px; min-height: 30px; }
+.pips { display: flex; gap: 6px; }
+.pips i {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: rgba(26, 29, 36, .16);
+  transition: background .2s ease, transform .2s ease;
+}
+.pips i.got {
+  background: linear-gradient(180deg, var(--red) 0 47%, #23262e 47% 53%, #fff 53% 100%);
+  transform: scale(1.1);
+}
+.chip.combo {
+  background: linear-gradient(180deg, #ffe17a, var(--yellow));
+  color: #3a2c00;
+  border: none;
+}
+.chip.combo.pop { animation: pop .35s ease; }
+
+/* -------------------------------------------------- new arcade pieces ----- */
+
+.silhouette {
+  width: min(38vw, 190px); height: min(38vw, 190px); object-fit: contain;
+  filter: brightness(0) opacity(.85);
+  transition: filter .5s ease;
+}
+.silhouette.revealed { filter: none; }
+.tile.name-tile { font-size: clamp(22px, 4.6vw, 34px); min-height: 96px; }
+.memory-card .pair-word {
+  font-size: clamp(16px, 3.4vw, 24px);
+  font-weight: 800;
+  color: var(--blue);
+  padding: 4px;
+  overflow-wrap: anywhere;
+}
+.memory-card .pair-emoji { font-size: 44px; }
+
 /* ---------------------------------------------------------------- shiny --- */
 /* A shiny is the same artwork wearing different colours — the games' own
    recolor trick, done here with a hue rotation so it costs zero assets. */

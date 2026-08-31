@@ -1,0 +1,18 @@
+{
+  "id": "ep35",
+  "route": 0,
+  "title": "Faille Obscure — Giratina et Necrozma",
+  "region": "Failles Ultra",
+  "story": "La dernière Faille Ultra est toute noire. C'est le monde inversé, la maison de Giratina... et au fond brille Necrozma, le Pokémon qui a volé la lumière. C'est le tout dernier défi de l'aventure. Rends la lumière au monde, lecteur !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 800,
+  "boss": {
+    "pokemon": 487,
+    "hp": 6,
+    "taunt": "Giratina surgit du monde inversé ! Lis sans trembler, la lumière revient !"
+  }
+}

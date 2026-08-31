@@ -192,6 +192,21 @@ function confetti(n = 44) {
 const PRAISE = ['Bravo !', 'Super !', 'Génial !', 'Bien joué !'];
 let praiseIdx = 0;
 
+// One picto per region on the maps; regions come from the episode data.
+const REGION_EMOJI = {
+  'Forêt Émeraude': '🌲',
+  'Colline Azur': '⛰️',
+  'Grotte Violette': '🦇',
+  'Volcan Rougeoyant': '🌋',
+  'Côte Saphir': '🌊',
+  'Vallée Arc-en-ciel': '🌈',
+  'Îles du Levant': '🏝',
+  'Îles du Couchant': '🌅',
+  'Plateau de la Ligue': '🏆',
+  'Terres Nouvelles': '🧭',
+  'Failles Ultra': '🌌',
+};
+
 // say() prefers the recorded phrase — from the session payload, or from the
 // state payload outside a session (home, Pokédex) — and degrades to the browser
 // voice when the audio track has not been generated yet.
@@ -305,6 +320,7 @@ const App = {
             el('button', { class: 'btn btn-huge', onclick: () => Session.start(s.next_episode) },
               next && next.done > 0 ? 'REJOUER ▶' : 'JOUER ▶'),
             el('div', { class: 'home-row' },
+              el('button', { class: 'btn btn-ghost', onclick: () => this.worldMap() }, '🗺️ Carte'),
               el('button', { class: 'btn btn-ghost', onclick: () => this.pokedex() },
                 `📘 Pokédex ${caught}/${s.pokedex.length}`),
               s.tower ? el('button', { class: 'btn btn-ghost', onclick: () => Session.start('tour') },
@@ -320,24 +336,64 @@ const App = {
     );
   },
 
-  // The world map: routes grouped into their regions, with the next episode
-  // glowing — a five-year-old should always see where the adventure continues.
+  // The route list: episodes grouped by their data-declared region, with the
+  // next episode glowing — a five-year-old should always see where the
+  // adventure continues.
   map(s) {
-    const sections = [
-      { title: '🌱 Région de Lecturia', match: (e) => e.route >= 1 && e.route <= 18 || (e.legendary && e.badge && ['glace', 'orage', 'psy', 'volcan', 'maree', 'arcenciel'].includes(e.badge)) },
-      { title: '🏝 Îles Lointaines', match: (e) => (e.route >= 19 && e.route <= 24) || (e.badge && ['tonnerre', 'ciel'].includes(e.badge)) },
-      { title: '🏆 Ligue Pokémon', match: () => true },
-    ];
     const box = el('div', { class: 'routes', style: 'margin-top:26px' });
-    const used = new Set();
-    sections.forEach((sec) => {
-      const eps = s.episodes.filter((e) => !used.has(e.id) && sec.match(e));
-      if (!eps.length) return;
-      eps.forEach((e) => used.add(e.id));
-      box.append(el('div', { class: 'map-section' }, sec.title));
-      eps.forEach((e) => box.append(this.routeCard(e, e.id === s.next_episode)));
+    let current = null;
+    s.episodes.forEach((e) => {
+      if (e.region !== current) {
+        current = e.region;
+        box.append(el('div', { class: 'map-section' }, `${REGION_EMOJI[e.region] || '📍'} ${e.region}`));
+      }
+      box.append(this.routeCard(e, e.id === s.next_episode));
     });
     return box;
+  },
+
+  /* The world map: one themed card per region, its episodes as a winding trail
+     of Poké Ball waypoints — cleared in colour, the next one glowing, the rest
+     waiting in grey. Tap a waypoint to set off. */
+  worldMap() {
+    Voice.stop();
+    const s = this.state;
+    const regions = [];
+    s.episodes.forEach((e) => {
+      let r = regions[regions.length - 1];
+      if (!r || r.name !== e.region) {
+        r = { name: e.region, eps: [] };
+        regions.push(r);
+      }
+      r.eps.push(e);
+    });
+
+    this.screen(
+      this.topbar(el('button', { class: 'btn-icon', onclick: () => this.home() }, '✕')),
+      el('div', { class: 'page' },
+        el('h2', { style: 'text-align:center' }, '🗺️ Carte du monde'),
+        el('div', { class: 'world' },
+          regions.map((r, ri) => el('div', { class: `region theme-${ri % 6}` },
+            el('div', { class: 'region-name' }, `${REGION_EMOJI[r.name] || '📍'} ${r.name}`),
+            el('div', { class: 'trail' },
+              r.eps.map((e) => {
+                const isNext = e.id === s.next_episode;
+                const node = el('button', {
+                  class: `waypoint ${e.done > 0 ? 'done' : ''} ${isNext ? 'next' : ''} ${e.unlocked ? '' : 'locked'}`,
+                  title: e.title,
+                  onclick: () => (e.unlocked ? Session.start(e.id) : say('Termine la route précédente !')),
+                },
+                  pokeball('pokeball-sm'),
+                  el('img', { class: 'wp-reward', src: `sprites/art/${e.reward_pokemon}.png`, alt: '', loading: 'lazy' }),
+                  el('small', {}, e.legendary ? '★' : e.route || '★'),
+                );
+                return node;
+              }),
+            ),
+          )),
+        ),
+      ),
+    );
   },
 
   // The badge case: every arena badge and the champion trophy, greyed out while
@@ -417,6 +473,42 @@ const App = {
   },
 };
 
+/* progressPips shows "where am I in this exercise" as little filling Poké
+   Balls — borrowed from every mobile learning app worth copying. */
+function progressPips(i, n) {
+  const box = el('div', { class: 'pips' });
+  for (let k = 0; k < n; k++) box.append(el('i', { class: k < i ? 'got' : '' }));
+  return box;
+}
+
+/* The combo streak: consecutive right answers heat up a 🔥 counter, with a
+   little celebration every third — momentum made visible, the cheapest and
+   most effective trick in the genre. */
+function comboChip() {
+  const chip = el('span', { class: 'chip combo', hidden: true });
+  return chip;
+}
+
+function comboUp(chip) {
+  Session.combo++;
+  if (chip) {
+    chip.hidden = Session.combo < 2;
+    chip.textContent = `🔥 x${Session.combo}`;
+    chip.classList.remove('pop');
+    void chip.offsetWidth;
+    chip.classList.add('pop');
+  }
+  if (Session.combo > 0 && Session.combo % 3 === 0) {
+    confetti(20);
+    burst('🔥');
+  }
+}
+
+function comboBreak(chip) {
+  Session.combo = 0;
+  if (chip) chip.hidden = true;
+}
+
 /* Renders a word as coloured syllables, each one tappable to hear it alone —
    the help affordance for a word he stalls on. */
 function syllableWord(syllables, fallbackText, audio) {
@@ -441,6 +533,7 @@ const Session = {
   wrong: 0,
   shiny: false, // this session's reward was rolled shiny
   fightStats: null, // {perfect, rounds} from the last combat, for tower scoring
+  combo: 0, // consecutive correct answers across the drill screens
 
   async start(id) {
     Voice.stop();
@@ -457,6 +550,7 @@ const Session = {
     this.wrong = 0;
     this.shiny = false;
     this.fightStats = null;
+    this.combo = 0;
     WakeLock.on();
     this.render();
   },
@@ -728,10 +822,14 @@ function renderQuiz(a, body, done) {
   let idx = 0;
   const head = el('h2', {}, a.title);
   const hint = el('p', { class: 'hint' }, a.instruction);
+  const combo = comboChip();
+  const pipsBox = el('div', { class: 'pips-holder' });
   const stage = el('div', { class: 'act', style: 'width:100%' });
-  body.append(head, hint, stage);
+  body.append(head, hint, el('div', { class: 'meter-row' }, pipsBox, combo), stage);
 
   const step = () => {
+    pipsBox.innerHTML = '';
+    pipsBox.append(progressPips(idx, a.items.length));
     if (idx >= a.items.length) return done();
     const item = a.items[idx];
     // Icon counts as a picture too — without it, an icon-only word ("Morsure")
@@ -767,7 +865,7 @@ function renderQuiz(a, body, done) {
         if (c.correct) {
           [...grid.children].forEach((t) => { if (t !== tile) t.classList.add('dim'); t.disabled = true; });
           tile.classList.add('good');
-          if (!answered) Session.record(item.id, true);
+          if (!answered) { Session.record(item.id, true); comboUp(combo); }
           answered = true;
           if (replay) replay.disabled = false;
           if (isText) {
@@ -784,7 +882,7 @@ function renderQuiz(a, body, done) {
           idx++;
           step();
         } else {
-          if (!answered) { Session.record(item.id, false); answered = true; }
+          if (!answered) { Session.record(item.id, false); answered = true; comboBreak(combo); }
           tile.classList.add('bad');
           tile.disabled = true;
           setTimeout(() => tile.classList.remove('bad'), 450);
@@ -808,10 +906,14 @@ function renderPhrase(a, body, done) {
   let idx = 0;
   const head = el('h2', {}, a.title);
   const hint = el('p', { class: 'hint' }, a.instruction);
+  const combo = comboChip();
+  const pipsBox = el('div', { class: 'pips-holder' });
   const stage = el('div', { class: 'act', style: 'width:100%' });
-  body.append(head, hint, stage);
+  body.append(head, hint, el('div', { class: 'meter-row' }, pipsBox, combo), stage);
 
   const step = () => {
+    pipsBox.innerHTML = '';
+    pipsBox.append(progressPips(idx, a.items.length));
     if (idx >= a.items.length) return done();
     const item = a.items[idx];
     const words = item.syllables; // the sentence's words, in order
@@ -854,6 +956,7 @@ function renderPhrase(a, body, done) {
 
     const complete = async () => {
       Session.record(item.id, !missed);
+      if (missed) comboBreak(combo); else comboUp(combo);
       stage.innerHTML = '';
       mystery.innerHTML = '';
       mystery.append(face);
@@ -883,6 +986,19 @@ function renderCombat(a, body, done) {
   let hp = f.hp;
   let round = 0;
   let perfect = 0; // rounds built without a single wrong syllable
+  let over = false; // defeat cuts the fight short
+
+  // Battle hearts: every wrong tap costs one, at zero the battle is LOST and
+  // the episode restarts — reading mistakes have stakes now, like the games.
+  // -1 from the settings means unlimited (the old behaviour).
+  const maxLives = (Session.data && Session.data.lives) || -1;
+  let lives = maxLives;
+  const heartsEl = el('div', { class: 'hearts' });
+  const paintHearts = () => {
+    if (maxLives === -1) return;
+    heartsEl.textContent = '❤️'.repeat(lives) + '🖤'.repeat(maxLives - lives);
+  };
+  paintHearts();
 
   const foeImg = el('img', { src: `sprites/art/${f.pokemon}.png`, alt: '' });
   const allyImg = companion('ally');
@@ -907,6 +1023,7 @@ function renderCombat(a, body, done) {
     ),
     el('div', { class: 'mine' },
       el('div', { class: 'platform' }, allyImg),
+      heartsEl,
     ),
   );
   paintHP();
@@ -981,14 +1098,23 @@ function renderCombat(a, body, done) {
           missed = true;
           b.classList.add('bad');
           setTimeout(() => b.classList.remove('bad'), 450);
-          // The foe counterattacks: a lunge and a thud, drama without damage —
-          // losing is not a thing that can happen to a five-year-old here.
+          // The foe counterattacks — and with the lives setting on, it hurts.
           Sfx.thud();
           foeImg.classList.remove('lunge');
           void foeImg.offsetWidth;
           foeImg.classList.add('lunge');
           allyImg.classList.add('flinch');
           setTimeout(() => allyImg.classList.remove('flinch'), 500);
+          if (maxLives !== -1) {
+            lives--;
+            paintHearts();
+            burst('💔');
+            if (lives <= 0) {
+              over = true;
+              Session.record(item.id, false);
+              return defeat();
+            }
+          }
           await Voice.play(item.audio, item.prompt);
         }
       });
@@ -1001,6 +1127,7 @@ function renderCombat(a, body, done) {
   };
 
   const attack = async (item, missed) => {
+    if (over) return;
     Session.record(item.id, !missed);
     stage.innerHTML = '';
     if (missed) {
@@ -1021,9 +1148,51 @@ function renderCombat(a, body, done) {
     paintHP();
     await sleep(450);
     foeImg.classList.remove('hit');
+    // The arena finale: on its last hit point a legendary boss GIGAMAXES —
+    // the sprite grows huge for the last word. Pure staging, maximum drama.
+    if (f.legendary && hp === 1 && round + 1 < f.rounds.length && !foeImg.classList.contains('giga')) {
+      foeImg.classList.add('giga');
+      stage.innerHTML = '';
+      stage.append(el('div', { class: 'shout crit' }, 'GIGAMAX !'));
+      Sfx.legendary();
+      burst('🌟');
+      await sleep(1100);
+    }
     round++;
     paintScore();
     step();
+  };
+
+  // Out of hearts: the battle is lost. Mistakes still feed the review boxes,
+  // then the whole episode restarts — losing exists, and it costs the run.
+  const defeat = async () => {
+    WakeLock.off();
+    allyImg.classList.add('faint');
+    foeImg.classList.remove('lunge');
+    stage.innerHTML = '';
+    stage.append(el('div', { class: 'shout defeat' }, 'DÉFAITE...'));
+    Sfx.faint();
+    try {
+      await api(`api/session/${Session.data.episode_id}/result`, {
+        items: Session.answers, stars: 0, completed: false,
+      });
+    } catch (_) {}
+    await say('Oh non, tu as perdu ! Entraîne-toi et reviens plus fort !');
+    const isTower = !!Session.data.tower;
+    App.screen(
+      App.topbar(),
+      el('div', { class: 'page' },
+        el('div', { class: 'act' },
+          el('h2', {}, '💔 Défaite...'),
+          el('p', { class: 'hint' }, isTower
+            ? 'La Tour t\'a battu cette fois. Réessaie l\'étage !'
+            : 'Le combat est perdu : l\'épisode recommence du début. Tu vas y arriver !'),
+          el('button', { class: 'btn btn-huge', onclick: () => Session.start(Session.data.episode_id) },
+            isTower ? 'RÉESSAYER L\'ÉTAGE 🔄' : 'RECOMMENCER L\'ÉPISODE 🔄'),
+          el('button', { class: 'btn btn-ghost', onclick: () => App.home() }, 'CARTE 🗺️'),
+        ),
+      ),
+    );
   };
 
   const victory = async () => {
@@ -1109,10 +1278,13 @@ const Arcade = {
   items: [],       // spaced-repetition answers collected by comprehension games
 
   GAMES: [
-    { id: 'memory', icon: '🃏', name: 'Memory Pokémon', desc: 'Retrouve les paires le plus vite possible.', lower: true, unit: 's' },
-    { id: 'chasse', icon: '🌿', name: 'La chasse', desc: 'Attrape les Pokémon avant qu\'ils se cachent. 45 secondes !', lower: false, unit: '' },
+    { id: 'atelier', icon: '⚒️', name: 'L\'atelier des mots', desc: 'Reconstruis un maximum de mots, comme au combat ! 90 secondes.', lower: false, unit: '' },
     { id: 'lecture', icon: '📖', name: 'Lis et attrape', desc: 'Lis le mot, touche la bonne image. 60 secondes !', lower: false, unit: '' },
     { id: 'oreille', icon: '👂', name: 'L\'oreille fine', desc: 'Écoute la syllabe, touche-la. 60 secondes !', lower: false, unit: '' },
+    { id: 'mystere', icon: '❓', name: 'Pokémon mystère', desc: 'Qui est cette ombre ? Lis les noms pour le découvrir. 60 secondes !', lower: false, unit: '' },
+    { id: 'paires', icon: '🔤', name: 'Les paires mot-image', desc: 'Associe chaque mot écrit à son image, le plus vite possible.', lower: true, unit: 's' },
+    { id: 'memory', icon: '🃏', name: 'Memory Pokémon', desc: 'Retrouve les paires le plus vite possible.', lower: true, unit: 's' },
+    { id: 'chasse', icon: '🌿', name: 'La chasse', desc: 'Attrape les Pokémon avant qu\'ils se cachent. 45 secondes !', lower: false, unit: '' },
   ],
 
   stop() {
@@ -1379,6 +1551,199 @@ const Arcade = {
     const bar = this.countdown(60, () => this.gameOver('lecture', score, false, '📖 Lis et attrape'));
     this.screen('📖 Lis et attrape', 'Lis le mot, touche la bonne image !', scoreChip, bar, stage);
     ask();
+  },
+
+  /* L'atelier des mots : the battle's build-the-word mechanic as a race —
+     as many words as possible in 90 s, each one rebuilt from its syllables
+     plus one trap. The exercise the fight made fun, distilled. */
+  atelier() {
+    const words = (this.pool.words || []).filter((w) => (w.syllables || []).length >= 2);
+    const syllables = (this.pool.syllables || []).map((s) => s.text);
+    if (words.length < 3) return this.hub();
+    this.items = [];
+    let score = 0;
+
+    const scoreChip = el('span', { class: 'chip' }, 'Mots : 0');
+    const stage = el('div', { class: 'act', style: 'width:100%' });
+
+    const ask = () => {
+      const target = words[Math.floor(Math.random() * words.length)];
+      let pos = 0;
+      let missed = false;
+      stage.innerHTML = '';
+
+      const slots = el('div', { class: 'slot-row' });
+      target.syllables.forEach(() => slots.append(el('div', { class: 'slot' }, '')));
+
+      const inWord = new Set(target.syllables.map((x) => x.toLowerCase()));
+      const traps = syllables.filter((x) => !inWord.has(x.toLowerCase()));
+      const tray = [...target.syllables];
+      if (traps.length) tray.push(traps[Math.floor(Math.random() * traps.length)]);
+      tray.sort(() => Math.random() - 0.5);
+
+      const trayEl = el('div', { class: 'tray' });
+      tray.forEach((syl) => {
+        const b = el('button', { class: 'syl-btn' }, syl);
+        b.addEventListener('click', () => {
+          if (b.classList.contains('used')) return;
+          if (syl === target.syllables[pos]) {
+            Sfx.tap();
+            const slot = slots.children[pos];
+            slot.textContent = syl;
+            slot.classList.add('filled');
+            b.classList.add('used');
+            pos++;
+            if (pos === target.syllables.length) {
+              this.items.push({ id: `mot:${target.text}`, correct: !missed });
+              score++;
+              scoreChip.textContent = `Mots : ${score}`;
+              Sfx.crit();
+              burst('⚒️');
+              Voice.play(target.audio, target.text);
+              setTimeout(ask, 500);
+            }
+          } else {
+            missed = true;
+            b.classList.add('bad');
+            setTimeout(() => b.classList.remove('bad'), 450);
+            Sfx.wrong();
+          }
+        });
+        trayEl.append(b);
+      });
+
+      stage.append(el('div', { class: 'word arcade-word' }, target.text), slots, trayEl);
+    };
+
+    const bar = this.countdown(90, () => this.gameOver('atelier', score, false, '⚒️ L\'atelier des mots'));
+    this.screen('⚒️ L\'atelier des mots', 'Remets les syllabes dans l\'ordre, encore et encore !', scoreChip, bar, stage);
+    ask();
+  },
+
+  /* Pokémon mystère : a silhouette from his own Pokédex, four written names —
+     reading Pokémon names is the whole game's fantasy, distilled. */
+  mystere() {
+    const caught = ((App.state && App.state.pokedex) || []).filter((p) => p.caught);
+    if (caught.length < 4) return this.hub();
+    this.items = [];
+    let score = 0;
+
+    const scoreChip = el('span', { class: 'chip' }, 'Points : 0');
+    const stage = el('div', { class: 'act', style: 'width:100%' });
+
+    const ask = () => {
+      const shuffled = [...caught].sort(() => Math.random() - 0.5);
+      const target = shuffled[0];
+      const options = shuffled.slice(0, 4).sort(() => Math.random() - 0.5);
+
+      stage.innerHTML = '';
+      const shadow = el('img', { class: 'silhouette', src: target.sprite, alt: '' });
+      const grid = el('div', { class: 'grid four name-grid' });
+      let answered = false;
+      options.forEach((p) => {
+        const tile = el('button', { class: 'tile name-tile' }, p.name);
+        tile.addEventListener('click', () => {
+          if (tile.disabled) return;
+          if (p === target) {
+            if (!answered) score++;
+            answered = true;
+            scoreChip.textContent = `Points : ${score}`;
+            tile.classList.add('good');
+            shadow.classList.add('revealed');
+            Sfx.catch_();
+            burst('✨');
+            Voice.play(target.name_audio, target.name);
+            setTimeout(ask, 900);
+          } else {
+            answered = true;
+            tile.classList.add('bad');
+            tile.disabled = true;
+            Sfx.wrong();
+          }
+        });
+        grid.append(tile);
+      });
+      stage.append(shadow, grid);
+    };
+
+    const bar = this.countdown(60, () => this.gameOver('mystere', score, false, '❓ Pokémon mystère'));
+    this.screen('❓ Pokémon mystère', 'Qui est cette ombre ? Lis les noms !', scoreChip, bar, stage);
+    ask();
+  },
+
+  /* Les paires mot-image : memory where one card of each pair is the WRITTEN
+     word and the other its picture — reading as the matching key. */
+  paires() {
+    const words = (this.pool.words || []).filter((w) => w.sprite || w.emoji || w.icon);
+    if (words.length < 4) return this.hub();
+    this.items = [];
+    const seen = new Set();
+    const picks = [];
+    for (const w of [...words].sort(() => Math.random() - 0.5)) {
+      if (picks.length === 4) break;
+      if (!seen.has(faceKey(w))) { seen.add(faceKey(w)); picks.push(w); }
+    }
+    // One word card + one picture card per pick, all shuffled together.
+    const cards = [];
+    picks.forEach((w) => {
+      cards.push({ key: w.text, kind: 'text', w });
+      cards.push({ key: w.text, kind: 'pic', w });
+    });
+    cards.sort(() => Math.random() - 0.5);
+
+    let open = null;
+    let lock = false;
+    let matched = 0;
+    let seconds = 0;
+
+    const clock = el('span', { class: 'chip' }, '⏱ 0s');
+    const grid = el('div', { class: 'memory-grid big' });
+    cards.forEach((c) => {
+      const front = c.kind === 'text'
+        ? el('span', { class: 'pair-word' }, c.w.text)
+        : c.w.sprite ? el('img', { src: c.w.sprite, alt: '' })
+        : c.w.icon ? iconEl(c.w.icon)
+        : el('span', { class: 'pair-emoji' }, c.w.emoji);
+      const card = el('button', { class: 'memory-card' },
+        el('span', { class: 'face back' }, pokeball('pokeball-sm')),
+        el('span', { class: 'face front' }, front),
+      );
+      card.dataset.key = c.key;
+      card.dataset.kind = c.kind;
+      card.addEventListener('click', () => {
+        if (lock || card.classList.contains('up') || card.classList.contains('won')) return;
+        Sfx.flip();
+        card.classList.add('up');
+        if (!open) { open = card; return; }
+        // A pair is a word card AND its picture card — two identical kinds don't match.
+        if (open.dataset.key === card.dataset.key && open.dataset.kind !== card.dataset.kind) {
+          open.classList.add('won');
+          card.classList.add('won');
+          open = null;
+          matched++;
+          this.items.push({ id: `mot:${c.key}`, correct: true });
+          Sfx.correct();
+          burst('✨');
+          const w = picks.find((x) => x.text === c.key);
+          if (w) Voice.play(w.audio, w.text);
+          if (matched === picks.length) this.gameOver('paires', seconds, true, '🔤 Les paires mot-image');
+        } else {
+          lock = true;
+          const other = open;
+          open = null;
+          Sfx.wrong();
+          setTimeout(() => {
+            other.classList.remove('up');
+            card.classList.remove('up');
+            lock = false;
+          }, 800);
+        }
+      });
+      grid.append(card);
+    });
+
+    this.screen('🔤 Les paires mot-image', 'Associe chaque mot à son image !', clock, grid);
+    this.timer = setInterval(() => { seconds++; clock.textContent = `⏱ ${seconds}s`; }, 1000);
   },
 
   /* L'oreille fine : hear the syllable, tap it — 60 s of phoneme work. */

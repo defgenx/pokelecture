@@ -2,20 +2,78 @@
   "id": "ep16",
   "route": 16,
   "title": "Route 16 — gn et ille",
+  "region": "Vallée Arc-en-ciel",
   "story": "Route 16, sur la montagne. Le g et le n se donnent la main pour faire gn, comme dans montagne. Et i-l-l chante ille, comme dans papillon ! Te souviens-tu de Chenipan ? Aujourd'hui, il va se transformer...",
-  "new_graphemes": ["gn", "ill"],
-  "syllables": ["gna", "gne", "gni", "gno", "gnon", "ille", "bille", "fille", "quille"],
+  "new_graphemes": [
+    "gn",
+    "ill"
+  ],
+  "syllables": [
+    "gna",
+    "gne",
+    "gni",
+    "gno",
+    "gnon",
+    "ille",
+    "bille",
+    "fille",
+    "quille"
+  ],
   "words": [
-    {"text": "Montagne", "emoji": "⛰️", "syllables": ["Mon", "ta", "gne"]},
-    {"text": "Papillon", "emoji": "🦋", "syllables": ["Pa", "pillon"]},
-    {"text": "Torgnole", "icon": "impact", "syllables": ["Tor", "gnole"]},
-    {"text": "Grognon", "emoji": "😠", "syllables": ["Gro", "gnon"]},
-    {"text": "Fille", "emoji": "👧", "syllables": ["Fille"]}
+    {
+      "text": "Montagne",
+      "emoji": "⛰️",
+      "syllables": [
+        "Mon",
+        "ta",
+        "gne"
+      ]
+    },
+    {
+      "text": "Papillon",
+      "emoji": "🦋",
+      "syllables": [
+        "Pa",
+        "pillon"
+      ]
+    },
+    {
+      "text": "Torgnole",
+      "icon": "impact",
+      "syllables": [
+        "Tor",
+        "gnole"
+      ]
+    },
+    {
+      "text": "Grognon",
+      "emoji": "😠",
+      "syllables": [
+        "Gro",
+        "gnon"
+      ]
+    },
+    {
+      "text": "Fille",
+      "emoji": "👧",
+      "syllables": [
+        "Fille"
+      ]
+    }
   ],
   "sentences": [
-    {"text": "Le papillon vole sur la montagne.", "emoji": "🦋"},
-    {"text": "La fille regarde le papillon.", "emoji": "👧"},
-    {"text": "Chenipan évite la torgnole.", "pokemon": 10}
+    {
+      "text": "Le papillon vole sur la montagne.",
+      "emoji": "🦋"
+    },
+    {
+      "text": "La fille regarde le papillon.",
+      "emoji": "👧"
+    },
+    {
+      "text": "Chenipan évite la torgnole.",
+      "pokemon": 10
+    }
   ],
   "reward_pokemon": 12,
   "boss": {

@@ -15,11 +15,12 @@ import (
 )
 
 type arcadeWord struct {
-	Text   string `json:"text"`
-	Audio  string `json:"audio"`
-	Emoji  string `json:"emoji,omitempty"`
-	Sprite string `json:"sprite,omitempty"`
-	Icon   string `json:"icon,omitempty"`
+	Text      string   `json:"text"`
+	Audio     string   `json:"audio"`
+	Emoji     string   `json:"emoji,omitempty"`
+	Sprite    string   `json:"sprite,omitempty"`
+	Icon      string   `json:"icon,omitempty"`
+	Syllables []string `json:"syllables"`
 }
 
 type arcadeSyllable struct {
@@ -45,11 +46,12 @@ func (s *Server) handleArcade(w http.ResponseWriter, r *http.Request) {
 	for _, wd := range words {
 		pic := wd.Pic()
 		out.Words = append(out.Words, arcadeWord{
-			Text:   wd.Text,
-			Audio:  speech.URL(wd.Spoken(), speech.StyleWord),
-			Emoji:  pic.Emoji,
-			Sprite: pic.Sprite,
-			Icon:   pic.Icon,
+			Text:      wd.Text,
+			Audio:     speech.URL(wd.Spoken(), speech.StyleWord),
+			Emoji:     pic.Emoji,
+			Sprite:    pic.Sprite,
+			Icon:      pic.Icon,
+			Syllables: wd.Syllables,
 		})
 	}
 	for _, syl := range syllables {
@@ -75,6 +77,7 @@ type recordRequest struct {
 
 var arcadeGames = map[string]bool{
 	"memory": true, "chasse": true, "lecture": true, "oreille": true,
+	"atelier": true, "mystere": true, "paires": true,
 }
 
 func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request) {

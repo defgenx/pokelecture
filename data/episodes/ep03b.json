@@ -2,13 +2,17 @@
   "id": "ep03b",
   "route": 0,
   "title": "Arène de Glace — Artikodin",
+  "region": "Forêt Émeraude",
   "story": "Le ciel devient tout blanc. Un immense oiseau bleu descend des montagnes : Artikodin, un Pokémon légendaire ! Il ne veut pas de nouveaux sons aujourd'hui. Il veut voir si tu te souviens de TOUT ce que tu as appris. Prêt ?",
   "new_graphemes": [],
   "syllables": [],
   "words": [],
   "sentences": [],
   "legendary": true,
-  "badge": {"id": "glace", "name": "Badge Glace"},
+  "badge": {
+    "id": "glace",
+    "name": "Badge Glace"
+  },
   "reward_pokemon": 144,
   "boss": {
     "pokemon": 144,

@@ -2,19 +2,71 @@
   "id": "ep12",
   "route": 12,
   "title": "Route 12 — z et les lettres doubles",
+  "region": "Volcan Rougeoyant",
   "story": "Route 12 : le z qui zigzague comme une abeille, et les lettres doubles rr et nn, deux lettres collées pour un seul son. Dans le jardin, un Pokémon avec un bulbe sur le dos fait la sieste au soleil. Tu vas lire son nom en entier : Bul-bi-zarre !",
-  "new_graphemes": ["z", "rr", "nn"],
-  "syllables": ["za", "zé", "zi", "zo", "zu", "zou", "zan", "zon"],
+  "new_graphemes": [
+    "z",
+    "rr",
+    "nn"
+  ],
+  "syllables": [
+    "za",
+    "zé",
+    "zi",
+    "zo",
+    "zu",
+    "zou",
+    "zan",
+    "zon"
+  ],
   "words": [
-    {"text": "Bulbizarre", "pokemon": 1, "syllables": ["Bul", "bi", "zarre"]},
-    {"text": "Tonnerre", "icon": "bolt", "syllables": ["To", "nnerre"]},
-    {"text": "Gazon", "emoji": "🌿", "syllables": ["Ga", "zon"]},
-    {"text": "Zéro", "emoji": "0️⃣", "syllables": ["Zé", "ro"]}
+    {
+      "text": "Bulbizarre",
+      "pokemon": 1,
+      "syllables": [
+        "Bul",
+        "bi",
+        "zarre"
+      ]
+    },
+    {
+      "text": "Tonnerre",
+      "icon": "bolt",
+      "syllables": [
+        "To",
+        "nnerre"
+      ]
+    },
+    {
+      "text": "Gazon",
+      "emoji": "🌿",
+      "syllables": [
+        "Ga",
+        "zon"
+      ]
+    },
+    {
+      "text": "Zéro",
+      "emoji": "0️⃣",
+      "syllables": [
+        "Zé",
+        "ro"
+      ]
+    }
   ],
   "sentences": [
-    {"text": "Pikachu utilise Tonnerre.", "pokemon": 25},
-    {"text": "Bulbizarre roule sur le gazon.", "pokemon": 1},
-    {"text": "Magicarpe saute vite.", "pokemon": 129}
+    {
+      "text": "Pikachu utilise Tonnerre.",
+      "pokemon": 25
+    },
+    {
+      "text": "Bulbizarre roule sur le gazon.",
+      "pokemon": 1
+    },
+    {
+      "text": "Magicarpe saute vite.",
+      "pokemon": 129
+    }
   ],
   "reward_pokemon": 1,
   "boss": {

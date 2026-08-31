@@ -109,14 +109,18 @@ type Activity struct {
 
 // Session is the generated playable episode.
 type Session struct {
-	EpisodeID     string            `json:"episode_id"`
-	Route         int               `json:"route"`
-	Title         string            `json:"title"`
-	RewardPokemon int               `json:"reward_pokemon"`
-	Legendary     bool              `json:"legendary,omitempty"`
-	Tower         *TowerInfo        `json:"tower,omitempty"`
-	UI            map[string]string `json:"ui"`
-	Activities    []Activity        `json:"activities"`
+	EpisodeID     string     `json:"episode_id"`
+	Route         int        `json:"route"`
+	Title         string     `json:"title"`
+	RewardPokemon int        `json:"reward_pokemon"`
+	Legendary     bool       `json:"legendary,omitempty"`
+	Tower         *TowerInfo `json:"tower,omitempty"`
+	// Lives is the battle heart count from the parental settings: -1 means
+	// unlimited, otherwise each wrong tap in a fight costs one and running out
+	// loses the battle.
+	Lives      int               `json:"lives"`
+	UI         map[string]string `json:"ui"`
+	Activities []Activity        `json:"activities"`
 }
 
 // UIAudio returns the recorded chrome phrases so praise and feedback come out
@@ -233,6 +237,7 @@ func (c *Curriculum) BuildSession(ep *Episode, st progress.State, now time.Time)
 		Title:         ep.Title,
 		RewardPokemon: ep.RewardPokemon,
 		Legendary:     ep.Legendary,
+		Lives:         st.Settings.BattleLives,
 		UI:            UIAudio(),
 	}
 
@@ -900,6 +905,7 @@ func (c *Curriculum) BuildTower(st progress.State, floor int, now time.Time) (Se
 		EpisodeID: TowerID,
 		Title:     fmt.Sprintf("Tour de Combat — Étage %d", floor),
 		Legendary: true,
+		Lives:     st.Settings.BattleLives,
 		UI:        UIAudio(),
 		Tower:     &TowerInfo{Floor: floor, Rounds: len(f.Rounds), Need: TowerNeed(len(f.Rounds))},
 		Activities: []Activity{{
@@ -1033,6 +1039,7 @@ var UIPhrases = []string{
 	"Coup critique !",
 	"Combat parfait !",
 	"Tu as gagné le combat !",
+	"Oh non, tu as perdu ! Entraîne-toi et reviens plus fort !",
 	"Tu as attrapé un nouveau Pokémon !",
 	"Ouah ! Un Pokémon chromatique !",
 	"Tu es le Champion de la Ligue !",

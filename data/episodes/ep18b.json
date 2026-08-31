@@ -2,13 +2,17 @@
   "id": "ep18b",
   "route": 0,
   "title": "Arène Arc-en-ciel — Ho-Oh",
+  "region": "Vallée Arc-en-ciel",
   "story": "Un arc-en-ciel traverse le ciel tout entier. Au bout de l'arc-en-ciel vole un oiseau aux plumes dorées : Ho-Oh ! Gagne le Badge Arc-en-ciel — puis cap sur les Îles Lointaines, où t'attendent les deux derniers badges avant la Ligue Pokémon.",
   "new_graphemes": [],
   "syllables": [],
   "words": [],
   "sentences": [],
   "legendary": true,
-  "badge": {"id": "arcenciel", "name": "Badge Arc-en-ciel"},
+  "badge": {
+    "id": "arcenciel",
+    "name": "Badge Arc-en-ciel"
+  },
   "reward_pokemon": 250,
   "boss": {
     "pokemon": 250,

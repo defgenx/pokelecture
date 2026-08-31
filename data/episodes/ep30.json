@@ -1,0 +1,71 @@
+{
+  "id": "ep30",
+  "route": 25,
+  "title": "Terres Nouvelles — Hoenn et Sinnoh",
+  "region": "Terres Nouvelles",
+  "story": "Champion, un bateau t'emmène vers les Terres Nouvelles ! Ici vivent les Pokémon des autres régions du monde. Pas de nouveau son aujourd'hui : tu sais tout lire. Sur la plage de Hoenn, trois petits nouveaux te regardent... et un pingouin bleu arrive de Sinnoh !",
+  "new_graphemes": [],
+  "syllables": [
+    "pou",
+    "ssi",
+    "gou",
+    "bou",
+    "ti",
+    "plouf"
+  ],
+  "words": [
+    {
+      "text": "Poussifeu",
+      "pokemon": 255,
+      "syllables": [
+        "Pou",
+        "ssi",
+        "feu"
+      ]
+    },
+    {
+      "text": "Gobou",
+      "pokemon": 258,
+      "syllables": [
+        "Go",
+        "bou"
+      ]
+    },
+    {
+      "text": "Arcko",
+      "pokemon": 252,
+      "syllables": [
+        "Ar",
+        "cko"
+      ]
+    },
+    {
+      "text": "Tiplouf",
+      "pokemon": 393,
+      "syllables": [
+        "Ti",
+        "plouf"
+      ]
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Poussifeu saute sur le rocher.",
+      "pokemon": 255
+    },
+    {
+      "text": "Gobou adore la pluie.",
+      "pokemon": 258
+    },
+    {
+      "text": "Tiplouf nage vite.",
+      "pokemon": 393
+    }
+  ],
+  "reward_pokemon": 393,
+  "boss": {
+    "pokemon": 255,
+    "hp": 3,
+    "taunt": "Poussifeu gonfle ses plumes ! Il veut tester le Champion. Lis !"
+  }
+}
