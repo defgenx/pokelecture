@@ -114,6 +114,7 @@ type Session struct {
 	Title         string            `json:"title"`
 	RewardPokemon int               `json:"reward_pokemon"`
 	Legendary     bool              `json:"legendary,omitempty"`
+	Tower         *TowerInfo        `json:"tower,omitempty"`
 	UI            map[string]string `json:"ui"`
 	Activities    []Activity        `json:"activities"`
 }
@@ -326,8 +327,8 @@ func (c *Curriculum) BuildSession(ep *Episode, st progress.State, now time.Time)
 	if items := phraseItems(sentences, diff.choices); len(items) > 0 {
 		s.Activities = append(s.Activities, Activity{
 			Kind:        "phrase",
-			Title:       "Lis la phrase",
-			Instruction: "Lis la phrase, puis touche l'image qui va avec.",
+			Title:       "Construis la phrase",
+			Instruction: "Lis les mots et remets-les dans l'ordre. Surprise à la fin !",
 			Items:       items,
 		})
 	}
@@ -466,7 +467,7 @@ func (c *Curriculum) fusionPairs(syllables []string, known []string) []Pair {
 			Syllable:   syl,
 			LeftAudio:  leftAudio,
 			RightAudio: rightAudio,
-			Audio:      speech.URL(syl, speech.StyleSyllable),
+			Audio:      speech.URL(SpokenSyllable(syl), speech.StyleSyllable),
 		})
 		if len(out) == maxFusion {
 			break
@@ -493,7 +494,7 @@ func ecouteItem(syl string, allSyllables []string, nChoices int) Item {
 	it := Item{
 		ID:     "syl:" + syl,
 		Prompt: syl,
-		Audio:  speech.URL(syl, speech.StyleSyllable),
+		Audio:  speech.URL(SpokenSyllable(syl), speech.StyleSyllable),
 	}
 	distract := pickDistractors(syl, allSyllables, nChoices-1)
 	labels := append([]string{syl}, distract...)
@@ -501,7 +502,7 @@ func ecouteItem(syl string, allSyllables []string, nChoices int) Item {
 	for _, l := range labels {
 		it.Choices = append(it.Choices, Choice{
 			Label:   l,
-			Audio:   speech.URL(l, speech.StyleSyllable),
+			Audio:   speech.URL(SpokenSyllable(l), speech.StyleSyllable),
 			Correct: l == syl,
 		})
 	}
@@ -567,7 +568,7 @@ func lectureItem(w Word, allWords []Word, nChoices int) Item {
 	// Per-syllable audio makes each coloured chunk of the word tappable, so he
 	// can break a word he stalls on into the pieces he already knows.
 	for _, syl := range w.Syllables {
-		it.SyllableAudio = append(it.SyllableAudio, speech.URL(syl, speech.StyleSyllable))
+		it.SyllableAudio = append(it.SyllableAudio, speech.URL(SpokenSyllable(syl), speech.StyleSyllable))
 	}
 	var others []Word
 	for _, o := range allWords {
@@ -597,35 +598,70 @@ func lectureItem(w Word, allWords []Word, nChoices int) Item {
 	return it
 }
 
+// sentenceWords splits a sentence into its word tiles, punctuation stripped:
+// the tiles the child reads and reorders in the sentence builder.
+func sentenceWords(text string) []string {
+	var out []string
+	for _, tok := range strings.Fields(text) {
+		if w := strings.Trim(tok, ".,!?"); w != "" {
+			out = append(out, w)
+		}
+	}
+	return out
+}
+
+// phraseItems builds the sentence workshop: the sentence's words arrive
+// shuffled and the child rebuilds it in order — the battle-tray mechanic
+// applied to syntax. Each placed word is spoken, the whole sentence is read
+// aloud at the end, and the picture is revealed as confirmation. From the
+// hard tier on, one intruder word from another sentence sneaks into the tray.
 func phraseItems(sentences []Sentence, nChoices int) []Item {
 	if len(sentences) == 0 {
 		return nil
 	}
 	var out []Item
 	for i, s := range sentences {
+		words := sentenceWords(s.Text)
+		if len(words) < 2 {
+			continue
+		}
 		pic := s.Pic()
 		it := Item{
-			ID:     "phrase:" + s.Text,
-			Prompt: s.Text,
-			Emoji:  pic.Emoji,
-			Sprite: pic.Sprite,
-			Icon:   pic.Icon,
-			Audio:  speech.URL(s.Spoken(), speech.StyleWord),
+			ID:        "phrase:" + s.Text,
+			Prompt:    s.Text,
+			Emoji:     pic.Emoji,
+			Sprite:    pic.Sprite,
+			Icon:      pic.Icon,
+			Audio:     speech.URL(s.Spoken(), speech.StyleWord),
+			Syllables: words,
 		}
-		choices := []Choice{{Emoji: pic.Emoji, Sprite: pic.Sprite, Icon: pic.Icon, Correct: true}}
-		seen := map[string]bool{pic.Key(): true}
-		for j, o := range sentences {
-			if j != i && !seen[o.Pic().Key()] {
-				op := o.Pic()
-				seen[op.Key()] = true
-				choices = append(choices, Choice{Emoji: op.Emoji, Sprite: op.Sprite, Icon: op.Icon})
+		for _, w := range words {
+			it.SyllableAudio = append(it.SyllableAudio, speech.URL(w, speech.StyleWord))
+		}
+
+		tray := append([]string(nil), words...)
+		if nChoices >= 4 {
+			inSentence := map[string]bool{}
+			for _, w := range words {
+				inSentence[strings.ToLower(w)] = true
 			}
-			if len(choices) == nChoices {
-				break
+			var intruders []string
+			for j, o := range sentences {
+				if j == i {
+					continue
+				}
+				for _, w := range sentenceWords(o.Text) {
+					if !inSentence[strings.ToLower(w)] {
+						intruders = append(intruders, w)
+					}
+				}
+			}
+			if len(intruders) > 0 {
+				tray = append(tray, intruders[rand.IntN(len(intruders))])
 			}
 		}
-		rand.Shuffle(len(choices), func(a, b int) { choices[a], choices[b] = choices[b], choices[a] })
-		it.Choices = choices
+		rand.Shuffle(len(tray), func(a, b int) { tray[a], tray[b] = tray[b], tray[a] })
+		it.Tray = tray
 		out = append(out, it)
 	}
 	return out
@@ -716,19 +752,70 @@ func (c *Curriculum) reward(id int) *Reward {
 	}
 }
 
+// LearnedPool returns every word and syllable from completed episodes — the
+// material the Tour de Combat and the mini-games draw from. False while no
+// episode is completed yet.
+func (c *Curriculum) LearnedPool(st progress.State) ([]Word, []string, bool) {
+	lastDone := -1
+	for i, ep := range c.Episodes {
+		if st.Episodes[ep.ID].Completions > 0 {
+			lastDone = i
+		}
+	}
+	if lastDone < 0 {
+		return nil, nil, false
+	}
+	p := c.poolUpTo(lastDone)
+	return p.words, p.syllables, true
+}
+
 // TowerID is the virtual episode id of the Tour de Combat. It exists in no
 // JSON file: the session is generated fresh from everything already learned.
 const TowerID = "tour"
 
 // TowerTaunt is spoken at the tower gate; a constant so SpeechTexts records it.
-const TowerTaunt = "Bienvenue à la Tour de Combat ! Lis tous les mots pour gagner !"
+const TowerTaunt = "Bienvenue à la Tour de Combat ! Lis tous les mots pour monter d'un étage !"
 
-// BuildTower generates the endless battle mode: one long fight over words drawn
-// from every completed episode, against a random Pokémon from the Pokédex. It
-// grants no completion and no catch — but every word read feeds the spaced
-// repetition, which makes it pure replayable practice. Returns false while no
-// episode is completed yet.
-func (c *Curriculum) BuildTower(st progress.State, now time.Time) (Session, bool) {
+// TowerInfo describes the floor being attempted: the client shows the target
+// and counts points; the server recomputes the threshold on the result.
+type TowerInfo struct {
+	Floor  int `json:"floor"`
+	Rounds int `json:"rounds"`
+	Need   int `json:"need"`
+}
+
+// towerRounds ramps the fight length with the floor: 4 words on floor 1 up to
+// 8 from floor 9 on — "infinite words", but never an infinite session.
+func towerRounds(floor int) int { return min(4+(floor-1)/2, 8) }
+
+// towerTray ramps the trap syllables per word with the floor.
+func towerTray(floor int) int { return min(1+floor/4, 3) }
+
+// TowerNeed is the points required to clear a floor: every word scores 1, a
+// word built without a single wrong tap scores 2 — so passing means at least
+// half the words read perfectly on the first try.
+func TowerNeed(rounds int) int { return rounds + (rounds+1)/2 }
+
+// TowerRewardFor returns the tower-exclusive Pokémon awarded for clearing a
+// floor: one every second floor, walking the ladder, 0 when there is none.
+func (c *Curriculum) TowerRewardFor(floor int) int {
+	if floor < 2 || floor%2 != 0 {
+		return 0
+	}
+	i := floor/2 - 1
+	if i >= len(c.TowerLadder) {
+		return 0
+	}
+	return c.TowerLadder[i]
+}
+
+// BuildTower generates one floor of the endless battle mode: a fight over words
+// drawn from every completed episode, longer and trickier as the floors climb,
+// against a random Pokémon from the Pokédex. It grants no episode completion —
+// but every word read feeds the spaced repetition, clearing a floor unlocks the
+// next, and every second floor a tower-exclusive Pokémon joins the Pokédex.
+// Returns false while no episode is completed yet.
+func (c *Curriculum) BuildTower(st progress.State, floor int, now time.Time) (Session, bool) {
 	lastDone := -1
 	for i, ep := range c.Episodes {
 		if st.Episodes[ep.ID].Completions > 0 {
@@ -737,6 +824,9 @@ func (c *Curriculum) BuildTower(st progress.State, now time.Time) (Session, bool
 	}
 	if lastDone < 0 {
 		return Session{}, false
+	}
+	if floor < 1 {
+		floor = 1
 	}
 
 	p := c.poolUpTo(lastDone)
@@ -750,8 +840,14 @@ func (c *Curriculum) BuildTower(st progress.State, now time.Time) (Session, bool
 		return Session{}, false
 	}
 	rand.Shuffle(len(words), func(i, j int) { words[i], words[j] = words[j], words[i] })
-	if len(words) > 8 {
-		words = words[:8]
+	// Higher floors prefer longer words; the shuffle above breaks ties.
+	target := 2 + min(floor/3, 2)
+	sortStable(words, func(a, b Word) bool {
+		return abs(len(a.Syllables)-target) < abs(len(b.Syllables)-target)
+	})
+	rounds := towerRounds(floor)
+	if len(words) > rounds {
+		words = words[:rounds]
 	}
 
 	// The opponent is one of his own catches — the tower is a friendly rematch,
@@ -784,7 +880,7 @@ func (c *Curriculum) BuildTower(st progress.State, now time.Time) (Session, bool
 				candidates = append(candidates, s)
 			}
 		}
-		for _, d := range pickDistractors(w.Syllables[0], candidates, 2) {
+		for _, d := range pickDistractors(w.Syllables[0], candidates, towerTray(floor)) {
 			tray = append(tray, d)
 		}
 		rand.Shuffle(len(tray), func(i, j int) { tray[i], tray[j] = tray[j], tray[i] })
@@ -802,16 +898,34 @@ func (c *Curriculum) BuildTower(st progress.State, now time.Time) (Session, bool
 
 	return Session{
 		EpisodeID: TowerID,
-		Title:     "Tour de Combat",
+		Title:     fmt.Sprintf("Tour de Combat — Étage %d", floor),
 		Legendary: true,
 		UI:        UIAudio(),
+		Tower:     &TowerInfo{Floor: floor, Rounds: len(f.Rounds), Need: TowerNeed(len(f.Rounds))},
 		Activities: []Activity{{
 			Kind:        "combat",
-			Title:       "Tour de Combat",
+			Title:       fmt.Sprintf("Étage %d", floor),
 			Instruction: "Remets les syllabes dans l'ordre pour lancer l'attaque.",
 			Fight:       f,
 		}},
 	}, true
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
+
+// sortStable is insertion sort: tiny inputs, and it keeps the shuffle as the
+// tie-breaker, same trick as the review queue.
+func sortStable(w []Word, less func(a, b Word) bool) {
+	for i := 1; i < len(w); i++ {
+		for j := i; j > 0 && less(w[j], w[j-1]); j-- {
+			w[j], w[j-1] = w[j-1], w[j]
+		}
+	}
 }
 
 // SpeechItem is one recording to make: the same text can legitimately need two
@@ -864,7 +978,7 @@ func (c *Curriculum) SpeechTexts() []SpeechItem {
 			add(badgePhrase(*ep.Badge), speech.StyleNormal)
 		}
 		for _, s := range ep.Syllables {
-			add(s, speech.StyleSyllable)
+			add(SpokenSyllable(s), speech.StyleSyllable)
 			if parts, err := Segment(s, known); err == nil {
 				for _, p := range parts {
 					if g, ok := c.Graphemes[p]; ok {
@@ -876,11 +990,14 @@ func (c *Curriculum) SpeechTexts() []SpeechItem {
 		for _, w := range ep.Words {
 			add(w.Spoken(), speech.StyleWord)
 			for _, s := range w.Syllables {
-				add(s, speech.StyleSyllable)
+				add(SpokenSyllable(s), speech.StyleSyllable)
 			}
 		}
 		for _, s := range ep.Sentences {
 			add(s.Spoken(), speech.StyleWord)
+			for _, w := range sentenceWords(s.Text) {
+				add(w, speech.StyleWord)
+			}
 		}
 	}
 	// Graphemes not yet reached by any episode: still recorded so a new episode

@@ -1,0 +1,42 @@
+{
+  "_comment": "Respellings for the SYLLABLE voice only (ce que la voix dit, jamais ce que l'enfant voit). Un chunk nu comme « ny » est épelé lettre à lettre par la synthèse, et un homographe comme « cher » est lu comme le mot /chair/ au lieu du son /ché/ visé. Ajoute une entrée, relance `make content`, c'est corrigé partout.",
+
+  "ny": "ni",
+  "py": "pi",
+  "ty": "ti",
+  "my": "mi",
+
+  "cher": "ché",
+  "ter": "té",
+  "ser": "sé",
+  "per": "pé",
+  "ler": "lé",
+  "nier": "nié",
+  "lier": "lié",
+  "tier": "tié",
+  "gneur": "gneure",
+
+  "nei": "nè",
+  "vei": "vè",
+  "bai": "bè",
+  "fai": "fè",
+  "lai": "lè",
+  "rai": "rè",
+  "sai": "sè",
+  "tai": "tè",
+  "vai": "vè",
+
+  "hui": "huis",
+  "bui": "buis",
+  "cui": "cuit",
+  "nui": "nuit",
+  "pui": "puis",
+  "sui": "suis",
+  "tui": "tui",
+
+  "mmè": "mè",
+  "mme": "me",
+  "nnerre": "nère",
+  "tta": "ta",
+  "ssi": "si"
+}

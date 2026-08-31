@@ -1,0 +1,21 @@
+{
+  "id": "ep24b",
+  "route": 0,
+  "title": "Tour du Ciel — Rayquaza",
+  "story": "Tout en haut de la Tour du Ciel, au-dessus des nuages, vit le gardien des Îles : Rayquaza, le grand dragon vert du ciel. Gagne le huitième et dernier badge, et les portes de la Ligue Pokémon s'ouvriront enfin. Tout ce que tu as appris est là. Respire... et lis !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "badge": {
+    "id": "ciel",
+    "name": "Badge du Ciel"
+  },
+  "reward_pokemon": 384,
+  "boss": {
+    "pokemon": 384,
+    "hp": 6,
+    "taunt": "Rayquaza descend des nuages en spirale ! Le vent hurle. Lis, champion !"
+  }
+}

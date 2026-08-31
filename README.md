@@ -25,6 +25,17 @@ portrait **et** paysage, zones sûres (barre d'état, encoche), pincer-zoomer et
 appui long neutralisés (des doigts de cinq ans touchent partout), et l'écran
 reste allumé pendant une séance (wake lock, en HTTPS).
 
+En **paysage**, la mise en page change vraiment : arène de combat à gauche et
+mots à droite (plus de défilement en plein combat), carte des routes sur deux
+colonnes, actions et vitrine à badges côte à côte, et les très grands corps de
+texte se resserrent sur les écrans courts.
+
+Côté fluidité : l'audio de chaque écran est **préchargé** avant le premier
+geste, et les garde-fous audio sont proportionnés à la ligne — l'ancien
+garde-fou fixe de 9 secondes sur la voix de synthèse était lui-même le blocage
+qu'il était censé éviter (une tablette sans voix française gelait le jeu à
+chaque ligne manquante).
+
 Une seule asymétrie à connaître : l'iPad ne lit pas les enregistrements WebM.
 Le studio voix enregistre désormais en **AAC (.m4a)** quand le navigateur le
 permet (Chrome récent, Safari) — ces enregistrements passent partout. Un vieil
@@ -263,8 +274,11 @@ Quatre onglets, tout agit sur `var/progress.json` immédiatement :
 - **Révisions** : chaque syllabe/mot/phrase avec sa boîte de répétition espacée,
   du plus fragile au plus solide — c'est la liste de ce qui coince vraiment.
 - **Pokédex** : attraper / retirer n'importe quel Pokémon à la main.
-- **Réglages** : renommer l'enfant sans redémarrer, et la remise à zéro
-  complète (le prénom est conservé).
+- **Réglages** : renommer l'enfant sans redémarrer ; **la politique de
+  déblocage** — terminer suffit (défaut), ou exiger ★ / ★★ / ★★★ avant de
+  débloquer la suite, ou tout débloquer (mode libre) ; l'étage de la Tour et
+  les records des mini-jeux ; et la remise à zéro complète (le prénom et ces
+  réglages sont conservés).
 
 Comme le studio voix, la page n'a **aucune authentification** : en public,
 mets un `auth_basic` devant.
@@ -330,7 +344,10 @@ confettis sur une capture, un badge et en fin de séance.
 
 ---
 
-## Épisodes livrés (routes 1 à 18 + la Ligue)
+## Épisodes livrés (routes 1 à 24, 8 badges, puis la Ligue)
+
+Comme dans les vrais jeux : **les huit badges d'abord, le Conseil des 4
+ensuite**, et le Champion en toute fin de parcours.
 
 | Route | Sons | Vocabulaire Pokémon | Récompense |
 |---|---|---|---|
@@ -358,26 +375,24 @@ confettis sur une capture, un badge et en fin de séance.
 | 17 | ph y | Métamorph, Photo, Stylo, Trophée | Ponyta |
 | 18 | ce ci | **Carapuce**, Racine, Cercle, Crabe, Pouce | Carapuce |
 | ★ | *révision de tout* | **Arène Arc-en-ciel** · Badge Arc-en-ciel | **Ho-Oh** |
+| 19 | j | Judo, Pyjama, Jeudi, Journal, Joie | **Jirachi** |
+| 20 | ai ei ê | Baie, Reine, Pêche, Aile, Neige | **Roucarnage** (Roucool a évolué) |
+| 21 | mm pp ll ff | Flammèche, Pomme, Balle, Griffe | **Mackogneur** (Machoc) |
+| ★ | *révision de tout* | **Arène du Tonnerre** · Badge Tonnerre | **Raikou** |
+| 22 | oin ien | Gardien, Pointu, Lointain, Chien, Soin | **Arcanin** (Caninos) |
+| 23 | h ui | Parapluie, Buisson, Ruisseau, Pluie, Huit | **Léviator** (Magicarpe !) |
+| 24 | er | Rocher, Panier, Chanter | **Florizarre** (Bulbizarre) |
+| ★ | *révision de tout* | **Tour du Ciel** · Badge du Ciel | **Rayquaza** |
 | ★ | *Conseil des 4, 1/4* | combat légendaire | **Suicune** |
 | ★ | *Conseil des 4, 2/4* | combat légendaire | **Entei** |
 | ★ | *Conseil des 4, 3/4* | combat légendaire | **Celebi** |
 | ★ | *Conseil des 4, 4/4* | combat légendaire | **Zoroark** |
 | 🏆 | *tout* | **Le Champion** · Trophée du Champion | **Mew** |
 
-### Après la Ligue : les Îles Lointaines (routes 19 à 24)
-
-Le post-game, comme dans les vrais jeux — et le thème est **l'évolution** : les
-Pokémon attrapés au début de l'aventure ont grandi avec le lecteur.
-
-| Île | Sons | Vocabulaire | Récompense |
-|---|---|---|---|
-| 1 | j | Judo, Pyjama, Jeudi, Journal, Joie | **Jirachi** |
-| 2 | ai ei ê | Baie, Reine, Pêche, Aile, Neige | **Roucarnage** (Roucool a évolué) |
-| 3 | mm pp ll ff | Flammèche, Pomme, Balle, Griffe | **Mackogneur** (Machoc) |
-| 4 | oin ien | Gardien, Pointu, Lointain, Chien, Soin | **Arcanin** (Caninos) |
-| 5 | h ui | Parapluie, Buisson, Ruisseau, Pluie, Huit | **Léviator** (Magicarpe !) |
-| 6 | er | Rocher, Panier, Chanter | **Florizarre** (Bulbizarre) |
-| ★ | *tout* | **Tour du Ciel** · Badge du Ciel | **Rayquaza** |
+Les routes 19–24 sont **les Îles Lointaines**, sur le thème de l'évolution :
+les Pokémon attrapés au début de l'aventure ont grandi avec le lecteur. La
+carte de l'accueil est découpée en trois régions (Lecturia, Îles, Ligue) et la
+prochaine étape brille en rouge.
 
 ### Difficulté progressive, alignée CP
 
@@ -404,11 +419,16 @@ réguliers, phrases sujet-verbe-complément, aucune notion de CE1 (pas de
   sur 6 d'attraper la version chromatique (recolorée) de sa récompense — une
   seconde collection, plus lente, par-dessus le Pokédex. Compteur ✨ sur
   l'accueil.
-- **🗼 Tour de Combat** : dès le premier épisode terminé, un mode combat sans
-  fin sur l'accueil — huit mots tirés de *tout* ce qui a été appris, contre un
-  Pokémon de son propre Pokédex, avec bouton REVANCHE. Aucune progression n'y
-  est accordée, mais chaque mot lu alimente la répétition espacée : c'est de
-  l'entraînement déguisé en défi.
+- **🗼 Tour de Combat, par étages** : dès le premier épisode terminé. Chaque
+  étage est un combat noté — 2 points par mot construit sans une seule erreur,
+  1 sinon — et il faut **au moins la moitié des mots du premier coup** pour
+  monter. Les combats s'allongent (4 → 8 mots) et se piègent (1 → 3 syllabes
+  intruses) avec les étages, les mots deviennent plus longs, et **un étage sur
+  deux libère un Pokémon exclusif à la Tour** : vingt Pokémon (Psykokwak,
+  Onix, Ectoplasma, Lokhlass… jusqu'à Dracolosse à l'étage 40) qu'on ne peut
+  obtenir nulle part ailleurs. On ne passe pas à l'étage suivant tant que
+  l'étage courant n'est pas réussi ; chaque mot lu alimente la répétition
+  espacée.
 - **Rotation des rediffusions** : quand tout est terminé, JOUER relance
   l'épisode le moins récemment joué.
 
@@ -421,17 +441,43 @@ n'apparaissent que comme récompenses, dont le nom est lu **à** l'enfant.
 Quand tout est terminé, « JOUER » relance l'épisode **le moins récemment
 joué** : la fin du parcours devient une rotation de révision, pas une impasse.
 
-## Jeux bonus
+## Mini-jeux — chronos, scores et records
 
-Après chaque séance terminée, un bouton **🎮 JEU BONUS** propose au hasard un
-des deux mini-jeux — zéro lecture, pure récompense, construits avec **ses
-propres captures** (remplir le Pokédex enrichit les jeux) :
+Un coin **🎮 Mini-jeux** sur l'accueil (et à la fin de chaque séance) : quatre
+jeux chronométrés, chacun avec **un record enregistré à battre** — nouveau
+record = feux d'artifice. Deux sont de la pure récompense, deux sont de la
+lecture déguisée :
 
-- **Memory Pokémon** : trois paires de ses Pokémon, face cachée.
-- **Attrape-les !** : les Pokémon surgissent des hautes herbes, il faut les
-  toucher avant qu'ils se cachent.
+- **🃏 Memory Pokémon** : six paires de ses propres captures, le record est le
+  temps.
+- **🌿 La chasse** : 45 secondes, les Pokémon surgissent des hautes herbes de
+  plus en plus vite.
+- **📖 Lis et attrape** : lire le mot, toucher la bonne image, 60 secondes —
+  chaque réponse alimente la répétition espacée.
+- **👂 L'oreille fine** : entendre la syllabe, la toucher parmi quatre,
+  60 secondes — pareil.
 
-Rien n'y est enregistré comme progression : c'est le dessert, pas le repas.
+Le matériel vient de `GET /api/arcade` (tout ce qui a été appris), les records
+vivent dans la sauvegarde (`POST /api/records`).
+
+### La phrase, réécrite : « Construis la phrase »
+
+L'ancien exercice « lis la phrase, touche l'image » ne parlait pas et
+n'accrochait pas. Il est remplacé par **le mécanisme du combat appliqué à la
+syntaxe** : les mots de la phrase arrivent mélangés, l'enfant les lit et les
+remet dans l'ordre. Chaque mot posé est **prononcé**, la phrase complète est
+**lue à voix haute** à la fin, et l'image-mystère (une Poké Ball) s'ouvre en
+confirmation du sens. Au palier difficile, un mot intrus d'une autre phrase se
+glisse dans le tas.
+
+### La prononciation des syllabes : `data/pronunciation.json`
+
+La synthèse épelle un morceau nu comme « ny » et lit « cher » comme le mot
+/chair/ au lieu du son /ché/. Le fichier `data/pronunciation.json` donne la
+respélisation **pour la voix seulement** (l'enfant voit toujours la vraie
+graphie), appliquée à la génération **et** au serveur — les deux restent
+d'accord. Une syllabe sonne mal ? Ajoute une ligne, `make content`, terminé.
+Et pour une prononciation parfaite : le studio voix, ta voix gagne toujours.
 
 ---
 

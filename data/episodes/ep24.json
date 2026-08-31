@@ -1,26 +1,74 @@
 {
   "id": "ep24",
-  "route": 19,
-  "title": "Île 1 — le son j",
-  "story": "Champion, une nouvelle aventure commence : les Îles Lointaines ! Sur la première île, une étoile filante traverse le ciel de la nuit. On dit que si tu lis ton vœu à voix haute, un Pokémon très rare l'entendra... Voici le son j, comme dans jungle.",
-  "new_graphemes": ["j"],
-  "syllables": ["ja", "ji", "jo", "ju", "jé", "jou", "jan", "jon"],
+  "route": 24,
+  "title": "Île 6 — er qui fait é",
+  "story": "La dernière île ! À la fin d'un mot, le e et le r ensemble font le son é : rocher, panier, chanter. Dans le grand jardin de l'île, une fleur géante s'ouvre au soleil... Bulbizarre a fini de grandir. Après cette île, la Tour du Ciel t'attend !",
+  "new_graphemes": [
+    "er"
+  ],
+  "syllables": [
+    "cher",
+    "ter",
+    "ser",
+    "per",
+    "ler",
+    "nier",
+    "lier",
+    "tier"
+  ],
   "words": [
-    {"text": "Judo", "emoji": "🥋", "syllables": ["Ju", "do"]},
-    {"text": "Pyjama", "emoji": "🛌", "syllables": ["Py", "ja", "ma"]},
-    {"text": "Jeudi", "emoji": "📅", "syllables": ["Jeu", "di"]},
-    {"text": "Journal", "emoji": "📰", "syllables": ["Jour", "nal"]},
-    {"text": "Joie", "emoji": "😄", "syllables": ["Joie"]}
+    {
+      "text": "Florizarre",
+      "pokemon": 3,
+      "syllables": [
+        "Flo",
+        "ri",
+        "zarre"
+      ]
+    },
+    {
+      "text": "Rocher",
+      "icon": "rock",
+      "syllables": [
+        "Ro",
+        "cher"
+      ]
+    },
+    {
+      "text": "Panier",
+      "emoji": "🧺",
+      "syllables": [
+        "Pa",
+        "nier"
+      ]
+    },
+    {
+      "text": "Chanter",
+      "emoji": "🎤",
+      "syllables": [
+        "Chan",
+        "ter"
+      ]
+    }
   ],
   "sentences": [
-    {"text": "Jirachi danse de joie.", "pokemon": 385},
-    {"text": "Pikachu porte le pyjama.", "pokemon": 25},
-    {"text": "Miaouss regarde le journal.", "pokemon": 52}
+    {
+      "text": "Florizarre aime chanter.",
+      "pokemon": 3
+    },
+    {
+      "text": "Le panier roule sur le rocher.",
+      "emoji": "🧺"
+    },
+    {
+      "text": "Sacha chante sur la route.",
+      "icon": "trainer"
+    }
   ],
-  "reward_pokemon": 385,
+  "reward_pokemon": 3,
   "boss": {
-    "pokemon": 385,
+    "pokemon": 3,
     "hp": 3,
-    "taunt": "Jirachi se réveille ! Lis les mots, et ton vœu sera exaucé !"
+    "taunt": "Bulbizarre a évolué ! Florizarre fait trembler le sol du jardin !"
   }
 }

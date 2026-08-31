@@ -1,27 +1,17 @@
 {
   "id": "ep25",
-  "route": 20,
-  "title": "Île 2 — ai, ei, ê",
-  "story": "Sur la deuxième île, trois nouvelles façons d'écrire le son è : a-i comme dans baie, e-i comme dans reine, et le ê avec son chapeau pointu, comme dans pêche. Là-haut, un grand oiseau tourne dans le ciel... Roucool a bien grandi !",
-  "new_graphemes": ["ai", "ei", "ê"],
-  "syllables": ["mai", "bai", "fai", "lai", "rai", "sai", "tai", "vai", "nei", "vei", "pê", "rê"],
-  "words": [
-    {"text": "Roucarnage", "pokemon": 18, "syllables": ["Rou", "car", "nage"]},
-    {"text": "Baie", "emoji": "🍒", "syllables": ["Baie"]},
-    {"text": "Reine", "emoji": "👑", "syllables": ["Rei", "ne"]},
-    {"text": "Pêche", "emoji": "🍑", "syllables": ["Pê", "che"]},
-    {"text": "Aile", "icon": "wing", "syllables": ["Ai", "le"]},
-    {"text": "Neige", "emoji": "❄️", "syllables": ["Nei", "ge"]}
-  ],
-  "sentences": [
-    {"text": "Roucarnage aime la neige.", "pokemon": 18},
-    {"text": "La reine mange la pêche.", "emoji": "👑"},
-    {"text": "Évoli adore la baie.", "pokemon": 133}
-  ],
-  "reward_pokemon": 18,
+  "route": 0,
+  "title": "Conseil des 4 — Suicune",
+  "story": "Tes huit badges brillent : bienvenue à la Ligue Pokémon ! Devant toi, quatre portes immenses : c'est le Conseil des 4, les quatre dresseurs les plus forts de la région. Derrière la première porte, une salle d'eau claire... et Suicune, le Pokémon qui court sur l'eau. Bonne chance !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 245,
   "boss": {
-    "pokemon": 18,
-    "hp": 3,
-    "taunt": "Roucool a évolué ! Roucarnage plonge du ciel à toute vitesse !"
+    "pokemon": 245,
+    "hp": 6,
+    "taunt": "Suicune file comme le vent du nord ! Montre au Conseil des 4 comme tu lis bien !"
   }
 }

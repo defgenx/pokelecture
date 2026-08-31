@@ -45,6 +45,16 @@ type EpisodeStat struct {
 	LastPlayed  time.Time `json:"last_played"`
 }
 
+// Settings is the parent-tunable progression policy, edited from the admin
+// page. Zero values are the defaults: completing an episode unlocks the next,
+// nothing is force-unlocked.
+type Settings struct {
+	// MinStars an episode must have earned before the next one unlocks (0–3).
+	MinStars int `json:"min_stars"`
+	// FreePlay unlocks every episode regardless of completion.
+	FreePlay bool `json:"free_play"`
+}
+
 // State is the whole savegame.
 type State struct {
 	Name    string `json:"name"`
@@ -52,12 +62,17 @@ type State struct {
 	Pokedex []int  `json:"pokedex"`
 	// Shiny lists Pokémon caught in their rare recolored form on a replay —
 	// a second, slower collection layered over the Pokédex.
-	Shiny     []int                  `json:"shiny,omitempty"`
-	Episodes  map[string]EpisodeStat `json:"episodes"`
-	Items     map[string]Item        `json:"items"`
-	Streak    int                    `json:"streak"`
-	LastDay   string                 `json:"last_day"`
-	UpdatedAt time.Time              `json:"updated_at"`
+	Shiny    []int                  `json:"shiny,omitempty"`
+	Episodes map[string]EpisodeStat `json:"episodes"`
+	Items    map[string]Item        `json:"items"`
+	// TowerFloor is the highest Tour de Combat floor cleared.
+	TowerFloor int `json:"tower_floor,omitempty"`
+	// Records holds the best score per mini-game.
+	Records   map[string]int `json:"records,omitempty"`
+	Settings  Settings       `json:"settings"`
+	Streak    int            `json:"streak"`
+	LastDay   string         `json:"last_day"`
+	UpdatedAt time.Time      `json:"updated_at"`
 }
 
 // Store is a mutex-guarded State persisted to a single file.
@@ -144,6 +159,10 @@ func (s *Store) copyLocked() State {
 	out := s.state
 	out.Pokedex = append([]int(nil), s.state.Pokedex...)
 	out.Shiny = append([]int(nil), s.state.Shiny...)
+	out.Records = make(map[string]int, len(s.state.Records))
+	for k, v := range s.state.Records {
+		out.Records[k] = v
+	}
 	out.Episodes = make(map[string]EpisodeStat, len(s.state.Episodes))
 	for k, v := range s.state.Episodes {
 		out.Episodes[k] = v
@@ -252,6 +271,40 @@ func (s *Store) MarkShiny(id int) {
 	sort.Ints(s.state.Shiny)
 }
 
+// ClearFloor records a Tour de Combat floor as cleared. Floors only ever go up.
+func (s *Store) ClearFloor(floor int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if floor > s.state.TowerFloor {
+		s.state.TowerFloor = floor
+	}
+}
+
+// Record stores a mini-game score and reports whether it beats the old best.
+// lowerBetter flips the comparison for time-based games.
+func (s *Store) Record(game string, score int, lowerBetter bool) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.state.Records == nil {
+		s.state.Records = map[string]int{}
+	}
+	old, has := s.state.Records[game]
+	beaten := !has || (lowerBetter && score < old) || (!lowerBetter && score > old)
+	if beaten {
+		s.state.Records[game] = score
+	}
+	return beaten
+}
+
+// UpdateSettings replaces the progression policy.
+func (s *Store) UpdateSettings(set Settings) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	set.MinStars = max(0, min(3, set.MinStars))
+	s.state.Settings = set
+}
+
 // Rename changes the child's name without touching anything else.
 func (s *Store) Rename(name string) {
 	s.mu.Lock()
@@ -261,14 +314,16 @@ func (s *Store) Rename(name string) {
 	}
 }
 
-// Reset wipes the whole savegame, keeping only the name.
+// Reset wipes the whole savegame, keeping only the name and the parental
+// settings — those describe the parent's choices, not the child's progress.
 func (s *Store) Reset() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	name := s.state.Name
+	name, settings := s.state.Name, s.state.Settings
 	s.state = State{
 		Name:     name,
+		Settings: settings,
 		Episodes: map[string]EpisodeStat{},
 		Items:    map[string]Item{},
 	}

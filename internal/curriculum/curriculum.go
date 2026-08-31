@@ -5,6 +5,7 @@ package curriculum
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -143,7 +144,8 @@ type BadgeDecl struct {
 // Badges the frontend knows how to draw (web/icons.js, BADGES map).
 var Badges = map[string]bool{
 	"glace": true, "orage": true, "psy": true, "volcan": true,
-	"maree": true, "arcenciel": true, "champion": true, "ciel": true,
+	"maree": true, "arcenciel": true, "tonnerre": true, "ciel": true,
+	"champion": true,
 }
 
 // Episode is one ~12 minute session: a declaration of content, not a script.
@@ -205,6 +207,10 @@ type Pokemon struct {
 	Types     []string `json:"types"`
 	Dex       string   `json:"dex"`
 	Legendary bool     `json:"legendary,omitempty"`
+
+	// Tower marks a Pokémon obtainable only by climbing the Tour de Combat —
+	// awarded every second floor, in pokemon.json file order.
+	Tower bool `json:"tower,omitempty"`
 }
 
 // Spoken is the phonetic respelling if one is given, else the name itself.
@@ -227,14 +233,46 @@ type Curriculum struct {
 	byID          map[string]*Episode
 	Pokemon       map[int]Pokemon
 	PokemonOrder  []int
+
+	// TowerLadder lists the tower-exclusive Pokémon in award order: the reward
+	// for clearing floor 2n is TowerLadder[n-1].
+	TowerLadder []int
 }
 
-// Load reads data/graphemes.json, data/pokemon.json and data/episodes/*.json.
+// sylPron maps a written syllable to the respelling the voice must say instead.
+// A TTS reads a bare chunk like "ny" as letter names and a homograph like
+// "cher" as the word /ʃɛʁ/ — not the /ʃe/ the child is blending. The override
+// is applied identically when generating audio and when building URLs, so the
+// file on disk and the URL the tablet asks for always agree.
+//
+// Package-level because the item builders are package functions; there is one
+// curriculum per process and reloading just rewrites the same entries.
+var sylPron = map[string]string{}
+
+// SpokenSyllable resolves a syllable to what the voice should actually say.
+func SpokenSyllable(s string) string {
+	if p, ok := sylPron[strings.ToLower(s)]; ok {
+		return p
+	}
+	return s
+}
+
+// Load reads data/graphemes.json, data/pokemon.json, data/episodes/*.json and
+// the optional data/pronunciation.json syllable respellings.
 func Load(dir string) (*Curriculum, error) {
 	c := &Curriculum{
 		Graphemes: map[string]Grapheme{},
 		byID:      map[string]*Episode{},
 		Pokemon:   map[int]Pokemon{},
+	}
+
+	pron := map[string]string{}
+	if err := readJSON(filepath.Join(dir, "pronunciation.json"), &pron); err == nil {
+		for k, v := range pron {
+			sylPron[strings.ToLower(k)] = v
+		}
+	} else if !os.IsNotExist(errors.Unwrap(err)) {
+		return nil, err
 	}
 
 	var graphemes []Grapheme
@@ -261,6 +299,9 @@ func Load(dir string) (*Curriculum, error) {
 	for _, p := range pokemon {
 		if _, dup := c.Pokemon[p.ID]; !dup {
 			c.PokemonOrder = append(c.PokemonOrder, p.ID)
+			if p.Tower {
+				c.TowerLadder = append(c.TowerLadder, p.ID)
+			}
 		}
 		c.Pokemon[p.ID] = p
 	}
@@ -461,7 +502,8 @@ func (c *Curriculum) Validate() []error {
 
 // checkPokedexCompletable fails when a Pokémon of pokemon.json can never enter
 // the Pokédex — a silhouette the child could stare at forever is exactly the
-// kind of dead end this game must not have.
+// kind of dead end this game must not have. Tower Pokémon are catchable by
+// climbing the Tour de Combat, so they are exempt from the episode check.
 func (c *Curriculum) checkPokedexCompletable() []error {
 	catchable := map[int]bool{}
 	for _, ep := range c.Episodes {
@@ -471,7 +513,7 @@ func (c *Curriculum) checkPokedexCompletable() []error {
 	}
 	var errs []error
 	for _, id := range c.PokemonOrder {
-		if !catchable[id] {
+		if !catchable[id] && !c.Pokemon[id].Tower {
 			errs = append(errs, fmt.Errorf("pokédex: %s (#%d) n'est attrapable dans aucun épisode", c.Pokemon[id].Name, id))
 		}
 	}

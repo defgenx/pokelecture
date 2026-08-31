@@ -1,27 +1,17 @@
 {
   "id": "ep28",
-  "route": 23,
-  "title": "Île 5 — le h muet et le son ui",
-  "story": "Cinquième île, sous la pluie. Le u et le i ensemble font le son ui, comme dans pluie. Et voici le h : il ne fait aucun bruit, il se cache au début de huit ! Dans le ruisseau qui déborde, quelque chose d'énorme remonte le courant... Magicarpe, c'est toi ?",
-  "new_graphemes": ["h", "ui"],
-  "syllables": ["bui", "cui", "lui", "nui", "pui", "rui", "sui", "tui", "hui"],
-  "words": [
-    {"text": "Léviator", "pokemon": 130, "syllables": ["Lé", "vi", "a", "tor"]},
-    {"text": "Parapluie", "emoji": "☂️", "syllables": ["Pa", "ra", "pluie"]},
-    {"text": "Buisson", "emoji": "🌳", "syllables": ["Buis", "son"]},
-    {"text": "Ruisseau", "emoji": "💧", "syllables": ["Ruis", "seau"]},
-    {"text": "Pluie", "emoji": "🌧️", "syllables": ["Pluie"]},
-    {"text": "Huit", "emoji": "8️⃣", "syllables": ["Huit"]}
-  ],
-  "sentences": [
-    {"text": "Léviator adore la pluie.", "pokemon": 130},
-    {"text": "Le parapluie tombe.", "emoji": "☂️"},
-    {"text": "Le buisson bouge.", "emoji": "🌳"}
-  ],
-  "reward_pokemon": 130,
+  "route": 0,
+  "title": "Conseil des 4 — Zoroark",
+  "story": "Dernière porte du Conseil des 4 ! La salle est toute noire. Cent Pokémon apparaissent autour de toi... mais ce sont des illusions ! Le vrai s'appelle Zoroark, le maître des tours de magie. Seuls les vrais lecteurs voient la vérité.",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 571,
   "boss": {
-    "pokemon": 130,
-    "hp": 3,
-    "taunt": "Magicarpe a évolué ! Léviator jaillit du ruisseau dans un mur d'eau !"
+    "pokemon": 571,
+    "hp": 6,
+    "taunt": "Zoroark multiplie les illusions ! Lis les vrais mots pour percer ses tours !"
   }
 }

@@ -70,6 +70,10 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /api/session/{id}", s.handleSession)
 	mux.HandleFunc("POST /api/session/{id}/result", s.handleResult)
 
+	// Mini-games: learned material to play with, and best scores to beat.
+	mux.HandleFunc("GET /api/arcade", s.handleArcade)
+	mux.HandleFunc("POST /api/records", s.handleRecord)
+
 	// Parent-side voice recording.
 	mux.HandleFunc("GET /api/texts", s.handleTexts)
 	mux.HandleFunc("PUT /api/record/{key}", s.handleRecordPut)
@@ -82,6 +86,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /api/admin/episodes/{id}/reset", s.handleAdminEpisodeReset)
 	mux.HandleFunc("POST /api/admin/episodes/{id}/complete", s.handleAdminEpisodeComplete)
 	mux.HandleFunc("POST /api/admin/pokedex/{id}", s.handleAdminPokedex)
+	mux.HandleFunc("POST /api/admin/settings", s.handleAdminSettings)
 
 	// Must sit in front of the file server so a recording can shadow the
 	// generated file behind the same URL.
@@ -132,22 +137,27 @@ type pokemonView struct {
 }
 
 type stateView struct {
-	Name     string            `json:"name"`
-	Stars    int               `json:"stars"`
-	Streak   int               `json:"streak"`
-	NextID   string            `json:"next_episode"`
-	AllDone  bool              `json:"all_done"`
-	Tower    bool              `json:"tower"` // Tour de Combat unlocked (≥1 episode done)
-	Episodes []episodeView     `json:"episodes"`
-	Pokedex  []pokemonView     `json:"pokedex"`
-	Badges   []badgeView       `json:"badges"`
-	UI       map[string]string `json:"ui"`
+	Name       string            `json:"name"`
+	Stars      int               `json:"stars"`
+	Streak     int               `json:"streak"`
+	NextID     string            `json:"next_episode"`
+	AllDone    bool              `json:"all_done"`
+	Tower      bool              `json:"tower"` // Tour de Combat unlocked (≥1 episode done)
+	TowerFloor int               `json:"tower_floor"`
+	Records    map[string]int    `json:"records"`
+	Episodes   []episodeView     `json:"episodes"`
+	Pokedex    []pokemonView     `json:"pokedex"`
+	Badges     []badgeView       `json:"badges"`
+	UI         map[string]string `json:"ui"`
 }
 
 func (s *Server) state() stateView {
 	st := s.store.Snapshot()
 
-	out := stateView{Name: st.Name, Stars: st.Stars, Streak: st.Streak, UI: curriculum.UIAudio()}
+	out := stateView{
+		Name: st.Name, Stars: st.Stars, Streak: st.Streak,
+		TowerFloor: st.TowerFloor, Records: st.Records, UI: curriculum.UIAudio(),
+	}
 	unlocked := true
 	for _, ep := range s.cur.Episodes {
 		stat := st.Episodes[ep.ID]
@@ -155,7 +165,7 @@ func (s *Server) state() stateView {
 			ID:        ep.ID,
 			Route:     ep.Route,
 			Title:     ep.Title,
-			Unlocked:  unlocked,
+			Unlocked:  unlocked || st.Settings.FreePlay,
 			Stars:     stat.BestStars,
 			Done:      stat.Completions,
 			Reward:    ep.RewardPokemon,
@@ -177,7 +187,9 @@ func (s *Server) state() stateView {
 		if unlocked && out.NextID == "" && stat.Completions == 0 {
 			out.NextID = ep.ID
 		}
-		unlocked = unlocked && stat.Completions > 0
+		// The parent decides what "done enough to move on" means: completed
+		// is the default, a star threshold makes replays part of the course.
+		unlocked = unlocked && stat.Completions > 0 && stat.BestStars >= st.Settings.MinStars
 	}
 	if out.NextID == "" && len(s.cur.Episodes) > 0 {
 		// Everything done: replay the least recently played episode, so the
@@ -238,7 +250,9 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 		id = s.state().NextID
 	}
 	if id == curriculum.TowerID {
-		sess, ok := s.cur.BuildTower(s.store.Snapshot(), time.Now())
+		st := s.store.Snapshot()
+		// Always the first uncleared floor: no skipping ahead, no need to choose.
+		sess, ok := s.cur.BuildTower(st, st.TowerFloor+1, time.Now())
 		if !ok {
 			http.Error(w, "la Tour ouvre après le premier épisode terminé", http.StatusConflict)
 			return
@@ -265,14 +279,22 @@ type resultRequest struct {
 	// Shiny reports that the session's reward was rolled shiny (the roll lives
 	// in the session payload; a family app can trust its own client).
 	Shiny bool `json:"shiny"`
+	// Tower results: the floor attempted, the rounds played and the points
+	// scored. The pass threshold is recomputed server-side from the rounds.
+	Floor  int `json:"floor"`
+	Rounds int `json:"rounds"`
+	Points int `json:"points"`
 }
 
 type resultResponse struct {
 	// NewCatches lists every Pokémon this completion added to the Pokédex: the
 	// reward, the boss and everything read in the episode — reading a name is
 	// catching it, which is what makes the Pokédex completable.
-	NewCatches []int     `json:"new_catches"`
-	State      stateView `json:"state"`
+	NewCatches []int `json:"new_catches"`
+	// Tower verdict: whether the floor was cleared, and the recomputed target.
+	TowerPassed bool      `json:"tower_passed"`
+	TowerNeed   int       `json:"tower_need"`
+	State       stateView `json:"state"`
 }
 
 func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
@@ -305,7 +327,18 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := resultResponse{NewCatches: []int{}}
-	if !isTower && req.Completed {
+	if isTower {
+		// Clearing a floor means at least half the words were built without a
+		// single wrong tap; only the very next floor can be cleared.
+		res.TowerNeed = curriculum.TowerNeed(req.Rounds)
+		if req.Rounds > 0 && req.Points >= res.TowerNeed && req.Floor == s.store.Snapshot().TowerFloor+1 {
+			res.TowerPassed = true
+			s.store.ClearFloor(req.Floor)
+			if id := s.cur.TowerRewardFor(req.Floor); id != 0 && s.store.Catch(id) {
+				res.NewCatches = append(res.NewCatches, id)
+			}
+		}
+	} else if req.Completed {
 		stars := max(0, min(3, req.Stars))
 		s.store.CompleteEpisode(ep.ID, stars, now)
 		for _, id := range ep.CatchablePokemon() {

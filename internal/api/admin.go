@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/adelvecchio/pokelecture/internal/progress"
 )
 
 type adminEpisodeView struct {
@@ -45,14 +47,17 @@ type adminPokemonView struct {
 }
 
 type adminSummary struct {
-	Name      string             `json:"name"`
-	Stars     int                `json:"stars"`
-	Streak    int                `json:"streak"`
-	LastDay   string             `json:"last_day"`
-	UpdatedAt time.Time          `json:"updated_at"`
-	Episodes  []adminEpisodeView `json:"episodes"`
-	Items     []adminItemView    `json:"items"`
-	Pokedex   []adminPokemonView `json:"pokedex"`
+	Name       string             `json:"name"`
+	Stars      int                `json:"stars"`
+	Streak     int                `json:"streak"`
+	LastDay    string             `json:"last_day"`
+	UpdatedAt  time.Time          `json:"updated_at"`
+	TowerFloor int                `json:"tower_floor"`
+	Records    map[string]int     `json:"records"`
+	Settings   progress.Settings  `json:"settings"`
+	Episodes   []adminEpisodeView `json:"episodes"`
+	Items      []adminItemView    `json:"items"`
+	Pokedex    []adminPokemonView `json:"pokedex"`
 }
 
 func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
@@ -60,11 +65,14 @@ func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 
 	out := adminSummary{
-		Name:      st.Name,
-		Stars:     st.Stars,
-		Streak:    st.Streak,
-		LastDay:   st.LastDay,
-		UpdatedAt: st.UpdatedAt,
+		Name:       st.Name,
+		Stars:      st.Stars,
+		Streak:     st.Streak,
+		LastDay:    st.LastDay,
+		UpdatedAt:  st.UpdatedAt,
+		TowerFloor: st.TowerFloor,
+		Records:    st.Records,
+		Settings:   st.Settings,
 	}
 
 	unlocked := true
@@ -191,6 +199,18 @@ func (s *Server) handleAdminPokedex(w http.ResponseWriter, r *http.Request) {
 	} else {
 		s.store.Uncatch(id)
 	}
+	s.adminDone(w)
+}
+
+// handleAdminSettings updates the progression policy: how many stars an
+// episode needs before the next one unlocks, or free play (all unlocked).
+func (s *Server) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
+	var req progress.Settings
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.MinStars < 0 || req.MinStars > 3 {
+		http.Error(w, "réglages invalides", http.StatusBadRequest)
+		return
+	}
+	s.store.UpdateSettings(req)
 	s.adminDone(w)
 }
 

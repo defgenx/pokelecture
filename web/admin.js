@@ -190,6 +190,49 @@ function dangerTab(list) {
       'Change le prénom sans toucher à la progression, au Pokédex ni aux étoiles.'),
   ));
 
+  // Progression policy: what "done enough to move on" means is the parent's call.
+  const set = s.settings || { min_stars: 0, free_play: false };
+  const minStars = el('select', {},
+    [['0', 'Terminer l\'épisode suffit'], ['1', 'Au moins ★'], ['2', 'Au moins ★★'], ['3', '★★★ obligatoires']]
+      .map(([v, label]) => {
+        const o = el('option', { value: v }, label);
+        if (Number(v) === set.min_stars) o.selected = true;
+        return o;
+      }),
+  );
+  const freePlay = el('input', { type: 'checkbox' });
+  freePlay.checked = !!set.free_play;
+  const apply = () => act('api/admin/settings', {
+    min_stars: Number(minStars.value),
+    free_play: freePlay.checked,
+  });
+  minStars.addEventListener('change', apply);
+  freePlay.addEventListener('change', apply);
+  list.append(el('div', { class: 'section' },
+    el('h2', {}, 'Déblocage des épisodes'),
+    el('div', { class: 'namebox' },
+      el('label', {}, 'Pour débloquer la suite : '), minStars,
+    ),
+    el('div', { class: 'namebox', style: 'margin-top:8px' },
+      el('label', { style: 'display:flex;align-items:center;gap:8px' },
+        freePlay, 'Tout débloquer (mode libre — l\'ordre reste conseillé, plus imposé)'),
+    ),
+    el('p', { style: 'color:#6a7180;font-size:13px;margin-top:8px' },
+      'Exiger des étoiles fait des rediffusions une partie du parcours ; le mode libre ' +
+      'laisse jouer n\'importe quel épisode. Appliqué immédiatement.'),
+  ));
+
+  const recs = s.records || {};
+  const recNames = { memory: '🃏 Memory (temps)', chasse: '🌿 La chasse', lecture: '📖 Lis et attrape', oreille: '👂 L\'oreille fine' };
+  list.append(el('div', { class: 'section' },
+    el('h2', {}, 'Tour de Combat et mini-jeux'),
+    el('p', { style: 'color:#6a7180;font-size:13px' },
+      `🗼 Étage atteint : ${s.tower_floor || 0} · prochain défi : étage ${(s.tower_floor || 0) + 1}. ` +
+      (Object.keys(recs).length
+        ? 'Records : ' + Object.entries(recs).map(([g, v]) => `${recNames[g] || g} : ${v}`).join(' · ')
+        : 'Aucun record de mini-jeu pour le moment.')),
+  ));
+
   list.append(el('div', { class: 'section' },
     el('h2', {}, 'Zone dangereuse'),
     el('div', { class: 'dangerzone' },

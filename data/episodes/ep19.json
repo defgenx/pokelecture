@@ -1,17 +1,26 @@
 {
   "id": "ep19",
-  "route": 0,
-  "title": "Conseil des 4 — Suicune",
-  "story": "Bienvenue à la Ligue Pokémon ! Devant toi, quatre portes immenses : c'est le Conseil des 4, les quatre dresseurs les plus forts de la région. Derrière la première porte, une salle d'eau claire... et Suicune, le Pokémon qui court sur l'eau. Bonne chance !",
-  "new_graphemes": [],
-  "syllables": [],
-  "words": [],
-  "sentences": [],
-  "legendary": true,
-  "reward_pokemon": 245,
+  "route": 19,
+  "title": "Île 1 — le son j",
+  "story": "Six badges en poche ! Mais avant d'affronter la Ligue Pokémon, il te reste les Îles Lointaines — et deux badges à gagner. Sur la première île, une étoile filante traverse le ciel de la nuit. On dit que si tu lis ton vœu à voix haute, un Pokémon très rare l'entendra... Voici le son j, comme dans jungle.",
+  "new_graphemes": ["j"],
+  "syllables": ["ja", "ji", "jo", "ju", "jé", "jou", "jan", "jon"],
+  "words": [
+    {"text": "Judo", "emoji": "🥋", "syllables": ["Ju", "do"]},
+    {"text": "Pyjama", "emoji": "🛌", "syllables": ["Py", "ja", "ma"]},
+    {"text": "Jeudi", "emoji": "📅", "syllables": ["Jeu", "di"]},
+    {"text": "Journal", "emoji": "📰", "syllables": ["Jour", "nal"]},
+    {"text": "Joie", "emoji": "😄", "syllables": ["Joie"]}
+  ],
+  "sentences": [
+    {"text": "Jirachi danse de joie.", "pokemon": 385},
+    {"text": "Pikachu porte le pyjama.", "pokemon": 25},
+    {"text": "Miaouss regarde le journal.", "pokemon": 52}
+  ],
+  "reward_pokemon": 385,
   "boss": {
-    "pokemon": 245,
-    "hp": 6,
-    "taunt": "Suicune file comme le vent du nord ! Montre au Conseil des 4 comme tu lis bien !"
+    "pokemon": 385,
+    "hp": 3,
+    "taunt": "Jirachi se réveille ! Lis les mots, et ton vœu sera exaucé !"
   }
 }

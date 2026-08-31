@@ -9,7 +9,8 @@
 // cache is what evicts those.
 // v3: badges, bonus games, Conseil des 4 — evict the pre-league app shell.
 // v4: Îles arc, Tour de Combat, shiny, tablet metas — same reason.
-const CACHE = 'pokelecture-v4';
+// v5: 8-badge order, tower floors, arcade, sentence builder, landscape layouts.
+const CACHE = 'pokelecture-v5';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './app.js', './styles.css', './icons.js', './sfx.js'])));

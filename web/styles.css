@@ -682,7 +682,30 @@ body::after {
 
 /* ------------------------------------------------------------ home / map --- */
 
+.home-top { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.home-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+.map-section {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 18px 4px 2px;
+}
+.map-section:first-child { margin-top: 0; }
+
 .routes { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+
+/* The next stop on the adventure glows, so "where do I go?" answers itself. */
+.route.next {
+  box-shadow: var(--lift-2), 0 0 0 3px var(--red);
+  animation: next-pulse 1.8s ease-in-out infinite;
+}
+@keyframes next-pulse {
+  0%, 100% { box-shadow: var(--lift-2), 0 0 0 3px rgba(238, 21, 21, .9); }
+  50% { box-shadow: var(--lift-2), 0 0 0 6px rgba(238, 21, 21, .35); }
+}
 .route {
   display: flex; align-items: center; gap: 14px;
   background: var(--glass-solid);
@@ -990,6 +1013,109 @@ body::after {
   transform: scale(1.15);
 }
 
+/* ------------------------------------------------------ sentence builder --- */
+
+.phrase-slots { flex-wrap: wrap; }
+.slot.word-slot {
+  min-width: 88px; min-height: 66px;
+  font-size: clamp(21px, 4.6vw, 34px);
+  padding: 4px 12px;
+}
+.syl-btn.word-btn {
+  font-size: clamp(21px, 4.6vw, 34px);
+  min-height: 66px; min-width: 88px;
+  padding: 10px 18px;
+}
+.mystery {
+  display: grid;
+  place-items: center;
+  width: 132px; height: 132px;
+  border-radius: var(--r-md);
+  background: var(--glass);
+  border: 3px dashed rgba(26, 29, 36, .2);
+  box-shadow: var(--lift-1);
+}
+.mystery.open {
+  border-style: solid;
+  border-color: #49c46a;
+  background: linear-gradient(180deg, #eafff0 0%, #c9f6d6 100%);
+  animation: pop .4s ease;
+}
+.mystery img, .mystery .icon { width: 104px; height: 104px; object-fit: contain; }
+.mystery .em { font-size: 76px; }
+
+/* --------------------------------------------------------------- arcade --- */
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  width: 100%;
+  max-width: 780px;
+}
+.game-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--glass-solid);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  box-shadow: var(--lift-2);
+  padding: 18px 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform .12s ease;
+}
+.game-card:active { transform: scale(.97); }
+.game-card .game-icon { font-size: 44px; }
+.game-card b { font-size: 20px; }
+.game-card small { color: var(--ink-soft); font-weight: 600; }
+.game-card .game-record {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--gold-lo);
+  background: linear-gradient(180deg, #ffe17a, var(--yellow));
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.timebar {
+  width: 100%;
+  max-width: 560px;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(26, 29, 36, .14);
+  overflow: hidden;
+}
+.timebar i {
+  display: block; height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #5566e6, var(--blue));
+  transition: width .1s linear, background .3s ease;
+}
+.timebar.low i { background: linear-gradient(180deg, #ff8080, #e83030); }
+
+.bigscore {
+  font-size: clamp(56px, 14vw, 108px);
+  font-weight: 900;
+  color: var(--blue);
+  text-shadow: 0 4px 0 var(--blue-lo), 0 12px 22px rgba(20, 24, 34, .2);
+}
+.newrecord { color: var(--gold-lo); animation: pop .6s ease 2; }
+.memory-grid.big { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 640px; }
+.memory-grid.big .memory-card { min-height: 92px; }
+.word.arcade-word { font-size: clamp(38px, 9vw, 76px); padding: 10px 28px; }
+
+/* ------------------------------------------------------------- tower ------ */
+
+.tower-chip { font-size: 20px; }
+.tower-chip.ok {
+  background: linear-gradient(180deg, #eafff0, #c9f6d6);
+  box-shadow: 0 0 0 2px #49c46a, var(--lift-1);
+}
+
 /* ---------------------------------------------------------------- shiny --- */
 /* A shiny is the same artwork wearing different colours — the games' own
    recolor trick, done here with a hue rotation so it costs zero assets. */
@@ -1063,6 +1189,52 @@ img.shiny { filter: hue-rotate(300deg) saturate(1.3) brightness(1.06) drop-shado
 @keyframes slide-in-right {
   0% { transform: translateX(70vw); opacity: 0; }
   100% { transform: translateX(0); opacity: 1; }
+}
+
+/* -------------------------------------------------------------- landscape ---
+   A tablet on its stand is wide and short: stacking arena over tray forces
+   scrolling mid-battle. Side-by-side layouts use the width instead. */
+
+.combat-cols { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+.combat-left, .combat-right {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  width: 100%; min-width: 0;
+}
+
+@media (orientation: landscape) and (min-width: 900px) {
+  .combat-cols {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 26px;
+  }
+  .combat-left { flex: 0 1 480px; position: sticky; top: 78px; }
+  .combat-right { flex: 0 1 560px; }
+
+  .home-top {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 34px;
+  }
+  .routes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .map-section { grid-column: 1 / -1; }
+  .page { max-width: 1100px; }
+}
+
+/* Short screens (any tablet in landscape): shrink the hero-sized type so an
+   exercise always fits without scrolling. */
+@media (max-height: 860px) {
+  .letter { font-size: clamp(84px, 20vh, 156px); }
+  .word { font-size: clamp(40px, 11vh, 88px); }
+  .arena img { width: 108px; height: 108px; }
+  .btn-huge { min-height: 76px; font-size: 26px; padding: 16px 38px; }
+  .fusion-row { min-height: 150px; }
+  .fusion-tile { min-height: 118px; font-size: clamp(44px, 12vh, 80px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

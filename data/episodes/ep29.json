@@ -1,25 +1,21 @@
 {
   "id": "ep29",
-  "route": 24,
-  "title": "Île 6 — er qui fait é",
-  "story": "La dernière île ! À la fin d'un mot, le e et le r ensemble font le son é : rocher, panier, chanter. Dans le grand jardin de l'île, une fleur géante s'ouvre au soleil... Bulbizarre a fini de grandir. Après cette île, la Tour du Ciel t'attend !",
-  "new_graphemes": ["er"],
-  "syllables": ["cher", "ter", "ser", "per", "ler", "nier", "lier", "tier"],
-  "words": [
-    {"text": "Florizarre", "pokemon": 3, "syllables": ["Flo", "ri", "zarre"]},
-    {"text": "Rocher", "icon": "rock", "syllables": ["Ro", "cher"]},
-    {"text": "Panier", "emoji": "🧺", "syllables": ["Pa", "nier"]},
-    {"text": "Chanter", "emoji": "🎤", "syllables": ["Chan", "ter"]}
-  ],
-  "sentences": [
-    {"text": "Florizarre aime chanter.", "pokemon": 3},
-    {"text": "Le panier roule sur le rocher.", "emoji": "🧺"},
-    {"text": "Sacha chante sur la route.", "icon": "trainer"}
-  ],
-  "reward_pokemon": 3,
+  "route": 0,
+  "title": "Le Champion — Mew",
+  "story": "Te voilà dans la salle du Champion. Tout est calme. Une petite lumière rose flotte dans l'air : Mew, le Pokémon le plus rare du monde entier ! C'est le dernier combat. Tout ce que tu as appris est là, dans ta tête. Gagne, et le Trophée du Champion est à toi !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "badge": {
+    "id": "champion",
+    "name": "Trophée du Champion"
+  },
+  "reward_pokemon": 151,
   "boss": {
-    "pokemon": 3,
-    "hp": 3,
-    "taunt": "Bulbizarre a évolué ! Florizarre fait trembler le sol du jardin !"
+    "pokemon": 151,
+    "hp": 6,
+    "taunt": "Mew flotte devant toi en souriant. Le dernier combat commence. Donne tout !"
   }
 }
