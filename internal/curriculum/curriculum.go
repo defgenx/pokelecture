@@ -240,6 +240,22 @@ type Curriculum struct {
 	// TowerLadder lists the tower-exclusive Pokémon in award order: the reward
 	// for clearing floor 2n is TowerLadder[n-1].
 	TowerLadder []int
+
+	// Arcade lists extra Pokémon (data/arcade.json) seen only in the mini-games:
+	// never in the Pokédex, so they carry just a name for the voice and a sprite.
+	Arcade []Pokemon
+}
+
+// Roster is every Pokémon the mini-games may show — the course's and the
+// arcade extras — in national dex order.
+func (c *Curriculum) Roster() []Pokemon {
+	out := make([]Pokemon, 0, len(c.Pokemon)+len(c.Arcade))
+	for _, id := range c.PokemonOrder {
+		out = append(out, c.Pokemon[id])
+	}
+	out = append(out, c.Arcade...)
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
 }
 
 // sylPron maps a written syllable to the respelling the voice must say instead.
@@ -261,7 +277,7 @@ func SpokenSyllable(s string) string {
 }
 
 // Load reads data/graphemes.json, data/pokemon.json, data/episodes/*.json and
-// the optional data/pronunciation.json syllable respellings.
+// the optional data/pronunciation.json syllable respellings and data/arcade.json.
 func Load(dir string) (*Curriculum, error) {
 	c := &Curriculum{
 		Graphemes: map[string]Grapheme{},
@@ -307,6 +323,10 @@ func Load(dir string) (*Curriculum, error) {
 			}
 		}
 		c.Pokemon[p.ID] = p
+	}
+
+	if err := readJSON(filepath.Join(dir, "arcade.json"), &c.Arcade); err != nil && !os.IsNotExist(errors.Unwrap(err)) {
+		return nil, err
 	}
 
 	files, err := filepath.Glob(filepath.Join(dir, "episodes", "*.json"))
@@ -505,6 +525,18 @@ func (c *Curriculum) Validate() []error {
 		}
 	}
 	errs = append(errs, c.checkPokedexCompletable()...)
+	seen := map[int]bool{}
+	for _, p := range c.Arcade {
+		switch _, inCourse := c.Pokemon[p.ID]; {
+		case inCourse:
+			errs = append(errs, fmt.Errorf("arcade.json: %s (#%d) est déjà dans pokemon.json, retire-le d'arcade.json", p.Name, p.ID))
+		case seen[p.ID]:
+			errs = append(errs, fmt.Errorf("arcade.json: #%d en double", p.ID))
+		case p.Name == "":
+			errs = append(errs, fmt.Errorf("arcade.json: #%d sans nom", p.ID))
+		}
+		seen[p.ID] = true
+	}
 	return errs
 }
 

@@ -11,7 +11,7 @@ check:
 	go run ./cmd/pokecontent check
 
 audio:
-	go run ./cmd/pokecontent audio -voice Thomas
+	go run ./cmd/pokecontent audio
 
 sprites:
 	go run ./cmd/pokecontent sprites

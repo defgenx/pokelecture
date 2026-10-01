@@ -7,6 +7,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -28,9 +29,19 @@ type arcadeSyllable struct {
 	Audio string `json:"audio"`
 }
 
+// arcadePokemon is one face of the mini-games' roster: the course's Pokémon,
+// caught or not, plus the arcade-only extras.
+type arcadePokemon struct {
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	NameAudio string `json:"name_audio"`
+	Sprite    string `json:"sprite"`
+}
+
 type arcadeView struct {
 	Words     []arcadeWord     `json:"words"`
 	Syllables []arcadeSyllable `json:"syllables"`
+	Pokemon   []arcadePokemon  `json:"pokemon"`
 }
 
 // handleArcade returns everything learned so far, for the games to draw from.
@@ -42,7 +53,15 @@ func (s *Server) handleArcade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out := arcadeView{Words: []arcadeWord{}, Syllables: []arcadeSyllable{}}
+	out := arcadeView{Words: []arcadeWord{}, Syllables: []arcadeSyllable{}, Pokemon: []arcadePokemon{}}
+	for _, p := range s.cur.Roster() {
+		out.Pokemon = append(out.Pokemon, arcadePokemon{
+			ID:        p.ID,
+			Name:      p.Name,
+			NameAudio: speech.URL(p.Spoken(), speech.StyleWord),
+			Sprite:    fmt.Sprintf("sprites/art/%d.png", p.ID),
+		})
+	}
 	for _, wd := range words {
 		pic := wd.Pic()
 		out.Words = append(out.Words, arcadeWord{

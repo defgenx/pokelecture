@@ -1,5 +1,5 @@
 # Generated, reproducible with `make content` — but the sprites only. The voice
-# track is committed on purpose: `say` is macOS-only, the server builds the image
+# track is committed on purpose: generating it needs a Mac, the server builds the image
 # from a clone of this repo, and an ignored web/audio/ meant production shipped
 # with no voice at all. 7 MB of .m4a is the cheapest way to keep the two in sync.
 web/sprites/

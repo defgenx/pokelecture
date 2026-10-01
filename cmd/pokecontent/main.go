@@ -1,9 +1,9 @@
 // Command pokecontent prepares the offline assets: the French voice track and
 // the Pokémon sprites. Run it after every change to data/.
 //
-//	pokecontent check                 # validate the curriculum, report missing audio
-//	pokecontent audio [-voice Thomas] # generate the missing .m4a with macOS `say`
-//	pokecontent sprites               # download sprites for every Pokémon used
+//	pokecontent check                        # validate the curriculum, report missing audio
+//	pokecontent audio [-engine edge|say] [-voice V] # generate the missing .m4a
+//	pokecontent sprites                      # download sprites for every Pokémon used
 package main
 
 import (
@@ -37,7 +37,8 @@ func main() {
 
 	fs := flag.NewFlagSet(os.Args[1], flag.ExitOnError)
 	root := fs.String("root", ".", "racine du projet")
-	voice := fs.String("voice", "Thomas", "voix macOS française (say -v '?')")
+	eng := fs.String("engine", "edge", "moteur de voix : edge (neuronal, gratuit, réseau) ou say (macOS)")
+	voice := fs.String("voice", "", "voix (défaut : fr-FR-DeniseNeural pour edge, Thomas pour say)")
 	workers := fs.Int("workers", 6, "générations en parallèle")
 	force := fs.Bool("force", false, "régénérer même si le fichier existe")
 	_ = fs.Parse(os.Args[2:])
@@ -51,7 +52,7 @@ func main() {
 	case "check":
 		check(cur, *root)
 	case "audio":
-		if err := genAudio(cur, *root, *voice, *workers, *force); err != nil {
+		if err := genAudio(cur, *root, *eng, *voice, *workers, *force); err != nil {
 			log.Fatal(err)
 		}
 	case "sprites":
@@ -148,15 +149,24 @@ type job struct {
 	style speech.Style
 }
 
-func genAudio(cur *curriculum.Curriculum, root, voice string, workers int, force bool) error {
-	if _, err := exec.LookPath("say"); err != nil {
-		return fmt.Errorf("`say` introuvable : la génération audio nécessite macOS (le navigateur prendra le relais sinon)")
+func genAudio(cur *curriculum.Curriculum, root, engineName, voice string, workers int, force bool) error {
+	eng, ok := engines[engineName]
+	if !ok {
+		return fmt.Errorf("moteur de voix inconnu %q (edge ou say)", engineName)
+	}
+	if voice == "" {
+		voice = eng.voice
+	}
+	for _, bin := range []string{eng.bin, "afconvert"} {
+		if _, err := exec.LookPath(bin); err != nil {
+			return fmt.Errorf("`%s` introuvable : %s (afconvert : macOS)", bin, eng.hint)
+		}
 	}
 	outDir := filepath.Join(root, "web", "audio")
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return err
 	}
-	tmpDir, err := os.MkdirTemp("", "pokelecture-say")
+	tmpDir, err := os.MkdirTemp("", "pokelecture-voice")
 	if err != nil {
 		return err
 	}
@@ -178,7 +188,7 @@ func genAudio(cur *curriculum.Curriculum, root, voice string, workers int, force
 		fmt.Println("  ✓ audio déjà complet")
 		return nil
 	}
-	fmt.Printf("  génération de %d fichier(s) avec la voix %s…\n", len(jobs), voice)
+	fmt.Printf("  génération de %d fichier(s) avec la voix %s (%s)…\n", len(jobs), voice, eng.name)
 
 	var (
 		wg    sync.WaitGroup
@@ -192,7 +202,7 @@ func genAudio(cur *curriculum.Curriculum, root, voice string, workers int, force
 		go func(worker int) {
 			defer wg.Done()
 			for j := range ch {
-				err := synth(j, voice, tmpDir, outDir, worker)
+				err := synth(j, eng, voice, tmpDir, outDir, worker)
 				mu.Lock()
 				done++
 				if err != nil {
@@ -214,28 +224,6 @@ func genAudio(cur *curriculum.Curriculum, root, voice string, workers int, force
 		fmt.Printf("  ✗ %s\n", f)
 	}
 	fmt.Printf("  ✓ %d fichier(s) écrits dans %s\n", len(jobs)-len(fails), outDir)
-	return nil
-}
-
-// synth speaks one text to AIFF then transcodes to AAC/m4a, which Chrome on
-// Android plays without a hiccup and which is ~10x smaller than the AIFF.
-func synth(j job, voice, tmpDir, outDir string, worker int) error {
-	aiff := filepath.Join(tmpDir, fmt.Sprintf("w%d.aiff", worker))
-	out := filepath.Join(outDir, speech.Key(j.text, j.style)+".m4a")
-
-	say := exec.Command("say",
-		"-v", voice,
-		"-r", fmt.Sprint(j.style.Rate()),
-		"-o", aiff,
-		j.text,
-	)
-	if b, err := say.CombinedOutput(); err != nil {
-		return fmt.Errorf("say: %v: %s", err, b)
-	}
-	conv := exec.Command("afconvert", "-f", "m4af", "-d", "aac", "-b", "48000", aiff, out)
-	if b, err := conv.CombinedOutput(); err != nil {
-		return fmt.Errorf("afconvert: %v: %s", err, b)
-	}
 	return nil
 }
 
@@ -275,8 +263,54 @@ func genSprites(cur *curriculum.Curriculum, root string, force bool) error {
 			got++
 		}
 	}
+	// Arcade extras only ever show as artwork in the mini-games, shrunk so the
+	// whole roster stays light on the tablet.
+	for _, p := range cur.Arcade {
+		path := filepath.Join(artDir, fmt.Sprintf("%d.png", p.ID))
+		if !force {
+			if fi, err := os.Stat(path); err == nil && fi.Size() > 0 {
+				skipped++
+				continue
+			}
+		}
+		if err := downloadScaled(client, fmt.Sprintf("%s/other/official-artwork/%d.png", spriteBase, p.ID), path, arcadeArt); err != nil {
+			fmt.Printf("  ✗ #%d: %v\n", p.ID, err)
+			continue
+		}
+		got++
+	}
 	fmt.Printf("  ✓ %d sprite(s) téléchargés, %d déjà présents\n", got, skipped)
 	return nil
+}
+
+// arcadeArt is the side, in pixels, of an arcade-only Pokémon's artwork.
+const arcadeArt = 240
+
+// downloadScaled fetches a PNG and writes it shrunk to a size×size box.
+func downloadScaled(client *http.Client, url, path string, size int) error {
+	tmp := path + ".orig"
+	if err := download(client, url, tmp); err != nil {
+		return err
+	}
+	defer os.Remove(tmp)
+	f, err := os.Open(tmp)
+	if err != nil {
+		return err
+	}
+	img, err := png.Decode(f)
+	f.Close()
+	if err != nil {
+		return fmt.Errorf("%s: %w", url, err)
+	}
+	out, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	if err := png.Encode(out, scaleBox(img, size, size)); err != nil {
+		out.Close()
+		return err
+	}
+	return out.Close()
 }
 
 // genIcons composes the app icons from Pikachu's artwork on the brand yellow.

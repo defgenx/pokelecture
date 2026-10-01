@@ -91,7 +91,7 @@ planning ci-dessous vise l'objectif atteignable, la progression continue après.
 
 ```
 cmd/pokelecture      serveur HTTP (stdlib, zéro dépendance)
-cmd/pokecontent      CLI de contenu : check | audio | sprites
+cmd/pokecontent      CLI de contenu : check | audio | sprites | prune
 internal/curriculum  chargement + VALIDATION du contenu, génération des séances
 internal/progress    sauvegarde JSON + répétition espacée (5 boîtes)
 internal/speech      texte → clé de fichier audio stable
@@ -234,6 +234,28 @@ peut jamais remplir est exactement le genre d'impasse que ce jeu s'interdit.
   évite, roule, cache, monte, tombe, danse, bouge.
 
 ---
+
+## La voix
+
+`make audio` génère toute la piste avec une **voix neuronale Microsoft Edge**
+(`fr-FR-DeniseNeural`) via [`edge-tts`](https://github.com/rany2/edge-tts) :
+gratuit, sans compte ni clé, et bien plus naturel que `say`. Le réseau n'est
+nécessaire qu'à la génération — la tablette lit des `.m4a` déjà prêts.
+
+```bash
+uv tool install edge-tts            # une fois (ou pipx install edge-tts)
+make audio                          # ce qui manque
+go run ./cmd/pokecontent audio -force                         # tout regénérer
+go run ./cmd/pokecontent audio -force -voice fr-FR-HenriNeural   # autre voix
+go run ./cmd/pokecontent audio -force -engine say -voice Thomas  # l'ancienne voix macOS
+```
+
+Voix françaises : `edge-tts --list-voices | grep fr-`. Chaque clip est rogné de
+son silence (Edge ajoute ~1 s de blanc à la fin, entendu comme un temps mort
+entre deux syllabes). La conversion `.m4a` passe par `afconvert` : macOS
+reste nécessaire. Changer de voix ne change pas les URLs (la clé dépend du
+texte, pas de la voix) : après un `-force`, incrémente `CACHE` dans `web/sw.js`
+pour que la tablette oublie l'ancienne.
 
 ## Studio voix — enregistrer ta propre voix
 
@@ -494,19 +516,25 @@ lecture déguisée :
   chaque réponse alimente la répétition espacée.
 - **👂 L'oreille fine** : entendre la syllabe, la toucher parmi quatre,
   60 secondes — pareil.
-- **❓ Pokémon mystère** : une silhouette de son propre Pokédex, quatre noms
-  écrits — lire les noms de Pokémon, le fantasme du jeu distillé.
+- **❓ Pokémon mystère** : une silhouette, quatre noms écrits — lire les noms
+  de Pokémon, le fantasme du jeu distillé.
 - **🔤 Les paires mot-image** : un memory où une carte sur deux est le mot
   ÉCRIT et l'autre son image — lire pour apparier, le record est le temps.
-- **🃏 Memory Pokémon** : six paires de ses propres captures, le record est le
-  temps.
+- **🃏 Memory Pokémon** : six paires de Pokémon, le record est le temps.
 - **🌿 La chasse** : 45 secondes, les Pokémon surgissent des hautes herbes de
   plus en plus vite.
 
 Les records se gèrent dans l'admin (effacer un record, ou tous).
 
-Le matériel vient de `GET /api/arcade` (tout ce qui a été appris), les records
-vivent dans la sauvegarde (`POST /api/records`).
+Le matériel vient de `GET /api/arcade` : les jeux de lecture n'utilisent que ce
+qui a été appris, mais les trois jeux Pokémon (mystère, memory, chasse) piochent
+dans **tout le roster** — les Pokémon du cours, attrapés ou non, plus
+`data/arcade.json` (le reste des générations 1 et 2, noms français de PokeAPI).
+Avec seulement trois captures, ils se répétaient en boucle. Ces Pokémon-là
+n'entrent jamais au Pokédex ; leur artwork est réduit à 240 px par
+`pokecontent sprites`. Un Pokémon ajouté au cours doit être retiré
+d'`arcade.json` (`pokecontent check` le signale). Les records vivent dans la
+sauvegarde (`POST /api/records`).
 
 ### La phrase, réécrite : « Construis la phrase »
 
@@ -536,7 +564,7 @@ En local, sur le réseau de la maison : `make run`, et c'est tout.
 En ligne, à côté d'un site existant, sous un sous-chemin :
 
 ```bash
-make content                        # la voix (macOS uniquement) doit exister avant le build
+make content                        # la voix (générée sur Mac) doit exister avant le build
 docker compose up -d                # standalone, http://<host>:8080/
 ```
 
@@ -563,7 +591,7 @@ d'habitude quand on monte une app sous un path.
 
 ### Ce qui n'est pas dans l'image
 
-- **La voix** est produite par `say` (macOS) : elle voyage dans le contexte de
+- **La voix** est générée sur Mac (voir « La voix ») : elle voyage dans le contexte de
   build. Comme le serveur construit l'image depuis un **clone du dépôt**, elle
   est committée — sinon la production part sans aucune voix, et sur une tablette
   Android le filet de sécurité TTS ne rattrape rien (pas de voix française

@@ -1267,14 +1267,16 @@ function renderReward(a, body, done) {
 }
 
 /* ---------------------------------------------------------------- arcade ---
-   The mini-games corner: four timed games with stored records to beat. Two are
-   pure celebration (memory, la chasse), two are reading in disguise (lecture,
-   l'oreille fine) — those also report their answers so the spaced repetition
-   learns from play. Nothing here blocks or advances the course. */
+   The mini-games corner: timed games with stored records to beat. The Pokémon
+   games (memory, la chasse, mystère) draw from the whole roster — the course's
+   Pokémon caught or not, plus data/arcade.json — so they stay varied from day
+   one; the reading games use only learned material and report their answers so
+   the spaced repetition learns from play. Nothing here blocks or advances the
+   course. */
 
 const Arcade = {
   timer: null,     // the game's interval/timeout handle
-  pool: null,      // learned words + syllables from /api/arcade
+  pool: null,      // learned words + syllables + Pokémon roster from /api/arcade
   items: [],       // spaced-repetition answers collected by comprehension games
 
   GAMES: [
@@ -1291,8 +1293,11 @@ const Arcade = {
     if (this.timer) { clearInterval(this.timer); clearTimeout(this.timer); this.timer = null; }
   },
 
-  caughtIds() {
-    return ((App.state && App.state.pokedex) || []).filter((p) => p.caught).map((p) => p.id);
+  /* Every Pokémon the games may show; the caught ones if the roster is missing. */
+  roster() {
+    const all = (this.pool && this.pool.pokemon) || [];
+    if (all.length) return all;
+    return ((App.state && App.state.pokedex) || []).filter((p) => p.caught);
   },
 
   record(id) {
@@ -1304,7 +1309,7 @@ const Arcade = {
     Voice.stop();
     this.stop();
     if (!this.pool) {
-      try { this.pool = await api('api/arcade'); } catch (_) { this.pool = { words: [], syllables: [] }; }
+      try { this.pool = await api('api/arcade'); } catch (_) { this.pool = { words: [], syllables: [], pokemon: [] }; }
     }
     const cards = this.GAMES.map((g) => {
       const best = this.record(g.id);
@@ -1389,9 +1394,9 @@ const Arcade = {
     else { burst('🎉'); Sfx.correct(); await say('Bravo !'); }
   },
 
-  /* Memory: six pairs of his Pokémon, the record is the time. */
+  /* Memory: six pairs of Pokémon, the record is the time. */
   memory() {
-    const ids = this.caughtIds();
+    const ids = this.roster().map((p) => p.id);
     ids.sort(() => Math.random() - 0.5);
     const picks = ids.slice(0, 6);
     const pad = [25, 1, 4, 7, 133, 143];
@@ -1445,7 +1450,7 @@ const Arcade = {
 
   /* La chasse : 45 seconds, the pop-ups speed up as the clock runs. */
   chasse() {
-    const ids = this.caughtIds();
+    const ids = this.roster().map((p) => p.id);
     let score = 0;
     let active = null;
     let popTimer = null;
@@ -1620,11 +1625,11 @@ const Arcade = {
     ask();
   },
 
-  /* Pokémon mystère : a silhouette from his own Pokédex, four written names —
+  /* Pokémon mystère : a silhouette from the whole roster, four written names —
      reading Pokémon names is the whole game's fantasy, distilled. */
   mystere() {
-    const caught = ((App.state && App.state.pokedex) || []).filter((p) => p.caught);
-    if (caught.length < 4) return this.hub();
+    const roster = this.roster();
+    if (roster.length < 4) return this.hub();
     this.items = [];
     let score = 0;
 
@@ -1632,7 +1637,7 @@ const Arcade = {
     const stage = el('div', { class: 'act', style: 'width:100%' });
 
     const ask = () => {
-      const shuffled = [...caught].sort(() => Math.random() - 0.5);
+      const shuffled = [...roster].sort(() => Math.random() - 0.5);
       const target = shuffled[0];
       const options = shuffled.slice(0, 4).sort(() => Math.random() - 0.5);
 

@@ -1016,6 +1016,9 @@ func (c *Curriculum) SpeechTexts() []SpeechItem {
 		add(p.Spoken(), speech.StyleWord)
 		add(p.Dex, speech.StyleNormal)
 	}
+	for _, p := range c.Arcade {
+		add(p.Spoken(), speech.StyleWord)
+	}
 	for _, phrase := range UIPhrases {
 		add(phrase, speech.StyleNormal)
 	}
