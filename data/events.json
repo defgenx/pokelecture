@@ -1,0 +1,62 @@
+[
+  {
+    "id": "petit",
+    "title": "Examen surprise — Créfadet",
+    "after": "ep06b",
+    "every": 4,
+    "pass": 70,
+    "pokemon": 482,
+    "questions": {
+      "son": 6,
+      "syl": 5,
+      "mot": 5,
+      "phrase": 2
+    },
+    "story": "Un examen surprise ! Créfadet veut savoir si tu connais bien tes sons. Une seule réponse par question !"
+  },
+  {
+    "id": "professeur",
+    "title": "Examen surprise — Créfollet",
+    "after": "ep12b",
+    "every": 4,
+    "pass": 75,
+    "pokemon": 481,
+    "questions": {
+      "son": 8,
+      "syl": 6,
+      "mot": 6,
+      "phrase": 3
+    },
+    "story": "Un examen surprise ! Créfollet a préparé des questions sur tout ce que tu as appris. Concentre-toi !"
+  },
+  {
+    "id": "grand",
+    "title": "Le Grand Examen — Créhelf",
+    "after": "ep24b",
+    "every": 5,
+    "pass": 80,
+    "pokemon": 480,
+    "questions": {
+      "son": 10,
+      "syl": 6,
+      "mot": 8,
+      "phrase": 4
+    },
+    "story": "Le Grand Examen ! Tu as tes huit badges. Créhelf, le Pokémon du savoir, vérifie que tu sais tout lire."
+  },
+  {
+    "id": "maitre",
+    "title": "L'Examen de Maître — Arceus",
+    "after": "ep40",
+    "every": 5,
+    "pass": 85,
+    "pokemon": 493,
+    "questions": {
+      "son": 12,
+      "syl": 6,
+      "mot": 8,
+      "phrase": 4
+    },
+    "story": "L'Examen de Maître ! Arceus descend du ciel. Seul un vrai Maître Lecteur peut le réussir !"
+  }
+]

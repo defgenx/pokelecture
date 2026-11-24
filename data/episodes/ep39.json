@@ -1,0 +1,118 @@
+{
+  "id": "ep39",
+  "route": 31,
+  "title": "Académie 4 — le e qui fait è",
+  "region": "Académie Pokémon",
+  "story": "Dernier cours : un secret de grand lecteur. Quand le e est devant deux lettres pareilles, il fait le son è : ette, elle, esse, enne. Mimiqui s'est caché dans la classe... trouve-le !",
+  "new_graphemes": [
+    "ette",
+    "elle",
+    "esse",
+    "enne"
+  ],
+  "syllables": [
+    "belle",
+    "tenne",
+    "quette",
+    "lesse"
+  ],
+  "words": [
+    {
+      "text": "Floette",
+      "say_as": "Floète",
+      "pokemon": 670,
+      "syllables": [
+        "Flo",
+        "ette"
+      ]
+    },
+    {
+      "text": "Flabébé",
+      "pokemon": 669,
+      "syllables": [
+        "Fla",
+        "bé",
+        "bé"
+      ]
+    },
+    {
+      "text": "Raquette",
+      "emoji": "🎾",
+      "syllables": [
+        "Ra",
+        "quette"
+      ]
+    },
+    {
+      "text": "Antenne",
+      "emoji": "📡",
+      "syllables": [
+        "An",
+        "tenne"
+      ]
+    },
+    {
+      "text": "Poubelle",
+      "emoji": "🗑️",
+      "syllables": [
+        "Pou",
+        "belle"
+      ]
+    },
+    {
+      "text": "Tablette",
+      "emoji": "📱",
+      "syllables": [
+        "Ta",
+        "blette"
+      ]
+    },
+    {
+      "text": "Mimiqui",
+      "say_as": "Mimiki",
+      "pokemon": 778,
+      "syllables": [
+        "Mi",
+        "mi",
+        "qui"
+      ]
+    },
+    {
+      "text": "Lougaroc",
+      "pokemon": 745,
+      "syllables": [
+        "Lou",
+        "ga",
+        "roc"
+      ]
+    },
+    {
+      "text": "Vitesse",
+      "syllables": [
+        "Vi",
+        "tesse"
+      ],
+      "icon": "speed"
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Mimiqui a une raquette.",
+      "pokemon": 778
+    },
+    {
+      "text": "Floette porte une fleur.",
+      "pokemon": 670
+    },
+    {
+      "text": "Lougaroc hurle sur le rocher.",
+      "pokemon": 745
+    }
+  ],
+  "reward_pokemon": 778,
+  "boss": {
+    "pokemon": 745,
+    "hp": 4,
+    "taunt": "Lougaroc hurle dans la cour de l'Académie ! Lis plus fort que lui !"
+  }
+}

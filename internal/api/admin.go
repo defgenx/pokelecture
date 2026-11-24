@@ -61,6 +61,7 @@ type adminSummary struct {
 	Episodes   []adminEpisodeView `json:"episodes"`
 	Items      []adminItemView    `json:"items"`
 	Pokedex    []adminPokemonView `json:"pokedex"`
+	Exams      []adminExamView    `json:"exams"`
 }
 
 func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
@@ -79,6 +80,7 @@ func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
 		TowerFloor: st.TowerFloor,
 		Records:    st.Records,
 		Settings:   st.Settings,
+		Exams:      s.adminExams(st),
 	}
 
 	unlocked := true

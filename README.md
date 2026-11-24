@@ -619,6 +619,15 @@ ensuite**, et le Champion en toute fin de parcours.
 | ★ | *Conseil des 4, 3/4* | combat légendaire | **Celebi** |
 | ★ | *Conseil des 4, 4/4* | combat légendaire | **Zoroark** |
 | 🏆 | *tout* | **Le Champion** · Trophée du Champion | **Mew** |
+| 28 | tion | Évolution, Attention, Station, Phyllali, Givrali | **Nymphali** |
+| 29 | ail eil aille eille | Soleil, Corail, Bataille, Abeille, Médaille, Apireine, Riolu | **Lucario** |
+| 30 | œu oeu ç | Cœur, Sœur, Œuf, Leçon, Garçon, Noeunoeuf, Grelaçon, Tarsal, Kirlia | **Gardevoir** |
+| 31 | ette elle esse enne | Floette, Flabébé, Raquette, Antenne, Poubelle, Vitesse, Lougaroc | **Mimiqui** |
+| ★ | *révision de tout* | **Arène du Savoir** · Diplôme de l'Académie | **Meloetta** |
+
+Sur la carte, les quatre portes du Conseil sont numérotées **1/4 à 4/4** et
+le Champion porte 🏆 : avec la même ★ partout, on n'en comptait que trois (le
+partenaire, posé sur la prochaine porte, cachait la sienne).
 
 Les routes 19–24 sont **les Îles Lointaines**, sur le thème de l'évolution :
 les Pokémon attrapés au début de l'aventure ont grandi avec le lecteur.
@@ -641,6 +650,80 @@ Unys/Alola et Galar/Paldea (Poussifeu, Gobou, Tiplouf, Moustillon, Brindibou,
 Flamiaou, Flambino, Poussacha, Chochodile…) — puis trois **Failles Ultra**,
 des combats légendaires doubles : Dialga **et** Palkia, Lunala **et**
 Solgaleo, Giratina **et** Necrozma entrent au Pokédex.
+
+### L'Académie Pokémon : les sons de CE1
+
+Après les Failles Ultra, cinq épisodes « pour grands lecteurs » (routes 28–31
+puis l'Arène du Savoir) enseignent ce qui dépasse le CP : `tion` (/sjɔ̃/),
+`ail eil aille eille`, `œu`/`oeu` et `ç`, et le **e qui fait è** devant une
+consonne double (`ette elle esse enne`). Chaque cours fait lire des noms de
+Pokémon d'autres générations (Lucario, Gardevoir, Mimiqui…), attrapés en les
+lisant. Pièges écartés : **Nymphali** se dit /nɛ̃fali/ (`ym` n'est pas
+enseigné) — c'est la récompense, lue *à* l'enfant, jamais un mot à déchiffrer ;
+**Pomdepik** se dit « pomme » (le `om` glouton lirait /pɔ̃/) : il est à la Tour.
+« Le son manquant » découpe chaque mot avec les sons connus **sur sa route**
+(« Aile » reste a-i-l-e, pas le `ail` de l'Académie).
+Ces épisodes forment le quatrième palier de difficulté (6 mots par combat,
+3 syllabes intruses).
+
+### Les examens surprises (`data/events.json`)
+
+Un **examen surprise** n'est pas une étape du parcours : il **apparaît au
+hasard** sur la carte — un 🎓 avec un « ! », à la même case dans chaque
+région, annoncé à voix haute — un jour sur `every` (tiré par un hachage de
+l'examen et de la fenêtre de jours : aléatoire, mais stable sur la journée),
+**une fois son épisode `after` terminé**, et tant qu'il n'est pas réussi.
+
+| Examen | Apparaît après | Questions (sons / syllabes / mots / phrases) | Réussite | Pokémon |
+|---|---|---|---|---|
+| Examen surprise | Arène de l'Orage | 6 / 5 / 5 / 2 | 70 % | Créfadet |
+| Examen surprise | Arène du Volcan | 8 / 6 / 6 / 3 | 75 % | Créfollet |
+| Le Grand Examen | Tour du Ciel (8 badges) | 10 / 6 / 8 / 4 | 80 % | Créhelf |
+| L'Examen de Maître | Arène du Savoir | 12 / 6 / 8 / 4 | 85 % | Arceus |
+
+C'est une vraie évaluation : **une seule réponse par question**, aucune aide
+avant de répondre (pas de syllabe à toucher, pas de karaoké), la bonne
+réponse montrée et dite après une erreur. Les questions vont **du plus fragile
+au plus solide** (boîtes de répétition). La section « sons » fait entendre un
+son et montrer les lettres qui l'écrivent — sans jamais mettre deux homophones
+côte à côte (`o`/`au`/`eau`, `ou`/`oo`, `in`/`ain`, `œu`/`eu`… liste `Homophones` dans
+`internal/curriculum/event.go`, la seule : « Le son manquant » la reçoit de
+`/api/arcade`), et la section « syllabes » n'offre jamais deux syllabes qui
+se disent pareil (`san`/`sen`, `ca`/`ka`, `son`/`çon`). Une tentative qui répond à moins de la moitié
+des questions est un échec.
+
+- **Réussi** : le Pokémon entre au Pokédex (+5 Poké Balls), l'examen ne
+  revient plus.
+- **Raté** : l'écran montre les sons à revoir (touchables, ils se font
+  entendre) ; chaque réponse fausse est descendue d'une boîte et revient en
+  échauffement — les sons aussi : un son raté à un examen est redemandé
+  (« entends-le, touche ses lettres ») au début des séances suivantes. L'examen se retente le jour même, ou réapparaîtra plus tard.
+- **Admin, onglet Examens** : la condition, le dernier essai section par
+  section, ce qui est à revoir, et **« Faire apparaître aujourd'hui »** pour le
+  poser sur la carte sans attendre le tirage.
+
+Ajouter un examen = une entrée de `events.json` (`id`, `title`, `story`,
+`after`, `every`, `pass`, `pokemon`, `questions`) ; `pokecontent check`
+vérifie l'épisode, le Pokémon et les sections.
+
+### Les étoiles : justesse et vitesse
+
+Trois étoiles, pas cinq : à 5 ans, trois se comptent d'un coup d'œil, et les
+réglages de déblocage (★ / ★★ / ★★★) en dépendent. La vitesse décide de la
+troisième :
+
+- ★ : l'épisode est fini ;
+- ★★ : 70 % de bonnes réponses ;
+- ★★★ : 90 % de bonnes réponses **et** au moins 60 % des réponses rapides.
+
+Une réponse est rapide sous 5 s pour un son ou une syllabe, 7 s pour un mot ;
+le chrono part quand la consigne parlée et la question sont finies. Les
+phrases (lues à voix haute, à son rythme) et le combat ne sont **pas**
+chronométrés pour l'étoile : sinon taper « J'AI LU ! » sans lire serait
+« rapide », et une règle « ★★★ pour la suite » pourrait bloquer l'aventure sur
+la vitesse d'un enfant de 5 ans. Une troisième étoile perdue seulement au chrono est dite : « Lis un
+peu plus vite pour gagner la troisième étoile ! ». La vitesse ne fait jamais
+rater : elle ne retire que la troisième étoile.
 
 ### Perdre existe : les vies en combat
 
@@ -668,6 +751,10 @@ Les exercices durcissent avec la progression, par tiers du parcours :
 | Routes 1–9 | 3 | 1 syllabe intruse | 4 |
 | Routes 10–18 | 4 | 1 | 4 |
 | Ligue et Îles | 4 | 2 | 5 (6 en arène) |
+| Académie (route 28+) | 4 | 3 | 6 |
+
+Le palier suit **la plus haute route atteinte**, pas la position dans la
+liste : insérer un épisode ne décale plus la rampe.
 
 Côté programme : une fois les Îles terminées, l'inventaire couvre **tous les
 graphèmes du CP** — voyelles, consonnes, digraphes (`ou oi on an en in au eu
@@ -691,7 +778,11 @@ réguliers, phrases sujet-verbe-complément, aucune notion de CE1 (pas de
   intruses) avec les étages, les mots deviennent plus longs, et **un étage sur
   deux libère un Pokémon exclusif à la Tour** : vingt Pokémon (Psykokwak,
   Onix, Ectoplasma, Lokhlass… jusqu'à Dracolosse à l'étage 40) qu'on ne peut
-  obtenir nulle part ailleurs. On ne passe pas à l'étage suivant tant que
+  obtenir nulle part ailleurs. **Au-delà de l'étage 40, chaque étage** en
+  libère un : 32 de plus (Pichu, Nidoking à l'étage 50, Steelix au 60,
+  Cizayox au 70… Leveinard au 72, Pomdepik au 73). Leur ordre est celui des `"tower": true`
+  dans `pokemon.json` ; leur ligne « où le trouver » est commune
+  (« tout en haut de la Tour »), une ligne de voix par étage coûterait cher. On ne passe pas à l'étage suivant tant que
   l'étage courant n'est pas réussi ; chaque mot lu alimente la répétition
   espacée.
 - **Rotation des rediffusions** : quand tout est terminé, JOUER relance
@@ -780,8 +871,8 @@ suivie d'une voyelle, un `er` au milieu du mot, un `s` entre voyelles, un
   Pokédex, ou le Pokédex sauvage) : un autre chemin pour les compléter.
 - **Le Pokédex dit où trouver chacun.** Toucher une silhouette : « Il t'attend
   sur la route 7 ! », « … à l'étage 12 de la Tour de Combat ! », « Fais
-  évoluer un de tes Pokémon pour l'avoir ! » (`curriculum.Where`). Les 97 sont
-  attrapables : routes, arènes, Tour (étages 2 à 40) — `pokecontent check`
+  évoluer un de tes Pokémon pour l'avoir ! » (`curriculum.Where`). Les 150 sont
+  attrapables : routes, arènes, Tour (étages 2 à 72), examens surprises — `pokecontent check`
   refuse un Pokémon qui ne l'est nulle part. **Tous les 10 Pokémon**, une
   récompense (Super Ball + 2 Poké Balls).
 - **Missions du jour (📜).** Trois par jour, tirées de sept (attraper, lire dix
@@ -809,7 +900,14 @@ premier événement d'un nouveau jour.
 ## Mini-jeux — chronos, scores et records
 
 Un coin **🎮 Mini-jeux** sur l'accueil (et à la fin de chaque séance) : neuf
-jeux, chacun avec **un record enregistré à battre** — nouveau
+jeux, **débloqués un à un dans l'aventure** (`curriculum.GameUnlocks`) —
+Memory après la route 1, la chasse après la 2, Lis et attrape après la 3,
+l'oreille fine après l'Arène de Glace, l'atelier après la route 5, Pokémon
+mystère après l'Arène de l'Orage, les paires après la route 8, le tambour
+après l'Arène Psy, le son manquant après l'Arène du Volcan. Un jeu fermé
+montre un 🔒 et se dit « plus loin dans l'aventure » ; l'écran de fin
+annonce le jeu qui vient de s'ouvrir. Le mode libre de l'admin ouvre tout.
+Chacun a **un record enregistré à battre** — nouveau
 record = feux d'artifice. Deux sont de la pure récompense, deux sont de la
 lecture déguisée :
 

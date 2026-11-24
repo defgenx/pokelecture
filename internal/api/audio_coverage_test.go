@@ -46,6 +46,9 @@ func TestEveryServedClipExists(t *testing.T) {
 	for _, ep := range cur.Episodes {
 		paths = append(paths, "api/session/"+ep.ID)
 	}
+	for _, ev := range cur.Events {
+		paths = append(paths, "api/session/"+curriculum.EventPrefix+ev.ID)
+	}
 	urls := map[string]string{}
 	// Sessions are shuffled: a few draws per endpoint cover the variations.
 	for round := 0; round < 4; round++ {

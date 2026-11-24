@@ -18,8 +18,11 @@ const HOMOPHONES = [
   ['l', 'll'], ['n', 'nn'], ['r', 'rr'], ['j', 'ge', 'gi'], ['ou', 'oo'], ['z', 's'],
 ];
 
+// The server's list (curriculum.Homophones) wins; the local one is the
+// fallback for a pool fetched before it carried one.
 function sameSound(a, b) {
-  return a === b || HOMOPHONES.some((g) => g.includes(a) && g.includes(b));
+  const groups = (Arcade.pool && Arcade.pool.homophones) || HOMOPHONES;
+  return a === b || groups.some((g) => g.includes(a) && g.includes(b));
 }
 
 const VOWELISH = new Set(['voyelle', 'digraphe', 'trigraphe']);

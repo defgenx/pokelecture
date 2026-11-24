@@ -1,0 +1,124 @@
+{
+  "id": "ep38",
+  "route": 30,
+  "title": "Académie 3 — œu et ç",
+  "region": "Académie Pokémon",
+  "story": "Troisième cours : deux lettres très spéciales. Le o et le e qui se tiennent la main, comme dans cœur. Et le c avec une petite queue, comme dans leçon. Gardevoir surveille la classe !",
+  "new_graphemes": [
+    "œu",
+    "oeu",
+    "ç"
+  ],
+  "syllables": [
+    "çon",
+    "ça",
+    "noeu",
+    "cœur"
+  ],
+  "words": [
+    {
+      "text": "Cœur",
+      "icon": "heart",
+      "syllables": [
+        "Cœur"
+      ]
+    },
+    {
+      "text": "Sœur",
+      "emoji": "👧",
+      "syllables": [
+        "Sœur"
+      ]
+    },
+    {
+      "text": "Œuf",
+      "emoji": "🥚",
+      "syllables": [
+        "Œuf"
+      ]
+    },
+    {
+      "text": "Leçon",
+      "emoji": "📖",
+      "syllables": [
+        "Le",
+        "çon"
+      ]
+    },
+    {
+      "text": "Garçon",
+      "emoji": "👦",
+      "syllables": [
+        "Gar",
+        "çon"
+      ]
+    },
+    {
+      "text": "Noeunoeuf",
+      "pokemon": 102,
+      "syllables": [
+        "Noeu",
+        "noeuf"
+      ]
+    },
+    {
+      "text": "Grelaçon",
+      "pokemon": 712,
+      "syllables": [
+        "Gre",
+        "la",
+        "çon"
+      ]
+    },
+    {
+      "text": "Tarsal",
+      "pokemon": 280,
+      "syllables": [
+        "Tar",
+        "sal"
+      ]
+    },
+    {
+      "text": "Kirlia",
+      "pokemon": 281,
+      "syllables": [
+        "Kir",
+        "li",
+        "a"
+      ]
+    },
+    {
+      "text": "Gardevoir",
+      "pokemon": 282,
+      "syllables": [
+        "Gar",
+        "de",
+        "voir"
+      ]
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Gardevoir aime sa sœur Kirlia.",
+      "pokemon": 282
+    },
+    {
+      "text": "Tarsal écoute la leçon.",
+      "pokemon": 280
+    },
+    {
+      "text": "Noeunoeuf roule sur le sable.",
+      "pokemon": 102
+    },
+    {
+      "text": "Grelaçon glisse sur la glace.",
+      "pokemon": 712
+    }
+  ],
+  "reward_pokemon": 282,
+  "boss": {
+    "pokemon": 712,
+    "hp": 4,
+    "taunt": "Grelaçon gèle le tableau de la classe ! Lis pour le faire fondre !"
+  }
+}

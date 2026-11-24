@@ -1,0 +1,93 @@
+{
+  "id": "ep36",
+  "route": 28,
+  "title": "Académie 1 — le son tion",
+  "region": "Académie Pokémon",
+  "story": "Bienvenue à l'Académie Pokémon, l'école des grands lecteurs ! Ici, on apprend les sons difficiles. Premier cours : tion, comme dans évolution. Les évolutions d'Évoli t'attendent en classe !",
+  "new_graphemes": [
+    "tion"
+  ],
+  "syllables": [
+    "tion",
+    "sta",
+    "mo",
+    "lu"
+  ],
+  "words": [
+    {
+      "text": "Évolution",
+      "icon": "sparkle",
+      "syllables": [
+        "É",
+        "vo",
+        "lu",
+        "tion"
+      ]
+    },
+    {
+      "text": "Attention",
+      "emoji": "⚠️",
+      "syllables": [
+        "A",
+        "tten",
+        "tion"
+      ]
+    },
+    {
+      "text": "Station",
+      "emoji": "🚉",
+      "syllables": [
+        "Sta",
+        "tion"
+      ]
+    },
+    {
+      "text": "Émotion",
+      "icon": "heart",
+      "syllables": [
+        "É",
+        "mo",
+        "tion"
+      ]
+    },
+    {
+      "text": "Phyllali",
+      "say_as": "Filali",
+      "pokemon": 470,
+      "syllables": [
+        "Phy",
+        "lla",
+        "li"
+      ]
+    },
+    {
+      "text": "Givrali",
+      "pokemon": 471,
+      "syllables": [
+        "Gi",
+        "vra",
+        "li"
+      ]
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Évoli rêve de son évolution.",
+      "pokemon": 133
+    },
+    {
+      "text": "Phyllali mange une potion.",
+      "pokemon": 470
+    },
+    {
+      "text": "Attention, Givrali arrive !",
+      "pokemon": 471
+    }
+  ],
+  "reward_pokemon": 700,
+  "boss": {
+    "pokemon": 471,
+    "hp": 4,
+    "taunt": "Givrali fait tomber la neige sur la classe ! Lis vite !"
+  }
+}

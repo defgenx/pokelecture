@@ -7,7 +7,6 @@
   {"id": "è", "display": "è", "say_as": "è", "kind": "voyelle", "example": "Salamèche", "pokemon": 4, "mnemo": "Le son è, comme dans Salamèche. La bouche s'ouvre un peu plus."},
   {"id": "ê", "display": "ê", "say_as": "ê", "kind": "voyelle", "example": "Tempête", "emoji": "🌪️", "mnemo": "Le son ê, comme dans Tempête de Sable. Il porte un chapeau pointu."},
   {"id": "e", "display": "e", "say_as": "e", "kind": "muet", "example": "Morsure", "emoji": "😬", "mnemo": "Le e tout seul à la fin d'un mot : on l'entend à peine."},
-
   {"id": "m", "display": "m", "say_as": "me", "kind": "consonne", "example": "Miaouss", "pokemon": 52, "mnemo": "Le son du m, comme dans Miaouss. Ferme les lèvres, ça chatouille."},
   {"id": "l", "display": "l", "say_as": "le", "kind": "consonne", "example": "Ramoloss", "pokemon": 79, "mnemo": "Le son du l, comme dans Ramoloss. La langue monte derrière les dents."},
   {"id": "r", "display": "r", "say_as": "reu", "kind": "consonne", "example": "Rattata", "pokemon": 19, "mnemo": "Le son du r, comme dans Rattata. Ça gratte au fond de la gorge."},
@@ -17,7 +16,6 @@
   {"id": "v", "display": "v", "say_as": "ve", "kind": "consonne", "example": "Évoli", "pokemon": 133, "mnemo": "Le son du v, comme dans Évoli. Comme le f, mais ça vibre."},
   {"id": "j", "display": "j", "say_as": "je", "kind": "consonne", "example": "Jungle", "emoji": "🌴", "mnemo": "Le son du j, comme dans Jungle."},
   {"id": "z", "display": "z", "say_as": "ze", "kind": "consonne", "example": "Bulbizarre", "pokemon": 1, "mnemo": "Le son du z, comme dans Bulbizarre. C'est l'abeille qui vole."},
-
   {"id": "t", "display": "t", "say_as": "te", "kind": "consonne", "example": "Otaria", "pokemon": 86, "mnemo": "Le son du t, comme dans Otaria. La langue tape derrière les dents."},
   {"id": "p", "display": "p", "say_as": "peu", "kind": "consonne", "example": "Paras", "pokemon": 46, "mnemo": "Le son du p, comme dans Paras. Les lèvres font un petit pop."},
   {"id": "d", "display": "d", "say_as": "de", "kind": "consonne", "example": "Doduo", "pokemon": 84, "mnemo": "Le son du d, comme dans Doduo. Comme le t, mais ça vibre."},
@@ -30,7 +28,6 @@
   {"id": "ce", "display": "ce", "say_as": "se", "kind": "digraphe", "example": "Carapuce", "pokemon": 7, "mnemo": "Devant un e, le c fait le son s, comme dans Carapuce."},
   {"id": "ci", "display": "ci", "say_as": "si", "kind": "digraphe", "example": "Racine", "emoji": "🌱", "mnemo": "Devant un i, le c fait aussi le son s, comme dans Racine."},
   {"id": "qu", "display": "qu", "say_as": "que", "kind": "digraphe", "example": "Attaque", "icon": "impact", "mnemo": "Le q et le u sont toujours ensemble. Ils font le son k, comme dans Attaque."},
-
   {"id": "ch", "display": "ch", "say_as": "che", "kind": "digraphe", "example": "Pikachu", "pokemon": 25, "mnemo": "Le c et le h ensemble font un seul son, comme dans Pikachu."},
   {"id": "ou", "display": "ou", "say_as": "ou", "kind": "digraphe", "example": "Roucool", "pokemon": 16, "mnemo": "Le o et le u ensemble font le son ou, comme dans Roucool."},
   {"id": "oo", "display": "oo", "say_as": "ou", "kind": "digraphe", "example": "Roucool", "pokemon": 16, "mnemo": "Dans les noms de Pokémon, deux o font le son ou : Roucool, Tentacool."},
@@ -57,7 +54,6 @@
   {"id": "y", "display": "y", "say_as": "i", "kind": "voyelle", "example": "Ponyta", "pokemon": 77, "mnemo": "Le y fait le son du i, comme dans Ponyta. C'est un i déguisé."},
   {"id": "x", "display": "x", "say_as": "kseu", "kind": "consonne", "example": "Goupix", "pokemon": 37, "mnemo": "Le son du x, comme dans Goupix."},
   {"id": "h", "display": "h", "say_as": "Le h est muet.", "kind": "muet", "example": "Huit", "emoji": "8️⃣", "mnemo": "Le h ne fait aucun bruit du tout. Il est timide, comme dans Huit."},
-
   {"id": "mm", "display": "mm", "say_as": "me", "kind": "double", "example": "Flammèche", "emoji": "🔥", "mnemo": "Deux m collés font un seul son, celui du m."},
   {"id": "pp", "display": "pp", "say_as": "peu", "kind": "double", "example": "Rappel", "emoji": "💊", "mnemo": "Deux p collés font un seul son, celui du p."},
   {"id": "tt", "display": "tt", "say_as": "te", "kind": "double", "example": "Rattata", "pokemon": 19, "mnemo": "Deux t collés font un seul son, comme dans Rattata."},
@@ -65,5 +61,17 @@
   {"id": "nn", "display": "nn", "say_as": "ne", "kind": "double", "example": "Tonnerre", "emoji": "⚡", "mnemo": "Deux n collés font un seul son, celui du n."},
   {"id": "rr", "display": "rr", "say_as": "reu", "kind": "double", "example": "Tonnerre", "emoji": "⚡", "mnemo": "Deux r collés font un seul son, celui du r."},
   {"id": "ss", "display": "ss", "say_as": "se", "kind": "double", "example": "Ramoloss", "pokemon": 79, "mnemo": "Deux s collés font le son du serpent, comme dans Ramoloss."},
-  {"id": "ff", "display": "ff", "say_as": "feu", "kind": "double", "example": "Griffe", "emoji": "🐾", "mnemo": "Deux f collés font un seul son, celui du f."}
+  {"id": "ff", "display": "ff", "say_as": "feu", "kind": "double", "example": "Griffe", "emoji": "🐾", "mnemo": "Deux f collés font un seul son, celui du f."},
+  {"id": "tion", "display": "tion", "say_as": "sion", "kind": "trigraphe", "example": "Évolution", "icon": "sparkle", "mnemo": "Le t, le i, le o et le n ensemble font le son sion, comme dans Évolution."},
+  {"id": "ail", "display": "ail", "say_as": "aïe", "kind": "trigraphe", "example": "Corail", "emoji": "🐚", "mnemo": "À la fin d'un mot, a, i, l font le son aïe."},
+  {"id": "aille", "display": "aille", "say_as": "aïe", "kind": "trigraphe", "example": "Bataille", "emoji": "⚔️", "mnemo": "Avec un e au bout, a, i, l, l, e font aussi le son aïe, comme dans Bataille."},
+  {"id": "eil", "display": "eil", "say_as": "eille", "kind": "trigraphe", "example": "Soleil", "emoji": "☀️", "mnemo": "À la fin d'un mot, e, i, l font le son eille, comme dans Soleil."},
+  {"id": "eille", "display": "eille", "say_as": "eille", "kind": "trigraphe", "example": "Abeille", "emoji": "🐝", "mnemo": "Avec un e au bout, c'est le même son, comme dans Abeille."},
+  {"id": "œu", "display": "œu", "say_as": "eux", "kind": "trigraphe", "example": "Cœur", "icon": "heart", "mnemo": "Le o et le e collés, avec le u, font le son eu, comme dans Cœur."},
+  {"id": "oeu", "display": "oeu", "say_as": "eux", "kind": "trigraphe", "example": "Noeunoeuf", "pokemon": 102, "mnemo": "Pareil sans les lettres collées : o, e, u font le son eu, comme dans Noeunoeuf."},
+  {"id": "ç", "display": "ç", "say_as": "se", "kind": "consonne", "example": "Leçon", "emoji": "📖", "mnemo": "Le c avec une petite queue fait toujours le son du s, comme dans Leçon."},
+  {"id": "ette", "display": "ette", "say_as": "êtes", "kind": "trigraphe", "example": "Floette", "pokemon": 670, "mnemo": "Devant deux t, le e fait le son è : ette, comme dans Floette."},
+  {"id": "elle", "display": "elle", "say_as": "elle", "kind": "trigraphe", "example": "Poubelle", "emoji": "🗑️", "mnemo": "Devant deux l, le e fait le son è : elle, comme dans Poubelle."},
+  {"id": "esse", "display": "esse", "say_as": "esse", "kind": "trigraphe", "example": "Vitesse", "icon": "speed", "mnemo": "Devant deux s, le e fait le son è : esse, comme dans Vitesse."},
+  {"id": "enne", "display": "enne", "say_as": "haine", "kind": "trigraphe", "example": "Antenne", "emoji": "📡", "mnemo": "Devant deux n, le e fait le son è : enne, comme dans Antenne."}
 ]

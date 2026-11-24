@@ -1,0 +1,117 @@
+{
+  "id": "ep37",
+  "route": 29,
+  "title": "Académie 2 — eil, ail, eille, aille",
+  "region": "Académie Pokémon",
+  "story": "Deuxième cours de l'Académie : le soleil et la bataille ! Les lettres i et l, à la fin d'un mot, chantent un son nouveau. Lucario et son petit Riolu sont tes professeurs aujourd'hui.",
+  "new_graphemes": [
+    "ail",
+    "eil",
+    "aille",
+    "eille"
+  ],
+  "syllables": [
+    "leil",
+    "veil",
+    "taille",
+    "beille"
+  ],
+  "words": [
+    {
+      "text": "Soleil",
+      "emoji": "☀️",
+      "syllables": [
+        "So",
+        "leil"
+      ]
+    },
+    {
+      "text": "Réveil",
+      "emoji": "⏰",
+      "syllables": [
+        "Ré",
+        "veil"
+      ]
+    },
+    {
+      "text": "Abeille",
+      "emoji": "🐝",
+      "syllables": [
+        "A",
+        "beille"
+      ]
+    },
+    {
+      "text": "Bataille",
+      "emoji": "⚔️",
+      "syllables": [
+        "Ba",
+        "taille"
+      ]
+    },
+    {
+      "text": "Médaille",
+      "emoji": "🏅",
+      "syllables": [
+        "Mé",
+        "daille"
+      ]
+    },
+    {
+      "text": "Apireine",
+      "pokemon": 416,
+      "syllables": [
+        "A",
+        "pi",
+        "reine"
+      ]
+    },
+    {
+      "text": "Lucario",
+      "pokemon": 448,
+      "syllables": [
+        "Lu",
+        "ca",
+        "ri",
+        "o"
+      ]
+    },
+    {
+      "text": "Riolu",
+      "pokemon": 447,
+      "syllables": [
+        "Ri",
+        "o",
+        "lu"
+      ]
+    },
+    {
+      "text": "Corail",
+      "emoji": "🐚",
+      "syllables": [
+        "Co",
+        "rail"
+      ]
+    }
+  ],
+  "sentences": [
+    {
+      "text": "Lucario protège Riolu.",
+      "pokemon": 448
+    },
+    {
+      "text": "Apireine vole au soleil.",
+      "pokemon": 416
+    },
+    {
+      "text": "Riolu gagne une médaille.",
+      "pokemon": 447
+    }
+  ],
+  "reward_pokemon": 448,
+  "boss": {
+    "pokemon": 416,
+    "hp": 4,
+    "taunt": "Apireine appelle toute sa ruche ! Bzzz ! Lis pour gagner la bataille !"
+  }
+}

@@ -145,7 +145,7 @@ type BadgeDecl struct {
 var Badges = map[string]bool{
 	"glace": true, "orage": true, "psy": true, "volcan": true,
 	"maree": true, "arcenciel": true, "tonnerre": true, "ciel": true,
-	"champion": true,
+	"champion": true, "diplome": true,
 }
 
 // Episode is one ~12 minute session: a declaration of content, not a script.
@@ -250,6 +250,9 @@ type Curriculum struct {
 	// (data/evolutions.json).
 	Partners   []PartnerLine
 	Evolutions []PartnerLine
+
+	// Events are the surprise exams (data/events.json), in priority order.
+	Events []Event
 }
 
 // Roster is every Pokémon the mini-games may show — the course's and the
@@ -339,6 +342,10 @@ func Load(dir string) (*Curriculum, error) {
 		return nil, err
 	}
 	if err := readJSON(filepath.Join(dir, "evolutions.json"), &c.Evolutions); err != nil && !os.IsNotExist(errors.Unwrap(err)) {
+		return nil, err
+	}
+
+	if err := readJSON(filepath.Join(dir, "events.json"), &c.Events); err != nil && !os.IsNotExist(errors.Unwrap(err)) {
 		return nil, err
 	}
 
@@ -540,6 +547,8 @@ func (c *Curriculum) Validate() []error {
 	errs = append(errs, c.checkPokedexCompletable()...)
 	errs = append(errs, c.validatePartners()...)
 	errs = append(errs, c.validateWild()...)
+	errs = append(errs, c.validateEvents()...)
+	errs = append(errs, c.validateGames()...)
 	seen := map[int]bool{}
 	for _, p := range c.Arcade {
 		switch _, inCourse := c.Pokemon[p.ID]; {
@@ -565,6 +574,9 @@ func (c *Curriculum) checkPokedexCompletable() []error {
 		for _, id := range ep.CatchablePokemon() {
 			catchable[id] = true
 		}
+	}
+	for _, ev := range c.Events {
+		catchable[ev.Pokemon] = true
 	}
 	var errs []error
 	for _, id := range c.PokemonOrder {

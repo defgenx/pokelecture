@@ -93,6 +93,8 @@ type State struct {
 	TowerFloor int `json:"tower_floor,omitempty"`
 	// Records holds the best score per mini-game.
 	Records map[string]int `json:"records,omitempty"`
+	// Exams holds the surprise exam results, by event id.
+	Exams map[string]ExamRecord `json:"exams,omitempty"`
 
 	// Partner is the starter chosen on first launch: one species line, levelled
 	// by experience earned reading. Nil until the child has picked one.
@@ -148,6 +150,21 @@ type Today struct {
 	Quests   []string       `json:"quests,omitempty"`   // today's mission ids
 	Progress map[string]int `json:"progress,omitempty"` // per mission kind
 	Claimed  []string       `json:"claimed,omitempty"`  // missions already rewarded
+	Event    string         `json:"event,omitempty"`    // exam a parent called up for today
+}
+
+// ExamRecord is the history of one surprise exam: what the parent reads in
+// the admin to know which sounds hold and which do not.
+type ExamRecord struct {
+	Attempts int       `json:"attempts"`
+	Passed   bool      `json:"passed,omitempty"`
+	Best     int       `json:"best"` // percent
+	Last     int       `json:"last"` // percent
+	LastAt   time.Time `json:"last_at"`
+	// Sections: right and asked per section of the last attempt.
+	Sections map[string][2]int `json:"sections,omitempty"`
+	// Missed: item ids answered wrong on the last attempt.
+	Missed []string `json:"missed,omitempty"`
 }
 
 // Lock is a hashed picture code, with its count of wrong tries.
@@ -375,6 +392,11 @@ func (s *Store) copyLocked() State {
 		out.Today.Progress[k] = v
 	}
 	out.WildShiny = append([]int(nil), s.state.WildShiny...)
+	out.Exams = make(map[string]ExamRecord, len(s.state.Exams))
+	for k, v := range s.state.Exams {
+		v.Missed = append([]string(nil), v.Missed...)
+		out.Exams[k] = v
+	}
 	if s.state.Partner != nil {
 		pt := *s.state.Partner
 		out.Partner = &pt
@@ -510,6 +532,31 @@ func (s *Store) ClearFloor(floor int) {
 	if floor > s.state.TowerFloor {
 		s.state.TowerFloor = floor
 	}
+}
+
+// RecordExam stores an exam attempt; true when it is the first pass.
+func (s *Store) RecordExam(id string, percent int, passed bool, sections map[string][2]int, missed []string, now time.Time) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state.Exams == nil {
+		s.state.Exams = map[string]ExamRecord{}
+	}
+	r := s.state.Exams[id]
+	first := passed && !r.Passed
+	r.Attempts++
+	r.Passed = r.Passed || passed
+	r.Best = max(r.Best, percent)
+	r.Last, r.LastAt, r.Sections, r.Missed = percent, now, sections, missed
+	s.state.Exams[id] = r
+	return first
+}
+
+// CallEvent puts an exam on today's map (from the admin); "" clears it.
+func (s *Store) CallEvent(id string, now time.Time, quests func(day string) []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.dayLocked(now, quests)
+	s.state.Today.Event = id
 }
 
 // Record stores a mini-game score and reports whether it beats the old best.

@@ -54,6 +54,8 @@ type arcadeView struct {
 	Syllables []arcadeSyllable `json:"syllables"`
 	Pokemon   []arcadePokemon  `json:"pokemon"`
 	Sounds    []arcadeSound    `json:"sounds"`
+	// Homophones: graphemes never offered side by side (curriculum.Homophones).
+	Homophones [][]string `json:"homophones"`
 }
 
 // handleArcade returns everything learned so far, for the games to draw from.
@@ -66,7 +68,8 @@ func (s *Server) handleArcade(w http.ResponseWriter, r *http.Request) {
 	}
 
 	known := s.cur.KnownGraphemes(s.lastDone(st))
-	out := arcadeView{Words: []arcadeWord{}, Syllables: []arcadeSyllable{}, Pokemon: []arcadePokemon{}, Sounds: []arcadeSound{}}
+	out := arcadeView{Words: []arcadeWord{}, Syllables: []arcadeSyllable{}, Pokemon: []arcadePokemon{}, Sounds: []arcadeSound{},
+		Homophones: curriculum.Homophones}
 	for _, id := range s.cur.GraphemeOrder {
 		for _, k := range known {
 			if k == id {
@@ -85,7 +88,7 @@ func (s *Server) handleArcade(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, wd := range words {
 		pic := wd.Pic()
-		gs, _ := curriculum.Segment(wd.Text, known)
+		gs := s.cur.WordGraphemes(wd.Text)
 		var sylAudio []string
 		for _, syl := range wd.Syllables {
 			sylAudio = append(sylAudio, speech.URL(curriculum.SpokenSyllable(syl), speech.StyleSyllable))

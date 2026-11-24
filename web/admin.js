@@ -22,6 +22,7 @@ const TABS = [
   ['episodes', 'Épisodes'],
   ['items', 'Révisions'],
   ['pokedex', 'Pokédex'],
+  ['exams', 'Examens'],
   ['danger', 'Réglages'],
 ];
 
@@ -177,7 +178,7 @@ function itemsTab(list) {
     const pct = it.seen ? Math.round((it.correct / it.seen) * 100) : 0;
     list.append(el('div', { class: 'row' },
       el('div', { class: 'txt' },
-        el('b', {}, it.id.replace(/^(syl|mot|phrase):/, (m, g) => ({ syl: '🔤 ', mot: '📖 ', phrase: '📝 ' })[g] || '')),
+        el('b', {}, it.id.replace(/^(son|syl|mot|phrase):/, (m, g) => ({ son: '🔊 ', syl: '🔤 ', mot: '📖 ', phrase: '📝 ' })[g] || '')),
         el('small', {}, `${it.correct}/${it.seen} réussi${it.correct > 1 ? 's' : ''} · vu le ${fmtDate(it.last_seen)}`),
       ),
       el('span', { class: `itembar ${it.box < 2 ? 'weak' : ''}` },
@@ -185,6 +186,41 @@ function itemsTab(list) {
       el('span', { class: 'meta' }, `boîte ${it.box}`),
       el('span', { class: 'meta' }, it.due ? 'à revoir' : ''),
       el('span', { class: 'meta' }, `${pct} %`),
+    ));
+  });
+}
+
+/* The surprise exams (data/events.json): each one's condition, today's
+   draw, and the last attempt section by section — the report card that says
+   which sounds hold. "Aujourd'hui" puts it on the map now. */
+const SECTION_NAMES = { son: 'Sons', syl: 'Syllabes', mot: 'Mots', phrase: 'Phrases' };
+
+function examsTab(list) {
+  const exams = state.sum.exams || [];
+  list.append(el('p', { style: 'color:#6a7180;font-size:13px' },
+    'Un examen surprise apparaît sur la carte (🎓) certains jours, une fois son épisode terminé. ' +
+    'Une seule réponse par question ; réussi, il donne son Pokémon et ne revient plus. ' +
+    'Les réponses fausses repartent en révision.'));
+  if (!exams.length) list.append(el('p', {}, 'Aucun examen dans data/events.json.'));
+  exams.forEach((x) => {
+    const r = x.record || {};
+    const sections = Object.entries(r.sections || {}).map(([k, [ok, of]]) => `${SECTION_NAMES[k] || k} ${ok}/${of}`).join(' · ');
+    const status = r.passed ? `✅ réussi (meilleur ${r.best} %)`
+      : r.attempts ? `❌ ${r.attempts} essai${r.attempts > 1 ? 's' : ''}, dernier ${r.last} % (il faut ${x.pass} %)`
+      : x.eligible ? 'pas encore tenté' : `🔒 après l'épisode ${x.after}`;
+    const call = r.passed ? '' : el('button', {
+      class: 'btn',
+      onclick: () => act(`api/admin/events/${x.today ? 'none' : x.id}/today`),
+    }, x.today ? 'Retirer de la carte' : 'Faire apparaître aujourd\'hui');
+    list.append(el('div', { class: 'row' },
+      el('img', { src: `sprites/art/${x.pokemon}.png`, alt: '', style: 'width:40px;height:40px;object-fit:contain' }),
+      el('div', { class: 'txt' },
+        el('b', {}, `${x.today ? '🎓 ' : ''}${x.title}`),
+        el('small', {}, status),
+        sections ? el('small', {}, `Dernier essai, le ${fmtDate(r.last_at)} : ${sections}`) : null,
+        x.missed.length ? el('small', {}, `À revoir : ${x.missed.map((m) => m.label).join(', ')}`) : null,
+      ),
+      call,
     ));
   });
 }
@@ -413,7 +449,7 @@ function render() {
   tally();
   const list = $('#list');
   list.innerHTML = '';
-  ({ episodes: episodesTab, items: itemsTab, pokedex: pokedexTab, danger: dangerTab })[state.tab](list);
+  ({ episodes: episodesTab, items: itemsTab, pokedex: pokedexTab, exams: examsTab, danger: dangerTab })[state.tab](list);
 }
 
 /* ------------------------------------------------------------------ boot --- */

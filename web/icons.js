@@ -74,6 +74,10 @@ const BADGES = {
   arcenciel: { c: '#ffcb05', b: '<circle cx="24" cy="24" r="21" fill="#ffe17a" stroke="#c99f00" stroke-width="2"/><path d="M8 32a16 16 0 0 1 32 0" fill="none" stroke="#ee1515" stroke-width="4"/><path d="M13 32a11 11 0 0 1 22 0" fill="none" stroke="#63bb5b" stroke-width="4"/><path d="M18 32a6 6 0 0 1 12 0" fill="none" stroke="#3b4cca" stroke-width="4"/>' },
   // The champion trophy.
   champion: { c: '#ffcb05', b: '<path d="M12 6h24v10a12 12 0 0 1-24 0Z" fill="#ffcb05" stroke="#c99f00" stroke-width="2"/><path d="M12 9H5c0 8 4 12 9 13M36 9h7c0 8-4 12-9 13" fill="none" stroke="#c99f00" stroke-width="3"/><path d="M21 27h6l1 8h-8Z" fill="#ffcb05"/><rect x="15" y="35" width="18" height="7" rx="2" fill="#c99f00"/><path d="m24 10 2 4 5 1-4 3 1 5-4-3-4 3 1-5-4-3 5-1Z" fill="#fff"/>' },
+  // Raikou's arena: a yellow bolt on a thunder-violet hexagon.
+  tonnerre: { c: '#a98ff3', b: '<path d="M24 2 43 13v22L24 46 5 35V13Z" fill="#7b5fd6" stroke="#4e3a9a" stroke-width="2"/><path d="M28 7 15 27h8l-4 14 15-20h-9l3-14Z" fill="#ffd23c"/>' },
+  // The Académie diploma: a rolled scroll tied with a red ribbon.
+  diplome: { c: '#f3e3b5', b: '<circle cx="24" cy="24" r="21" fill="#3b4cca" stroke="#26318a" stroke-width="2"/><rect x="9" y="15" width="30" height="16" rx="4" fill="#fff6d8" stroke="#c99f00" stroke-width="2"/><path d="M17 20h14M17 25h10" stroke="#c99f00" stroke-width="2" stroke-linecap="round"/><path d="m30 28 4 12 3-4 4 2-4-11Z" fill="#ee1515"/><circle cx="32" cy="28" r="4" fill="#ee1515"/>' },
   // The Tour du Ciel: an emerald diamond with a white wind spiral.
   ciel: { c: '#63bb5b', b: '<path d="M24 2 46 24 24 46 2 24Z" fill="#2f9e6e" stroke="#1d6b49" stroke-width="2"/><path d="M24 34c-6 0-10-4-10-9s4-9 10-9 9 3 9 7-3 7-7 7-5-2-5-5 2-4 4-4" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>' },
 };

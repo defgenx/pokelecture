@@ -11,11 +11,12 @@
 //   T obstacle (the region's tree)  W water  . ground  = path  F flowers
 //   g tall grass  1–5 route stops  O Tour  A mini-jeux  P Pokédex
 //   < previous region  > next region  D E the region's two trainers
+//   X the professor of a surprise exam (only on a day one is waiting)
 const OW_MAP = [
   'TTTTTTTTTTTTT',
   'T..F...WWW.FT',
   '<==1===2=..AT',
-  'T..=.D.=....T',
+  'T..=.D.=..X.T',
   'Tgg=gT.=.TT.T',
   'Tgggg..3==4=>',
   'Tggg...=.ET.T',
@@ -28,7 +29,7 @@ const OW_TREE = {
   'Forêt Émeraude': '🌲', 'Colline Azur': '🌳', 'Grotte Violette': '⛰️',
   'Volcan Rougeoyant': '🌋', 'Côte Saphir': '🌴', 'Vallée Arc-en-ciel': '🌳',
   'Îles du Levant': '🌴', 'Îles du Couchant': '🌴', 'Plateau de la Ligue': '🌳',
-  'Terres Nouvelles': '🌲', 'Failles Ultra': '🌌',
+  'Terres Nouvelles': '🌲', 'Failles Ultra': '🌌', 'Académie Pokémon': '🌳',
 };
 
 // spoken() marks a literal as a voice line: speech_coverage_test.go finds
@@ -241,6 +242,12 @@ const Overworld = {
       const hello = spoken('Touche une case pour te déplacer, ou utilise les flèches !');
       Voice.lead(uiAudio(hello), hello);
     }
+    // A surprise exam waiting today: said once per visit of the map screen.
+    if (App.state.event && this.examSaid !== App.state.event.id) {
+      this.examSaid = App.state.event.id;
+      const line = spoken('Un examen surprise est arrivé ! Trouve le professeur sur la carte !');
+      Voice.play(uiAudio(line), line);
+    }
   },
 
   tile(ch, x, y, reg, tree) {
@@ -255,6 +262,12 @@ const Overworld = {
       case 'O': t.classList.add('ow-place'); t.textContent = '🗼'; break;
       case 'A': t.classList.add('ow-place'); t.textContent = '🎮'; break;
       case 'P': t.classList.add('ow-place'); t.textContent = '📘'; break;
+      case 'X':
+        if (App.state.event) {
+          t.classList.add('ow-trainer', 'ow-prof');
+          put(t, el('span', {}, '🎓'), el('i', { class: 'ow-bang' }, '!'));
+        }
+        break;
       case 'D': case 'E': {
         const n = ch === 'D' ? 0 : 1;
         const beaten = (App.state.beaten || []).includes(`${this.region}:${n}`);
@@ -275,7 +288,7 @@ const Overworld = {
           if (!ep.unlocked) t.classList.add('locked');
           t.append(pokeball('ow-ball'),
             el('img', { src: `sprites/art/${ep.reward_pokemon}.png`, alt: '', loading: 'lazy' }),
-            el('small', {}, ep.legendary ? '★' : String(ep.route)));
+            el('small', {}, stopLabel(ep)));
         }
     }
     if (this.spots && this.spots.has(`${x},${y}`)) t.append(el('i', { class: 'ow-sparkle' }, '✨'));
@@ -379,6 +392,7 @@ const Overworld = {
     const trainer = this.trainerNear();
     if (trainer !== null && !/[1-5OAP]/.test(ch)) return this.trainerDialog(trainer);
     if (/[1-5]/.test(ch)) return this.stopDialog(reg.eps[Number(ch) - 1], first);
+    if (ch === 'X' && s.event) return this.examDialog(s.event);
     switch (ch) {
       case 'O': return s.tower
         ? this.show('🗼 La Tour de Combat', `Étage ${s.tower_floor + 1}`, 'ENTRER ▶', () => Session.start('tour'), spoken('La Tour de Combat ! Monte les étages en lisant !'))
@@ -440,6 +454,15 @@ const Overworld = {
     this.show(`${icon} Objet trouvé !`, r.kind === 'balls' ? `+${r.count} Poké Ball${r.count > 1 ? 's' : ''}` : '', null, null, null);
     await Voice.play(r.line.audio, r.line.text);
     await celebrateAll(res);
+  },
+
+  // The professor of today's surprise exam (curriculum.EventToday).
+  examDialog(ev) {
+    this.stopWalking();
+    Sfx.encounter();
+    this.show(`🎓 ${ev.title}`,
+      [el('img', { class: 'ow-dialog-mon', src: `sprites/art/${ev.pokemon}.png`, alt: '' }), el('span', {}, `🎯 ${ev.pass} %`)],
+      'EXAMEN ▶', () => Session.start(`examen-${ev.id}`), spoken('C\'est l\'examen surprise ! Tu es prêt ?'));
   },
 
   stopDialog(ep, first) {

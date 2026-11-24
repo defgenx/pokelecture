@@ -118,6 +118,7 @@ type Session struct {
 	RewardPokemon int        `json:"reward_pokemon"`
 	Legendary     bool       `json:"legendary,omitempty"`
 	Tower         *TowerInfo `json:"tower,omitempty"`
+	Exam          *ExamInfo  `json:"exam,omitempty"`
 	// Trainer is set on a map trainer's battle (see BuildTrainer).
 	Trainer *TrainerInfo `json:"trainer,omitempty"`
 	// Lives is the battle heart count from the parental settings: -1 means
@@ -154,8 +155,8 @@ const (
 
 // difficulty scales the exercises with progression: a child at route 20 is not
 // the same reader as on day one, and questions that never get harder read as
-// the same game replayed. Thresholds are relative thirds of the course, so
-// adding episodes keeps the ramp in shape.
+// the same game replayed. Tiers follow the highest route reached (README
+// « Difficulté progressive »), so inserting an episode never shifts the ramp.
 type difficulty struct {
 	choices int // answer tiles per question (correct + distractors)
 	tray    int // distractor syllables added to the battle tray
@@ -163,16 +164,24 @@ type difficulty struct {
 }
 
 func (c *Curriculum) difficultyAt(idx int) difficulty {
-	n := len(c.Episodes)
+	route := 0
+	for i := 0; i <= idx && i < len(c.Episodes); i++ {
+		route = max(route, c.Episodes[i].Route)
+	}
 	switch {
-	case idx >= (2*n)/3:
+	case route >= AcademyRoute:
+		return difficulty{choices: 4, tray: 3, rounds: 6}
+	case route >= 19:
 		return difficulty{choices: 4, tray: 2, rounds: 5}
-	case idx >= n/3:
+	case route >= 10:
 		return difficulty{choices: 4, tray: 1, rounds: 4}
 	default:
 		return difficulty{choices: 3, tray: 1, rounds: 4}
 	}
 }
+
+// AcademyRoute is the first route of the Académie Pokémon, the hardest tier.
+const AcademyRoute = 28
 
 type pool struct {
 	syllables []string
@@ -420,6 +429,18 @@ func (c *Curriculum) reviewActivity(idx int, p pool, st progress.State, now time
 		it := lectureItem(w, p.words, diff.choices)
 		it.ID = id
 		cands = append(cands, cand{id: id, item: it, score: rec.Box})
+	}
+	// Sounds enter the warm-up once an exam has asked them: a missed one comes
+	// back here until it climbs its boxes again.
+	known := c.KnownGraphemes(idx)
+	for id, rec := range st.Items {
+		g, isSound := strings.CutPrefix(id, SectionSons+":")
+		if !isSound || !rec.Due(now) || rec.Box >= 2 {
+			continue
+		}
+		if it, ok := c.soundItem(g, known); ok {
+			cands = append(cands, cand{id: id, item: it, score: rec.Box})
+		}
 	}
 	if len(cands) == 0 {
 		return nil
@@ -880,16 +901,35 @@ func towerTray(floor int) int { return min(1+floor/4, 3) }
 func TowerNeed(rounds int) int { return rounds + (rounds+1)/2 }
 
 // TowerRewardFor returns the tower-exclusive Pokémon awarded for clearing a
-// floor: one every second floor, walking the ladder, 0 when there is none.
+// floor, walking the ladder: one every second floor up to TowerEvenUntil,
+// then one on every floor; 0 when there is none.
 func (c *Curriculum) TowerRewardFor(floor int) int {
-	if floor < 2 || floor%2 != 0 {
-		return 0
-	}
-	i := floor/2 - 1
-	if i >= len(c.TowerLadder) {
+	i := towerLadderIndex(floor)
+	if i < 0 || i >= len(c.TowerLadder) {
 		return 0
 	}
 	return c.TowerLadder[i]
+}
+
+// TowerEvenUntil: up to this floor the ladder pays on even floors only.
+const TowerEvenUntil = 40
+
+func towerLadderIndex(floor int) int {
+	switch {
+	case floor > TowerEvenUntil:
+		return TowerEvenUntil/2 + floor - TowerEvenUntil - 1
+	case floor >= 2 && floor%2 == 0:
+		return floor/2 - 1
+	}
+	return -1
+}
+
+// TowerFloorOf is the floor that awards ladder entry i (inverse of the above).
+func TowerFloorOf(i int) int {
+	if i < TowerEvenUntil/2 {
+		return 2 * (i + 1)
+	}
+	return TowerEvenUntil + 1 + i - TowerEvenUntil/2
 }
 
 // BuildTower generates one floor of the endless battle mode: a fight over words
@@ -1107,6 +1147,9 @@ func (c *Curriculum) SpeechTexts() []SpeechItem {
 	}
 	add(TowerTaunt, speech.StyleNormal)
 	add(TowerGuardianTaunt, speech.StyleNormal)
+	for _, ev := range c.Events {
+		add(ev.Story, speech.StyleNormal)
+	}
 	add(TrainerTaunt, speech.StyleNormal)
 	add(TrainerBeaten, speech.StyleNormal)
 	add(TrainerWon, speech.StyleNormal)
@@ -1237,7 +1280,28 @@ var UIPhrases = []string{
 	"Écoute la syllabe, puis touche-la !",
 	"Combien de syllabes ? Tape sur le bon tambour !",
 	"Quel son manque ? Écoute le mot, trouve les lettres !",
+
+	// Surprise exams (event.go), speed stars and mini-game unlocks.
+	ExamSoundsHint,
+	ExamPhraseHint,
+	ExamRule,
+	ExamPassed,
+	ExamFailed,
+	ExamArrived,
+	ExamDialog,
+	ExamWhere,
+	ExamDone,
+	SlowStar,
+	NewGame,
+	GameLocked,
 }
+
+// Voice lines of the speed star and the mini-game unlocks.
+const (
+	SlowStar   = "Bravo ! Lis un peu plus vite pour gagner la troisième étoile !"
+	NewGame    = "Un nouveau mini-jeu est débloqué !"
+	GameLocked = "Ce jeu s'ouvrira plus loin dans l'aventure !"
+)
 
 // Fmt is a tiny helper for episode titles in logs.
 func (e Episode) Fmt() string { return fmt.Sprintf("%s (route %d) — %s", e.ID, e.Route, e.Title) }

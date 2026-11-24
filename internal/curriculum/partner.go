@@ -289,6 +289,9 @@ func WherePhrase(ep Episode) string {
 	}
 }
 
+// TowerTopPhrase: a tower-exclusive above TowerEvenUntil.
+const TowerTopPhrase = "Il t'attend tout en haut de la Tour de Combat ! Monte encore !"
+
 // TowerWherePhrase: a tower-exclusive's floor.
 func TowerWherePhrase(floor int) string {
 	return fmt.Sprintf("Il t'attend à l'étage %d de la Tour de Combat !", floor)
@@ -306,7 +309,16 @@ func (c *Curriculum) Where(id int) string {
 	}
 	for i, t := range c.TowerLadder {
 		if t == id {
-			return TowerWherePhrase(2 * (i + 1))
+			if f := TowerFloorOf(i); f <= TowerEvenUntil {
+				return TowerWherePhrase(f)
+			}
+			// One line for the whole top: a clip per floor costs a voice line each.
+			return TowerTopPhrase
+		}
+	}
+	for _, ev := range c.Events {
+		if ev.Pokemon == id {
+			return ExamWhere
 		}
 	}
 	return EvolveToGet
@@ -318,7 +330,7 @@ func (c *Curriculum) progressionSpeech() []string {
 	for _, t := range TrainerTitles[1:] {
 		out = append(out, TrainerTitlePhrase(t.Title))
 	}
-	for n := 10; n <= 90; n += 10 {
+	for n := 10; n <= 100; n += 10 {
 		out = append(out, MilestonePhrase(n))
 	}
 	for _, id := range c.PokemonOrder {

@@ -143,6 +143,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /api/admin/settings", s.guard(s.adminPlay((*Server).handleAdminSettings)))
 	mux.HandleFunc("POST /api/admin/episodes/{id}/stars", s.guard(s.adminPlay((*Server).handleAdminEpisodeStars)))
 	mux.HandleFunc("POST /api/admin/records/reset", s.guard(s.adminPlay((*Server).handleAdminRecordsReset)))
+	mux.HandleFunc("POST /api/admin/events/{id}/today", s.guard(s.adminPlay((*Server).handleAdminEventToday)))
 
 	// Google sign-in for the parent pages.
 	mux.HandleFunc("GET /auth/login", s.handleLogin)
@@ -240,6 +241,9 @@ type stateView struct {
 	Beaten  []string       `json:"beaten"` // trainers beaten today
 	Hungry  bool           `json:"hungry"` // the partner wants its berry
 	Quests  []questView    `json:"quests"`
+	// Event is today's surprise exam on the map; Games the open mini-games.
+	Event *eventView `json:"event,omitempty"`
+	Games []string   `json:"games"`
 }
 
 type wildCount struct {
@@ -263,6 +267,11 @@ func (s *Server) state() stateView {
 		out.Starters = s.starters()
 	}
 	out.Quests = s.questViews()
+	out.Event = s.eventToday(st)
+	out.Games = s.cur.GamesOpen(st)
+	if out.Games == nil {
+		out.Games = []string{}
+	}
 	today := s.store.Snapshot().Today
 	out.Bag, out.Found, out.Beaten = st.Bag, today.Found, today.Beaten
 	if out.Bag == nil {
@@ -392,6 +401,20 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, sess)
 		return
 	}
+	if evID, ok := isExam(id); ok {
+		ev, known := s.cur.Event(evID)
+		if !known {
+			http.Error(w, "examen inconnu", http.StatusNotFound)
+			return
+		}
+		sess, built := s.cur.BuildExam(ev, s.store.Snapshot(), time.Now())
+		if !built {
+			http.Error(w, "l'examen attend ta première route terminée", http.StatusConflict)
+			return
+		}
+		writeJSON(w, http.StatusOK, sess)
+		return
+	}
 	if id == curriculum.TowerID {
 		st := s.store.Snapshot()
 		// Always the first uncleared floor: no skipping ahead, no need to choose.
@@ -445,7 +468,10 @@ type resultResponse struct {
 	QuestsDone   []questView   `json:"quests_done"`
 	TrainerEvent *trainerEvent `json:"trainer_event,omitempty"`
 	Milestone    *voiceLine    `json:"milestone,omitempty"`
-	State        stateView     `json:"state"`
+	Exam         *examResult   `json:"exam,omitempty"`
+	// NewGames lists the mini-games this result opened.
+	NewGames []string  `json:"new_games"`
+	State    stateView `json:"state"`
 }
 
 func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
@@ -455,8 +481,9 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 	// boxes and nothing else — no completion, no stars, no catch.
 	isTower := id == curriculum.TowerID
 	tRegion, tN, isTrainer := curriculum.ParseTrainer(id)
+	examID, isExamID := isExam(id)
 	var ep *curriculum.Episode
-	if !isTower && !isTrainer {
+	if !isTower && !isTrainer && !isExamID {
 		var ok bool
 		ep, ok = s.cur.Episode(id)
 		if !ok {
@@ -492,8 +519,15 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	res := resultResponse{NewCatches: []int{}}
-	if isTrainer {
+	res := resultResponse{NewCatches: []int{}, NewGames: []string{}}
+	gamesBefore := s.cur.GamesOpen(s.store.Snapshot())
+	if isExamID {
+		if !s.gradeExam(examID, req, &res, now) {
+			http.Error(w, "examen inconnu", http.StatusNotFound)
+			return
+		}
+		res.PartnerEvent = s.award(min(maxSessionXP, right+sessionBonusXP))
+	} else if isTrainer {
 		// A won battle comes back completed; a lost one does not.
 		if req.Completed && s.store.Beat(fmt.Sprintf("%d:%d", tRegion, tN), now, questsFor) {
 			res.TrainerWon = true
@@ -540,7 +574,7 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		s.store.AddBalls(res.Balls)
 	}
 	res.QuestsDone = append(res.QuestsDone, s.progress("words", words)...)
-	if req.Completed && !isTower && !isTrainer {
+	if req.Completed && ep != nil {
 		res.QuestsDone = append(res.QuestsDone, s.progress("route", 1)...)
 	}
 	tev, m := s.settle()
@@ -550,6 +584,15 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res.State = s.state()
+	open := map[string]bool{}
+	for _, g := range gamesBefore {
+		open[g] = true
+	}
+	for _, g := range res.State.Games {
+		if !open[g] {
+			res.NewGames = append(res.NewGames, g)
+		}
+	}
 	writeJSON(w, http.StatusOK, res)
 }
 

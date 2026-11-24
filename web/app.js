@@ -201,7 +201,36 @@ const REGION_EMOJI = {
   'Plateau de la Ligue': '🏆',
   'Terres Nouvelles': '🧭',
   'Failles Ultra': '🌌',
+  'Académie Pokémon': '🎓',
 };
+
+// The number under a stop: the route, 1/4…4/4 for the Conseil des 4 (one
+// door each, counted so all four read as four), 🏆 for the Champion.
+function stopLabel(e) {
+  if (e.badge === 'champion') return '🏆';
+  if (/^Conseil des 4/.test(e.title || '')) {
+    const doors = ((App.state && App.state.episodes) || []).filter((x) => /^Conseil des 4/.test(x.title || ''));
+    const n = doors.findIndex((x) => x.id === e.id);
+    if (n >= 0) return `${n + 1}/${doors.length}`;
+  }
+  return e.legendary ? '★' : String(e.route || '★');
+}
+
+// How long an answer may take and still count as fast, by item kind. The
+// clock starts once the question is fully given (after the instruction and
+// the item's audio). Only drill answers are timed: sentences (reading aloud
+// at his own pace) and combat stay out of the speed star.
+const FAST_MS = { syl: 5000, son: 5000, mot: 7000 };
+
+// startClock sets the question's start once the screen's spoken instruction
+// is over; set(t) receives the moment.
+function startClock(set) {
+  set(performance.now());
+  if (Voice.leading) Voice.leading.then(() => set(performance.now()), () => set(performance.now()));
+}
+function fastLimit(id, extra = 0) {
+  return (FAST_MS[String(id).split(':')[0]] || 7000) + extra;
+}
 
 // say() prefers the recorded phrase — from the session payload, or from the
 // state payload outside a session (home, Pokédex) — and degrades to the browser
@@ -525,7 +554,7 @@ const App = {
                 },
                   pokeball('pokeball-sm'),
                   el('img', { class: 'wp-reward', src: `sprites/art/${e.reward_pokemon}.png`, alt: '', loading: 'lazy' }),
-                  el('small', {}, e.legendary ? '★' : e.route || '★'),
+                  el('small', {}, stopLabel(e)),
                 );
                 return node;
               }),
@@ -559,7 +588,7 @@ const App = {
       class: `route ${e.unlocked ? '' : 'locked'} ${e.legendary ? 'legend' : ''} ${isNext ? 'next' : ''}`,
       onclick: () => (e.unlocked ? Session.start(e.id) : say('Termine la route précédente !')),
     },
-      el('span', { class: 'no' }, e.legendary ? '★' : e.route),
+      el('span', { class: 'no' }, stopLabel(e)),
       el('img', { src: `sprites/art/${e.reward_pokemon}.png`, alt: '', loading: 'lazy' }),
       el('div', { class: 't' },
         el('b', {}, e.unlocked ? e.title
@@ -851,6 +880,8 @@ const Session = {
   shiny: false, // this session's reward was rolled shiny
   fightStats: null, // {perfect, rounds} from the last combat, for tower scoring
   combo: 0, // consecutive correct answers across the drill screens
+  timed: 0, // answers with a clock on them…
+  fast: 0,  // …and how many came quickly: the third star wants speed too
 
   async start(id) {
     Voice.stop();
@@ -868,14 +899,33 @@ const Session = {
     this.shiny = false;
     this.fightStats = null;
     this.combo = 0;
+    this.timed = 0;
+    this.fast = 0;
     WakeLock.on();
     this.render();
   },
 
-  record(id, correct) {
+  // ms/limit time the answer: a right one within its limit counts as fast.
+  record(id, correct, ms, limit) {
     if (!id) return;
     this.answers.push({ id, correct });
     if (correct) this.right++; else this.wrong++;
+    if (typeof ms === 'number' && limit) {
+      this.timed++;
+      if (correct && ms <= limit) this.fast++;
+    }
+  },
+
+  // Stars: 1 for finishing, 2 from 70 % right, 3 from 90 % right AND most
+  // answers quick (README « Les étoiles »). slow: the third star was lost to time.
+  stars() {
+    const total = this.right + this.wrong;
+    const ratio = total ? this.right / total : 1;
+    const quick = this.timed ? this.fast / this.timed : 1;
+    let stars = ratio >= 0.9 ? 3 : ratio >= 0.7 ? 2 : 1;
+    const slow = stars === 3 && quick < 0.6;
+    if (slow) stars = 2;
+    return { stars, slow, total };
   },
 
   next() {
@@ -929,7 +979,7 @@ const Session = {
 
     // The buddy tags along on the drill screens; the battle, the catch and the
     // badge ceremony have their own staging and would only be cluttered by it.
-    if (!['combat', 'recompense', 'story', 'badge'].includes(a.kind)) {
+    if (!['combat', 'recompense', 'story', 'badge', 'examen'].includes(a.kind)) {
       $('#app').append(companion());
     }
 
@@ -943,15 +993,15 @@ const Session = {
       case 'recompense': return renderReward(a, body, done);
       case 'badge': return renderBadge(a, body, done);
       case 'phrase': return renderPhrase(a, body, done);
+      case 'examen': return renderExam(a, body, done);
       default: return renderQuiz(a, body, done);
     }
   },
 
   async finish() {
-    const total = this.right + this.wrong;
-    const ratio = total ? this.right / total : 1;
-    const stars = ratio >= 0.9 ? 3 : ratio >= 0.7 ? 2 : 1;
+    const { stars, slow, total } = this.stars();
     const towerInfo = this.data.tower;
+    const exam = this.data.exam;
 
     // The tower is practice with a ladder: its answers feed the review boxes,
     // its points decide whether the floor is cleared — but it never completes
@@ -960,14 +1010,16 @@ const Session = {
     const points = stats.rounds + stats.perfect;
     const res = await api(`api/session/${this.data.episode_id}/result`, {
       items: this.answers,
-      stars: towerInfo ? 0 : stars,
-      completed: !towerInfo,
+      stars: towerInfo || exam ? 0 : stars,
+      completed: !towerInfo && !exam,
       shiny: this.shiny,
       floor: towerInfo ? towerInfo.floor : 0,
       rounds: stats.rounds,
       points,
     });
     App.state = res.state;
+
+    if (exam) return finishExam(exam, res);
 
     if (this.data.trainer) {
       const won = res.trainer_won;
@@ -1033,6 +1085,9 @@ const Session = {
         el('div', { class: 'act' },
           el('div', { class: 'bigstars' }, '★'.repeat(stars) + '☆'.repeat(3 - stars)),
           el('div', { class: 'score' }, `${this.right} bonne${this.right > 1 ? 's' : ''} réponse${this.right > 1 ? 's' : ''} sur ${total}`),
+          this.timed ? el('div', { class: `speed-row ${slow ? 'slow' : ''}` },
+            `⚡ ${this.fast} réponse${this.fast > 1 ? 's' : ''} rapide${this.fast > 1 ? 's' : ''} sur ${this.timed}`) : null,
+          newGamesRow(res.new_games),
           catches.length ? el('div', { class: 'newcatch' },
             el('span', { class: 'score' }, catches.length > 1
               ? `🎉 ${catches.length} nouveaux Pokémon dans le Pokédex !`
@@ -1050,8 +1105,9 @@ const Session = {
     burst('🏆');
     Sfx.fanfare();
     confetti();
-    await say(stars === 3 ? 'Super !' : 'Bravo !');
+    await say(slow ? 'Bravo ! Lis un peu plus vite pour gagner la troisième étoile !' : stars === 3 ? 'Super !' : 'Bravo !');
     if (catches.length) await say('Tu as attrapé un nouveau Pokémon !');
+    if ((res.new_games || []).length) { Sfx.badge(); await say('Un nouveau mini-jeu est débloqué !'); }
     if (res.balls_won) await say('Tu gagnes des Poké Balls !');
     await celebrateAll(res);
     await say('À demain !');
@@ -1187,6 +1243,9 @@ function renderQuiz(a, body, done) {
     // silently turned the reading exercise into a listening one.
     const isText = !!(item.emoji || item.sprite || item.icon) || a.kind === 'phrase';
     let answered = false;
+    let t0 = performance.now();
+    startClock((t) => { if (!answered) t0 = t; });
+    const took = () => performance.now() - t0;
 
     stage.innerHTML = '';
 
@@ -1200,7 +1259,8 @@ function renderQuiz(a, body, done) {
     } else {
       const listen = el('button', { class: 'btn btn-huge', onclick: () => Voice.play(item.audio, item.prompt) }, '🔊 ÉCOUTE');
       stage.append(listen);
-      Voice.play(item.audio, item.prompt);
+      // The clock starts when the syllable has been heard, not while it plays.
+      Promise.resolve(Voice.play(item.audio, item.prompt)).then(() => { if (!answered) t0 = performance.now(); });
     }
 
     const grid = el('div', { class: `grid ${item.choices.length === 2 ? 'two' : item.choices.length >= 4 ? 'four' : ''}` });
@@ -1216,7 +1276,7 @@ function renderQuiz(a, body, done) {
         if (c.correct) {
           [...grid.children].forEach((t) => { if (t !== tile) t.classList.add('dim'); t.disabled = true; });
           tile.classList.add('good');
-          if (!answered) { Session.record(item.id, true); comboUp(combo); }
+          if (!answered) { Session.record(item.id, true, took(), fastLimit(item.id)); comboUp(combo); }
           answered = true;
           if (replay) replay.disabled = false;
           if (isText) {
@@ -1233,7 +1293,7 @@ function renderQuiz(a, body, done) {
           idx++;
           step();
         } else {
-          if (!answered) { Session.record(item.id, false); answered = true; comboBreak(combo); }
+          if (!answered) { Session.record(item.id, false, took(), fastLimit(item.id)); answered = true; comboBreak(combo); }
           tile.classList.add('bad');
           tile.disabled = true;
           setTimeout(() => tile.classList.remove('bad'), 450);
@@ -1317,6 +1377,130 @@ function renderPhrase(a, body, done) {
     };
   };
   step();
+}
+
+/* renderExam is a surprise exam section: the drill screens' questions, but
+   strict — one tap per question, no help before answering, and the right
+   answer shown and heard after a wrong one. No combo, no buddy cheering. */
+function renderExam(a, body, done) {
+  let idx = 0;
+  const pipsBox = el('div', { class: 'pips-holder' });
+  const stage = el('div', { class: 'act', style: 'width:100%' });
+  body.append(el('h2', {}, `📝 ${a.title}`), hint(a.instruction), el('div', { class: 'meter-row' }, pipsBox), stage);
+
+  const step = () => {
+    pipsBox.innerHTML = '';
+    pipsBox.append(progressPips(idx, a.items.length));
+    if (idx >= a.items.length) return done();
+    const item = a.items[idx];
+    const listening = a.text === 'son' || a.text === 'syl';
+    let answered = false;
+    let t0 = performance.now();
+    startClock((t) => { if (!answered) t0 = t; });
+    stage.innerHTML = '';
+
+    if (listening) {
+      stage.append(el('button', { class: 'btn btn-huge', onclick: () => Voice.play(item.audio, item.prompt) }, '🔊 ÉCOUTE'));
+      Promise.resolve(Voice.play(item.audio, item.prompt)).then(() => { if (!answered) t0 = performance.now(); });
+    } else if (a.text === 'phrase') {
+      stage.append(el('div', { class: 'sentence exam-sentence' }, item.prompt));
+    } else {
+      stage.append(el('div', { class: 'word exam-word' }, item.prompt));
+    }
+
+    const n = item.choices.length;
+    const grid = el('div', { class: `grid ${n === 2 ? 'two' : n === 3 ? 'three' : n >= 4 ? 'four' : ''} ${a.text === 'phrase' ? 'phrase-pics' : ''}` });
+    const tiles = item.choices.map((c) => {
+      const face = c.sprite ? el('img', { src: c.sprite, alt: '' })
+        : c.icon ? iconEl(c.icon)
+        : listening ? el('span', { class: 'exam-label' }, c.label) : (c.emoji || c.label);
+      const kind = c.sprite ? 'sprite' : c.icon ? 'ico' : listening ? '' : 'emoji';
+      const tile = el('button', { class: `tile ${kind}` }, face);
+      tile.addEventListener('click', async () => {
+        if (answered) return;
+        answered = true;
+        const ms = performance.now() - t0;
+        if (a.text === 'phrase') Session.record(item.id, !!c.correct);
+        else Session.record(item.id, !!c.correct, ms, fastLimit(item.id));
+        tiles.forEach((t) => { t.disabled = true; });
+        if (c.correct) {
+          tile.classList.add('good');
+          Sfx.correct();
+        } else {
+          tile.classList.add('bad');
+          tiles[item.choices.findIndex((x) => x.correct)].classList.add('good');
+          Sfx.wrong();
+        }
+        await Voice.play(item.audio, item.prompt);
+        await sleep(350);
+        idx++;
+        step();
+      });
+      return tile;
+    });
+    grid.append(...tiles);
+    stage.append(grid);
+  };
+  step();
+}
+
+const EXAM_SECTIONS = { son: '🔤 Les sons', syl: '🗣 Les syllabes', mot: '📖 Les mots', phrase: '📜 Les phrases' };
+
+/* finishExam: the report card. Ten Poké Balls fill with the score and a gold
+   mark shows the line to reach; then each section, the answers to revise
+   (tappable to hear), and — on a pass — the catch. */
+async function finishExam(exam, res) {
+  const r = res.exam || { passed: false, score: 0, need: exam.pass, sections: {}, missed: [] };
+  const filled = Math.round(r.score / 10);
+  const balls = el('div', { class: 'exam-balls' },
+    Array.from({ length: 10 }, (_, k) => el('span', { class: `exam-ball ${k < filled ? 'on' : ''} ${k === Math.ceil(r.need / 10) - 1 ? 'mark' : ''}` }, pokeball('pokeball-sm'))));
+  const rows = Object.keys(EXAM_SECTIONS).filter((k) => r.sections[k]).map((k) => {
+    const [ok, of] = r.sections[k];
+    return el('div', { class: 'exam-row' }, el('span', {}, EXAM_SECTIONS[k]), el('b', {}, `${ok} / ${of}`));
+  });
+  const missed = (r.missed || []).filter((m) => m.audio).slice(0, 12);
+  const catches = res.new_catches || [];
+  App.screen(
+    App.topbar(),
+    el('div', { class: 'page' },
+      el('div', { class: 'act' },
+        el('h2', {}, r.passed ? '🎓 EXAMEN RÉUSSI !' : '📝 Pas encore…'),
+        balls,
+        el('div', { class: 'exam-rows' }, rows),
+        !r.passed && missed.length ? el('div', { class: 'exam-missed' },
+          hint('Pas encore ! Révise ces sons, et l\'examen reviendra bientôt.', false),
+          el('div', { class: 'grid four' }, missed.map((m) => el('button', { class: 'tile exam-label', onclick: () => Voice.play(m.audio, m.label) }, m.label))),
+        ) : null,
+        catches.length ? el('div', { class: 'newcatch' },
+          el('span', { class: 'score' }, '🎉 Il rejoint ta collection !'),
+          el('div', { class: 'catchrow' }, catches.map((id) => el('img', { src: `sprites/art/${id}.png`, alt: '' })))) : null,
+        ballsWon(res.balls_won),
+        Partner.gainRow(res.partner_event),
+        r.passed ? null : el('button', { class: 'btn btn-huge', onclick: () => Session.start(`examen-${exam.id}`) }, 'RÉESSAYER 🔄'),
+        el('button', { class: 'btn btn-huge btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
+      ),
+    ),
+  );
+  if (r.passed) {
+    burst('🎓'); Sfx.fanfare(); confetti(120);
+    await say('Bravo ! Tu as réussi l\'examen !');
+    if (catches.length) { Sfx.badge(); await say('Il rejoint ta collection !'); }
+    if (res.balls_won) await say('Tu gagnes des Poké Balls !');
+  } else {
+    Sfx.wrong();
+    await say('Pas encore ! Révise ces sons, et l\'examen reviendra bientôt.');
+  }
+  await celebrateAll(res);
+}
+
+// The games a result just opened, as a row of icons on the result screen.
+function newGamesRow(ids) {
+  if (!ids || !ids.length) return null;
+  const games = ids.map((id) => Arcade.GAMES.find((g) => g.id === id)).filter(Boolean);
+  if (!games.length) return null;
+  return el('div', { class: 'newcatch' },
+    el('span', { class: 'score' }, '🎮 Nouveau mini-jeu !'),
+    el('div', { class: 'catchrow' }, games.map((g) => el('span', { class: 'game-icon' }, g.icon))));
 }
 
 /* karaoke plays a sentence and lights its words up as the voice reaches
@@ -1782,8 +1966,16 @@ const Arcade = {
     if (!this.pool) {
       try { this.pool = await api('api/arcade'); } catch (_) { this.pool = { words: [], syllables: [], pokemon: [] }; }
     }
+    // Games open one by one along the story (curriculum.GameUnlocks).
+    const open = new Set((App.state && App.state.games) || []);
     const cards = this.GAMES.map((g) => {
       const best = this.record(g.id);
+      if (!open.has(g.id)) {
+        return el('button', { class: 'game-card locked', onclick: () => say('Ce jeu s\'ouvrira plus loin dans l\'aventure !') },
+          el('span', { class: 'game-icon' }, '🔒'),
+          el('b', {}, '???'),
+          el('small', {}, 'Continue l\'aventure pour l\'ouvrir !'));
+      }
       return el('button', { class: 'game-card', onclick: () => this[g.id]() },
         el('span', { class: 'game-icon' }, g.icon),
         el('b', {}, g.name),

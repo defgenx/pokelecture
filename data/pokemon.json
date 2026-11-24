@@ -1362,5 +1362,758 @@
       "Psy"
     ],
     "dex": "On dit qu'il a volé la lumière du monde. Qui le calme la rend aux étoiles."
+  },
+  {
+    "id": 161,
+    "name": "Fouinette",
+    "tower": true,
+    "syllables": [
+      "Foui",
+      "nette"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Il marche sur sa queue pour voir plus loin que les autres."
+  },
+  {
+    "id": 172,
+    "name": "Pichu",
+    "say_as": "Pitchou",
+    "tower": true,
+    "syllables": [
+      "Pi",
+      "chu"
+    ],
+    "types": [
+      "Électrik"
+    ],
+    "dex": "Le bébé de Pikachu. Quand il rit, il fait de petites étincelles."
+  },
+  {
+    "id": 163,
+    "name": "Hoothoot",
+    "tower": true,
+    "syllables": [
+      "Hoot",
+      "hoot"
+    ],
+    "types": [
+      "Normal",
+      "Vol"
+    ],
+    "dex": "Il se tient sur une seule patte. Il compte le temps en hochant la tête."
+  },
+  {
+    "id": 14,
+    "name": "Coconfort",
+    "tower": true,
+    "syllables": [
+      "Co",
+      "con",
+      "fort"
+    ],
+    "types": [
+      "Insecte",
+      "Poison"
+    ],
+    "dex": "Il ne bouge presque pas. Il se prépare à évoluer dans son cocon."
+  },
+  {
+    "id": 90,
+    "name": "Kokiyas",
+    "tower": true,
+    "syllables": [
+      "Ko",
+      "ki",
+      "yas"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Il ferme sa coquille très fort et tire la langue."
+  },
+  {
+    "id": 32,
+    "name": "Nidoran♂",
+    "say_as": "Nidoran mâle",
+    "tower": true,
+    "syllables": [
+      "Ni",
+      "do",
+      "ran"
+    ],
+    "types": [
+      "Poison"
+    ],
+    "dex": "Ses grandes oreilles entendent le moindre bruit. Sa corne pique."
+  },
+  {
+    "id": 216,
+    "name": "Teddiursa",
+    "tower": true,
+    "syllables": [
+      "Te",
+      "ddiur",
+      "sa"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Ce petit ourson lèche ses pattes pleines de miel."
+  },
+  {
+    "id": 83,
+    "name": "Canarticho",
+    "tower": true,
+    "syllables": [
+      "Ca",
+      "nar",
+      "ti",
+      "cho"
+    ],
+    "types": [
+      "Normal",
+      "Vol"
+    ],
+    "dex": "Ce canard ne lâche jamais son poireau. Il s'en sert comme d'une épée."
+  },
+  {
+    "id": 211,
+    "name": "Qwilfish",
+    "tower": true,
+    "syllables": [
+      "Qwil",
+      "fish"
+    ],
+    "types": [
+      "Eau",
+      "Poison"
+    ],
+    "dex": "Il avale de l'eau pour gonfler comme un ballon plein de piquants."
+  },
+  {
+    "id": 34,
+    "name": "Nidoking",
+    "tower": true,
+    "syllables": [
+      "Ni",
+      "do",
+      "king"
+    ],
+    "types": [
+      "Poison",
+      "Sol"
+    ],
+    "dex": "Le roi des Nidoran. Sa queue est si forte qu'elle casse les arbres."
+  },
+  {
+    "id": 162,
+    "name": "Fouinar",
+    "tower": true,
+    "syllables": [
+      "Foui",
+      "nar"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Il est très long et très mince. Il se faufile partout."
+  },
+  {
+    "id": 33,
+    "name": "Nidorino",
+    "tower": true,
+    "syllables": [
+      "Ni",
+      "do",
+      "ri",
+      "no"
+    ],
+    "types": [
+      "Poison"
+    ],
+    "dex": "Il est vite en colère. Sa corne grandit quand il est fâché."
+  },
+  {
+    "id": 49,
+    "name": "Aéromite",
+    "tower": true,
+    "syllables": [
+      "Aé",
+      "ro",
+      "mite"
+    ],
+    "types": [
+      "Insecte",
+      "Poison"
+    ],
+    "dex": "Ce papillon de nuit vole vers la lumière des lampes."
+  },
+  {
+    "id": 164,
+    "name": "Noarfang",
+    "tower": true,
+    "syllables": [
+      "Noar",
+      "fang"
+    ],
+    "types": [
+      "Normal",
+      "Vol"
+    ],
+    "dex": "Ce hibou voit dans le noir. Il tourne la tête dans tous les sens."
+  },
+  {
+    "id": 97,
+    "name": "Hypnomade",
+    "tower": true,
+    "syllables": [
+      "Hyp",
+      "no",
+      "made"
+    ],
+    "types": [
+      "Psy"
+    ],
+    "dex": "Il balance un pendule pour endormir ceux qui le regardent."
+  },
+  {
+    "id": 114,
+    "name": "Saquedeneu",
+    "tower": true,
+    "syllables": [
+      "Sa",
+      "que",
+      "de",
+      "neu"
+    ],
+    "types": [
+      "Plante"
+    ],
+    "dex": "Son corps est caché sous des lianes bleues qui bougent sans arrêt."
+  },
+  {
+    "id": 209,
+    "name": "Snubbull",
+    "tower": true,
+    "syllables": [
+      "Snub",
+      "bull"
+    ],
+    "types": [
+      "Fée"
+    ],
+    "dex": "Il a l'air méchant, mais il adore les câlins."
+  },
+  {
+    "id": 210,
+    "name": "Granbull",
+    "tower": true,
+    "syllables": [
+      "Gran",
+      "bull"
+    ],
+    "types": [
+      "Fée"
+    ],
+    "dex": "Ses grandes dents font peur, mais il est très peureux."
+  },
+  {
+    "id": 106,
+    "name": "Kicklee",
+    "tower": true,
+    "syllables": [
+      "Kick",
+      "lee"
+    ],
+    "types": [
+      "Combat"
+    ],
+    "dex": "Ses jambes s'allongent comme des ressorts pour donner des coups de pied."
+  },
+  {
+    "id": 208,
+    "name": "Steelix",
+    "tower": true,
+    "syllables": [
+      "Stee",
+      "lix"
+    ],
+    "types": [
+      "Acier",
+      "Sol"
+    ],
+    "dex": "Un serpent de fer, plus dur que le diamant. Il creuse sous la terre."
+  },
+  {
+    "id": 237,
+    "name": "Kapoera",
+    "tower": true,
+    "syllables": [
+      "Ka",
+      "poe",
+      "ra"
+    ],
+    "types": [
+      "Combat"
+    ],
+    "dex": "Il tourne sur sa tête comme une toupie et donne des coups de pied."
+  },
+  {
+    "id": 207,
+    "name": "Scorplane",
+    "tower": true,
+    "syllables": [
+      "Scor",
+      "plane"
+    ],
+    "types": [
+      "Sol",
+      "Vol"
+    ],
+    "dex": "Il plane sans bruit et s'accroche au visage avec ses pinces."
+  },
+  {
+    "id": 193,
+    "name": "Yanma",
+    "tower": true,
+    "syllables": [
+      "Yan",
+      "ma"
+    ],
+    "types": [
+      "Insecte",
+      "Vol"
+    ],
+    "dex": "Ses grands yeux voient tout autour de lui sans tourner la tête."
+  },
+  {
+    "id": 206,
+    "name": "Insolourdo",
+    "tower": true,
+    "syllables": [
+      "In",
+      "so",
+      "lour",
+      "do"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Il creuse des tunnels avec sa queue en forme de perceuse."
+  },
+  {
+    "id": 122,
+    "name": "M. Mime",
+    "say_as": "Monsieur Mime",
+    "tower": true,
+    "syllables": [
+      "M.",
+      "Mime"
+    ],
+    "types": [
+      "Psy",
+      "Fée"
+    ],
+    "dex": "Il fait semblant de toucher un mur, et le mur apparaît vraiment."
+  },
+  {
+    "id": 22,
+    "name": "Rapasdepic",
+    "tower": true,
+    "syllables": [
+      "Ra",
+      "pas",
+      "de",
+      "pic"
+    ],
+    "types": [
+      "Normal",
+      "Vol"
+    ],
+    "dex": "Il vole très longtemps sans se poser grâce à ses grandes ailes."
+  },
+  {
+    "id": 217,
+    "name": "Ursaring",
+    "tower": true,
+    "syllables": [
+      "Ur",
+      "sa",
+      "ring"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Un grand ours très fort. Il sent le miel de très loin."
+  },
+  {
+    "id": 214,
+    "name": "Scarhino",
+    "tower": true,
+    "syllables": [
+      "Scar",
+      "hi",
+      "no"
+    ],
+    "types": [
+      "Insecte",
+      "Combat"
+    ],
+    "dex": "Avec sa corne, il soulève des choses cent fois plus lourdes que lui."
+  },
+  {
+    "id": 215,
+    "name": "Farfuret",
+    "tower": true,
+    "syllables": [
+      "Far",
+      "fu",
+      "ret"
+    ],
+    "types": [
+      "Ténèbres",
+      "Glace"
+    ],
+    "dex": "Il est rusé et rapide. Ses griffes brillent dans la neige."
+  },
+  {
+    "id": 212,
+    "name": "Cizayox",
+    "tower": true,
+    "syllables": [
+      "Ci",
+      "za",
+      "yox"
+    ],
+    "types": [
+      "Insecte",
+      "Acier"
+    ],
+    "dex": "Ses pinces ont des yeux dessinés pour faire peur. Son corps est en acier."
+  },
+  {
+    "id": 233,
+    "name": "Porygon2",
+    "say_as": "Porygon deux",
+    "tower": true,
+    "syllables": [
+      "Po",
+      "ry",
+      "gon",
+      "deux"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Un Pokémon fait par des savants. Il vole même dans l'espace."
+  },
+  {
+    "id": 113,
+    "name": "Leveinard",
+    "tower": true,
+    "syllables": [
+      "Le",
+      "vei",
+      "nard"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Il porte un œuf très doux. Il le partage avec ceux qui sont tristes."
+  },
+  {
+    "id": 470,
+    "name": "Phyllali",
+    "say_as": "Filali",
+    "syllables": [
+      "Phy",
+      "lla",
+      "li"
+    ],
+    "types": [
+      "Plante"
+    ],
+    "dex": "Une évolution d'Évoli. Il pousse comme une plante au soleil."
+  },
+  {
+    "id": 471,
+    "name": "Givrali",
+    "syllables": [
+      "Gi",
+      "vra",
+      "li"
+    ],
+    "types": [
+      "Glace"
+    ],
+    "dex": "Une évolution d'Évoli. Ses poils gèlent et deviennent des aiguilles."
+  },
+  {
+    "id": 700,
+    "name": "Nymphali",
+    "say_as": "Ninfali",
+    "syllables": [
+      "Nym",
+      "pha",
+      "li"
+    ],
+    "types": [
+      "Fée"
+    ],
+    "dex": "Une évolution d'Évoli. Ses rubans calment ceux qui se battent."
+  },
+  {
+    "id": 416,
+    "name": "Apireine",
+    "syllables": [
+      "A",
+      "pi",
+      "reine"
+    ],
+    "types": [
+      "Insecte",
+      "Vol"
+    ],
+    "dex": "La reine des abeilles. Elle donne des ordres à toute la ruche."
+  },
+  {
+    "id": 447,
+    "name": "Riolu",
+    "syllables": [
+      "Ri",
+      "o",
+      "lu"
+    ],
+    "types": [
+      "Combat"
+    ],
+    "dex": "Il sent ce que les autres ressentent. Il ne se fatigue jamais."
+  },
+  {
+    "id": 448,
+    "name": "Lucario",
+    "syllables": [
+      "Lu",
+      "ca",
+      "ri",
+      "o"
+    ],
+    "types": [
+      "Combat",
+      "Acier"
+    ],
+    "dex": "Il voit l'énergie des êtres vivants, même les yeux fermés."
+  },
+  {
+    "id": 102,
+    "name": "Noeunoeuf",
+    "syllables": [
+      "Noeu",
+      "noeuf"
+    ],
+    "types": [
+      "Plante",
+      "Psy"
+    ],
+    "dex": "Six œufs qui se parlent entre eux. Ils restent toujours ensemble."
+  },
+  {
+    "id": 712,
+    "name": "Grelaçon",
+    "syllables": [
+      "Gre",
+      "la",
+      "çon"
+    ],
+    "types": [
+      "Glace"
+    ],
+    "dex": "Il est fait de glace. Il vit en haut des montagnes froides."
+  },
+  {
+    "id": 280,
+    "name": "Tarsal",
+    "syllables": [
+      "Tar",
+      "sal"
+    ],
+    "types": [
+      "Psy",
+      "Fée"
+    ],
+    "dex": "Ses cornes sentent si quelqu'un est joyeux autour de lui."
+  },
+  {
+    "id": 281,
+    "name": "Kirlia",
+    "syllables": [
+      "Kir",
+      "li",
+      "a"
+    ],
+    "types": [
+      "Psy",
+      "Fée"
+    ],
+    "dex": "Il danse quand son Dresseur est heureux."
+  },
+  {
+    "id": 282,
+    "name": "Gardevoir",
+    "syllables": [
+      "Gar",
+      "de",
+      "voir"
+    ],
+    "types": [
+      "Psy",
+      "Fée"
+    ],
+    "dex": "Il protège son Dresseur de toutes ses forces."
+  },
+  {
+    "id": 669,
+    "name": "Flabébé",
+    "syllables": [
+      "Fla",
+      "bé",
+      "bé"
+    ],
+    "types": [
+      "Fée"
+    ],
+    "dex": "Une toute petite fée qui ne quitte jamais sa fleur."
+  },
+  {
+    "id": 670,
+    "name": "Floette",
+    "say_as": "Floète",
+    "syllables": [
+      "Flo",
+      "ette"
+    ],
+    "types": [
+      "Fée"
+    ],
+    "dex": "Elle prend soin des fleurs et les fait pousser."
+  },
+  {
+    "id": 778,
+    "name": "Mimiqui",
+    "say_as": "Mimiki",
+    "syllables": [
+      "Mi",
+      "mi",
+      "qui"
+    ],
+    "types": [
+      "Spectre",
+      "Fée"
+    ],
+    "dex": "Il se cache sous un drap qui ressemble à Pikachu."
+  },
+  {
+    "id": 745,
+    "name": "Lougaroc",
+    "syllables": [
+      "Lou",
+      "ga",
+      "roc"
+    ],
+    "types": [
+      "Roche"
+    ],
+    "dex": "Un loup rapide comme le vent, aux crinières de pierre."
+  },
+  {
+    "id": 648,
+    "name": "Meloetta",
+    "say_as": "Méloétta",
+    "legendary": true,
+    "syllables": [
+      "Me",
+      "lo",
+      "e",
+      "tta"
+    ],
+    "types": [
+      "Normal",
+      "Psy"
+    ],
+    "dex": "Elle chante des chansons qui rendent tout le monde joyeux."
+  },
+  {
+    "id": 482,
+    "name": "Créfadet",
+    "say_as": "Créfadè",
+    "legendary": true,
+    "syllables": [
+      "Cré",
+      "fa",
+      "det"
+    ],
+    "types": [
+      "Psy"
+    ],
+    "dex": "Le Pokémon de la volonté. Il aide à ne jamais abandonner."
+  },
+  {
+    "id": 481,
+    "name": "Créfollet",
+    "say_as": "Créfolè",
+    "legendary": true,
+    "syllables": [
+      "Cré",
+      "fo",
+      "llet"
+    ],
+    "types": [
+      "Psy"
+    ],
+    "dex": "Le Pokémon des émotions. Il rend joyeux ceux qu'il croise."
+  },
+  {
+    "id": 480,
+    "name": "Créhelf",
+    "say_as": "Créelf",
+    "legendary": true,
+    "syllables": [
+      "Cré",
+      "helf"
+    ],
+    "types": [
+      "Psy"
+    ],
+    "dex": "Le Pokémon du savoir. Il connaît toutes les réponses."
+  },
+  {
+    "id": 493,
+    "name": "Arceus",
+    "say_as": "Arcéus",
+    "legendary": true,
+    "syllables": [
+      "Ar",
+      "ceus"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "On dit qu'il a créé le monde. C'est le Pokémon le plus puissant."
+  },
+  {
+    "id": 204,
+    "name": "Pomdepik",
+    "tower": true,
+    "syllables": [
+      "Pom",
+      "de",
+      "pik"
+    ],
+    "types": [
+      "Insecte"
+    ],
+    "dex": "Il pend aux branches comme une pomme de pin."
   }
 ]
