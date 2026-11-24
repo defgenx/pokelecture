@@ -1864,3 +1864,37 @@ body.font-cursive .exam-label {
 .dictee { animation: ow-prof-bob 1.2s ease-in-out infinite; }
 .book-page { display: grid; gap: 1rem; justify-items: center; padding: 1rem; border-radius: 1.2rem; background: #fffdf4; box-shadow: 0 6px 0 rgba(0, 0, 0, .08); width: min(100%, 36rem); }
 .book-pic { width: 7rem; height: 7rem; object-fit: contain; font-size: 5rem; line-height: 7rem; text-align: center; }
+
+/* ------------------------------------------------- top bar on a phone --- */
+/* The map's stats sit in a strip that may shrink and scroll; the buttons
+   after it keep their size, so every action stays one tap away. */
+.topbar-stats { display: flex; align-items: center; gap: inherit; min-width: 0; }
+
+@media (max-width: 600px) {
+  .topbar {
+    gap: 4px;
+    padding: 6px 8px;
+    padding-top: calc(6px + env(safe-area-inset-top, 0px));
+    padding-left: calc(8px + env(safe-area-inset-left, 0px));
+    padding-right: calc(8px + env(safe-area-inset-right, 0px));
+  }
+  .topbar .lens, .topbar .lights { display: none; }
+  .topbar .grow { flex: 1 1 0; min-width: 0; }
+  .topbar-stats {
+    flex: 0 1 auto;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .topbar-stats::-webkit-scrollbar { display: none; }
+  .topbar .chip { font-size: 14px; padding: 3px 7px; box-shadow: none; flex: 0 0 auto; }
+  .topbar .chip-extra { display: none; }
+  .topbar .trainer-bar { display: none; }
+  .topbar .btn-icon { min-height: 38px; min-width: 38px; padding: 4px 6px; font-size: 17px; flex: 0 0 auto; }
+  .topbar .dex-btn { display: none; }
+}
+@media (max-width: 380px) {
+  .topbar { gap: 3px; padding-left: calc(5px + env(safe-area-inset-left, 0px)); padding-right: calc(5px + env(safe-area-inset-right, 0px)); }
+  .topbar .chip { font-size: 13px; padding: 2px 5px; }
+  .topbar .btn-icon { min-width: 34px; min-height: 36px; padding: 3px 4px; font-size: 16px; }
+}

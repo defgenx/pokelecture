@@ -37,6 +37,14 @@ l'écran d'accueil le remplace. Sur Android, en HTTP simple, « Ajouter à l'éc
 d'accueil » crée un raccourci qui s'ouvre dans un onglet : c'est alors le plein
 écran automatique qui joue ; le vrai mode application installée demande HTTPS.
 
+Sur un **téléphone** (largeur ≤ 600 px), la barre du haut de la carte se
+resserre : plus de lentille ni de voyants décoratifs, des pastilles et des
+boutons plus petits (34 px au moins sous le doigt), les objets du sac (Super
+Balls, baies, série de jours) masqués — ils se montrent là où ils servent — et
+le bouton 📘 aussi, le Pokédex étant un lieu de la carte. Les boutons ne
+rétrécissent jamais ; si un écran très étroit manque encore de place, c'est la
+bande des scores qui défile. Tout tient sans défilement à partir de 360 px.
+
 En **paysage**, la mise en page change vraiment : arène de combat à gauche et
 mots à droite (plus de défilement en plein combat), carte des routes sur deux
 colonnes, actions et vitrine à badges côte à côte, et les très grands corps de

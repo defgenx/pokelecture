@@ -191,16 +191,21 @@ const Overworld = {
     const done = reg.eps.filter((e) => e.done > 0).length;
     App.screen(
       App.topbar(
-        el('span', { class: 'chip' }, `⭐ ${s.stars}`),
-        el('span', { class: 'chip' }, pokeball('pokeball-xs'), ` ${s.balls || 0}`),
-        s.streak > 1 ? el('span', { class: 'chip' }, `🔥 ${s.streak}`) : null,
-        (s.bag && s.bag.superball) ? el('span', { class: 'chip' }, pokeball('pokeball-xs superball'), ` ${s.bag.superball}`) : null,
-        (s.bag && s.bag.berry) ? el('span', { class: 'chip' }, `🍓 ${s.bag.berry}`) : null,
-        Trainer.chip(),
+        // The stats strip shrinks (and scrolls) on a phone; the buttons after
+        // it never do. chip-extra: bag items, hidden on a phone (styles.css).
+        el('span', { class: 'topbar-stats' }, [
+          el('span', { class: 'chip' }, `⭐ ${s.stars}`),
+          el('span', { class: 'chip' }, pokeball('pokeball-xs'), ` ${s.balls || 0}`),
+          s.streak > 1 ? el('span', { class: 'chip chip-extra' }, `🔥 ${s.streak}`) : null,
+          (s.bag && s.bag.superball) ? el('span', { class: 'chip chip-extra' }, pokeball('pokeball-xs superball'), ` ${s.bag.superball}`) : null,
+          (s.bag && s.bag.berry) ? el('span', { class: 'chip chip-extra' }, `🍓 ${s.bag.berry}`) : null,
+          Trainer.chip(),
+        ].filter(Boolean)),
         el('button', { class: 'btn-icon', title: 'Mon équipe', onclick: () => Team.open() }, '👥'),
         el('button', { class: 'btn-icon quest-btn', title: 'Missions', onclick: () => Quests.panel() },
           `📜 ${(s.quests || []).filter((q) => q.done).length}/${(s.quests || []).length}`),
-        el('button', { class: 'btn-icon', title: 'Pokédex', onclick: () => App.pokedex() }, '📘'),
+        // dex-btn: hidden on a phone — the Pokédex is also a place on the map (📘).
+        el('button', { class: 'btn-icon dex-btn', title: 'Pokédex', onclick: () => App.pokedex() }, '📘'),
         el('button', { class: 'btn-icon', title: 'Menu', onclick: () => App.menu() }, '☰'),
       ),
       el('div', { class: 'page ow-page' },
