@@ -450,7 +450,7 @@ une) ; quatre onglets, tout agit immédiatement sur la sauvegarde de ce joueur :
   du plus fragile au plus solide — c'est la liste de ce qui coince vraiment.
 - **Pokédex** : attraper / retirer n'importe quel Pokémon à la main.
 - **Réglages** : renommer l'enfant sans redémarrer ; **la politique de
-  déblocage** — terminer suffit (défaut), ou exiger ★ / ★★ / ★★★ avant de
+  déblocage** — terminer suffit (défaut), ou exiger de ★ à ★★★★★ avant de
   débloquer la suite, ou tout débloquer (mode libre) — avec, dans l'onglet
   Épisodes, **un seuil propre à chaque épisode** (« ★ pour la suite ») qui
   prime sur la règle globale ; l'étage de la Tour et les records des
@@ -753,13 +753,20 @@ vérifie l'épisode, le Pokémon et les sections.
 
 ### Les étoiles : justesse et vitesse
 
-Trois étoiles, pas cinq : à 5 ans, trois se comptent d'un coup d'œil, et les
-réglages de déblocage (★ / ★★ / ★★★) en dépendent. La vitesse décide de la
-troisième :
+**Cinq étoiles** : à 6 ans, en CP, cinq se comptent sans peine et laissent
+voir les progrès d'un rejeu à l'autre. La vitesse décide de la cinquième :
 
 - ★ : l'épisode est fini ;
-- ★★ : 70 % de bonnes réponses ;
-- ★★★ : 90 % de bonnes réponses **et** au moins 60 % des réponses rapides.
+- ★★ : 60 % de bonnes réponses ;
+- ★★★ : 75 % ;
+- ★★★★ : 90 % ;
+- ★★★★★ : 90 % **et** au moins 60 % des réponses rapides.
+
+Une sauvegarde de l'époque des trois étoiles est convertie une fois, à
+l'ouverture, **sans rien perdre** : ★ → ★, ★★ → ★★★, ★★★ → ★★★★★ (et le
+total d'étoiles suit) ; les seuils de déblocage de l'admin sont convertis de
+même (`StarScale` dans la sauvegarde). Les Poké Balls et l'expérience gagnées
+restent celles d'avant : 5★ rapporte ce que rapportaient 3★.
 
 **Rapide, c'est par rapport à lui-même.** Tant que le jeu ne le connaît pas
 (moins de 10 réponses justes chronométrées d'un type), une réponse est rapide
@@ -770,10 +777,11 @@ toucher sous 0,3 s ou une absence de plus d'une minute ne comptent pas) et
 1,5 s et deux fois la limite fixe). Une limite fixe pousse à deviner ; battre
 son propre rythme fait progresser. Le chrono part quand la consigne parlée et
 la question sont finies. L'écran de fin montre la ligne ⚡ ; aucune phrase ne
-lui dit « plus vite ». Les
+lui dit « plus vite ». La vitesse ne fait jamais rater : elle ne retire que la
+cinquième étoile. Les
 phrases (lues à voix haute, à son rythme) et le combat ne sont **pas**
 chronométrés pour l'étoile : sinon taper « J'AI LU ! » sans lire serait
-« rapide », et une règle « ★★★ pour la suite » pourrait bloquer l'aventure sur
+« rapide », et une règle « ★★★★★ pour la suite » pourrait bloquer l'aventure sur
 la vitesse d'un enfant de 5 ans.
 
 ### Ce que les exercices font travailler (et comment ils évitent les pièges)
@@ -813,9 +821,7 @@ de lui, lance la minute, et pour chaque mot (pris dans ce qu'il a appris)
 touche **✓ bien lu** ou **✗ raté**. Résultat : **mots bien lus par minute**,
 gardés dans un historique (une fois par semaine suffit pour voir la courbe),
 et chaque mot va dans les boîtes de révision. L'onglet montre aussi son temps
-de réponse habituel dans le jeu. Une troisième étoile perdue seulement au chrono est dite : « Lis un
-peu plus vite pour gagner la troisième étoile ! ». La vitesse ne fait jamais
-rater : elle ne retire que la troisième étoile.
+de réponse habituel dans le jeu.
 
 ### Perdre existe : les vies en combat
 

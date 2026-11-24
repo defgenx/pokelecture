@@ -276,3 +276,27 @@ func TestAddTimesIgnoresAbsurdTimes(t *testing.T) {
 		t.Fatalf("got %+v", got)
 	}
 }
+
+func TestThreeStarSaveBecomesFiveStars(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "p.json")
+	old := `{"name":"Nino","stars":6,"episodes":{"ep01":{"completions":1,"best_stars":3},"ep02":{"completions":2,"best_stars":2},"ep03":{"completions":1,"best_stars":1}},"items":{},"settings":{"min_stars":2,"episode_stars":{"ep03b":3},"battle_lives":3}}`
+	if err := os.WriteFile(path, []byte(old), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	s, err := Open(path, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	st := s.Snapshot()
+	if st.Episodes["ep01"].BestStars != 5 || st.Episodes["ep02"].BestStars != 3 || st.Episodes["ep03"].BestStars != 1 {
+		t.Fatalf("best stars: %+v", st.Episodes)
+	}
+	if st.Stars != 9 || st.Settings.MinStars != 3 || st.Settings.EpisodeStars["ep03b"] != 5 || st.StarScale != MaxStars {
+		t.Fatalf("total %d, min %d, override %d, scale %d", st.Stars, st.Settings.MinStars, st.Settings.EpisodeStars["ep03b"], st.StarScale)
+	}
+	// Converted once: reopening changes nothing.
+	s2, _ := Open(path, "")
+	if s2.Snapshot().Stars != 9 {
+		t.Fatal("converted twice")
+	}
+}

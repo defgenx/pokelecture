@@ -494,7 +494,7 @@ const Overworld = {
       return this.show(`🎓 ${ep.title}`, '🔒', 'EXAMEN ▶', () => Session.start(`examen-${ep.gate}`),
         spoken('Pour entrer ici, réussis l\'examen du professeur ! Il t\'attend sur la carte.'));
     }
-    const stars = '★'.repeat(ep.stars) + '☆'.repeat(3 - ep.stars);
+    const stars = starRow(ep.stars);
     const sounds = el('span', { class: 'sounds' }, (ep.sounds || []).map((g) => el('i', {}, g)));
     if (!ep.unlocked) return this.show(`🔒 ${ep.legendary ? 'Arène légendaire' : `Route ${ep.route}`}`, '', null, null, spoken('Termine la route précédente !'));
     const isNext = ep.id === App.state.next_episode && ep.done === 0;

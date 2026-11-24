@@ -223,6 +223,10 @@ function stopLabel(e) {
   return e.legendary ? '★' : String(e.route || '★');
 }
 
+// MAX_STARS matches progress.MaxStars (internal/progress/progress.go).
+const MAX_STARS = 5;
+const starRow = (n) => '★'.repeat(n) + '☆'.repeat(Math.max(0, MAX_STARS - n));
+
 // How long an answer may take and still count as fast, by item kind. The
 // clock starts once the question is fully given (after the instruction and
 // the item's audio). Only drill answers are timed: sentences (reading aloud
@@ -621,7 +625,7 @@ const App = {
   },
 
   routeCard(e, isNext) {
-    const stars = '★'.repeat(e.stars) + '☆'.repeat(3 - e.stars);
+    const stars = starRow(e.stars);
     const conseil = e.legendary && !e.badge;
     return el('button', {
       class: `route ${e.unlocked ? '' : 'locked'} ${e.legendary ? 'legend' : ''} ${isNext ? 'next' : ''}`,
@@ -963,15 +967,16 @@ const Session = {
     }
   },
 
-  // Stars: 1 for finishing, 2 from 70 % right, 3 from 90 % right AND most
-  // answers quick (README « Les étoiles »). slow: the third star was lost to time.
+  // Stars out of MAX_STARS: 1 for finishing, 2 from 60 % right, 3 from 75 %,
+  // 4 from 90 %, 5 from 90 % AND most answers quick (README « Les étoiles »).
+  // slow: the fifth star was lost to time.
   stars() {
     const total = this.right + this.wrong;
     const ratio = total ? this.right / total : 1;
     const quick = this.timed ? this.fast / this.timed : 1;
-    let stars = ratio >= 0.9 ? 3 : ratio >= 0.7 ? 2 : 1;
-    const slow = stars === 3 && quick < 0.6;
-    if (slow) stars = 2;
+    let stars = ratio >= 0.9 ? 5 : ratio >= 0.75 ? 3 : ratio >= 0.6 ? 2 : 1;
+    const slow = stars === 5 && quick < 0.6;
+    if (slow) stars = 4;
     return { stars, slow, total };
   },
 
@@ -1132,7 +1137,7 @@ const Session = {
       App.topbar(),
       el('div', { class: 'page' },
         el('div', { class: 'act' },
-          el('div', { class: 'bigstars' }, '★'.repeat(stars) + '☆'.repeat(3 - stars)),
+          el('div', { class: 'bigstars' }, starRow(stars)),
           el('div', { class: 'score' }, `${this.right} bonne${this.right > 1 ? 's' : ''} réponse${this.right > 1 ? 's' : ''} sur ${total}`),
           this.timed ? el('div', { class: `speed-row ${slow ? 'slow' : ''}` },
             `⚡ ${this.fast} réponse${this.fast > 1 ? 's' : ''} rapide${this.fast > 1 ? 's' : ''} sur ${this.timed}`) : null,
@@ -1155,7 +1160,7 @@ const Session = {
     burst('🏆');
     Sfx.fanfare();
     confetti();
-    await say(stars === 3 ? 'Super !' : 'Bravo !');
+    await say(stars === MAX_STARS ? 'Super !' : 'Bravo !');
     if (catches.length) await say('Tu as attrapé un nouveau Pokémon !');
     if ((res.new_games || []).length) { Sfx.badge(); await say('Un nouveau mini-jeu est débloqué !'); }
     if (res.balls_won) await say('Tu gagnes des Poké Balls !');

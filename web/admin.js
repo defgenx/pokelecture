@@ -125,12 +125,12 @@ function episodesTab(list) {
     '« ★ pour la suite » : les étoiles que CET épisode doit avoir pour débloquer le suivant — ' +
     'par défaut la règle globale (onglet Réglages), ajustable épisode par épisode.'));
   state.sum.episodes.forEach((e) => {
-    const stars = e.completions > 0 ? '★'.repeat(e.best_stars) + '☆'.repeat(3 - e.best_stars) : '';
+    const stars = e.completions > 0 ? '★'.repeat(e.best_stars) + '☆'.repeat(Math.max(0, 5 - e.best_stars)) : '';
 
     // The per-episode unlock threshold, overriding the global policy.
     const sel = el('select', { class: 'small', title: '★ que cet épisode doit avoir pour débloquer le suivant' },
       [['', `global (${'★'.repeat(state.sum.settings.min_stars) || 'terminer'})`],
-       ['0', 'terminer suffit'], ['1', '★ requis'], ['2', '★★ requis'], ['3', '★★★ requis']]
+       ['0', 'terminer suffit'], ['1', '★ requis'], ['2', '★★ requis'], ['3', '★★★ requis'], ['4', '★★★★ requis'], ['5', '★★★★★ requis']]
         .map(([v, label]) => {
           const o = el('option', { value: v }, label);
           if (String(overrides[e.id] ?? '') === v) o.selected = true;
@@ -256,7 +256,7 @@ function fluencyTab(list) {
     list.append(el('h2', {}, 'Son temps de réponse habituel (jeu)'));
     known.forEach(([k, v]) => list.append(el('div', { class: 'row' },
       el('div', { class: 'txt' }, el('b', {}, `${(v.ms / 1000).toFixed(1)} s par ${kinds[k]}`),
-        el('small', {}, `sur ${v.n} réponses — la 3e étoile se gagne un peu plus vite que ça`)))));
+        el('small', {}, `sur ${v.n} réponses — la 5e étoile se gagne un peu plus vite que ça`)))));
   }
 }
 
@@ -361,7 +361,7 @@ function dangerTab(list) {
   // Progression policy: what "done enough to move on" means is the parent's call.
   const set = s.settings || { min_stars: 0, free_play: false, battle_lives: 3 };
   const minStars = el('select', {},
-    [['0', 'Terminer l\'épisode suffit'], ['1', 'Au moins ★'], ['2', 'Au moins ★★'], ['3', '★★★ obligatoires']]
+    [['0', 'Terminer l\'épisode suffit'], ['1', 'Au moins ★'], ['2', 'Au moins ★★'], ['3', 'Au moins ★★★'], ['4', 'Au moins ★★★★'], ['5', '★★★★★ obligatoires']]
       .map(([v, label]) => {
         const o = el('option', { value: v }, label);
         if (Number(v) === set.min_stars) o.selected = true;

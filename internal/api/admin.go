@@ -250,7 +250,7 @@ func (s *Server) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	livesOK := req.BattleLives == -1 || (req.BattleLives >= 2 && req.BattleLives <= 5)
-	if err != nil || req.MinStars < 0 || req.MinStars > 3 || !livesOK {
+	if err != nil || req.MinStars < 0 || req.MinStars > progress.MaxStars || !livesOK {
 		http.Error(w, "réglages invalides", http.StatusBadRequest)
 		return
 	}
@@ -283,7 +283,7 @@ func (s *Server) handleAdminEpisodeStars(w http.ResponseWriter, r *http.Request)
 	var req struct {
 		MinStars int `json:"min_stars"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.MinStars > 3 {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.MinStars > progress.MaxStars {
 		http.Error(w, "réglages invalides", http.StatusBadRequest)
 		return
 	}

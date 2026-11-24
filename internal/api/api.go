@@ -629,7 +629,9 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		}
 		res.PartnerEvent = s.award(min(maxSessionXP, right+req.Points))
 	} else if req.Completed {
-		stars := max(0, min(3, req.Stars))
+		stars := max(0, min(progress.MaxStars, req.Stars))
+		// Balls and XP keep their 3-star amounts: 5★ pays what 3★ paid.
+		paid := (stars*3 + 2) / progress.MaxStars
 		s.store.CompleteEpisode(ep.ID, stars, now)
 		for _, id := range ep.CatchablePokemon() {
 			if s.store.Catch(id) {
@@ -639,9 +641,9 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		if req.Shiny && ep.RewardPokemon != 0 {
 			s.store.MarkShiny(ep.RewardPokemon)
 		}
-		res.Balls = episodeBalls + stars
+		res.Balls = episodeBalls + paid
 		res.Tickets = s.payTicket()
-		res.PartnerEvent = s.award(min(maxSessionXP, right+sessionBonusXP+starXP*stars))
+		res.PartnerEvent = s.award(min(maxSessionXP, right+sessionBonusXP+starXP*paid))
 	}
 	if res.Balls > 0 {
 		s.store.AddBalls(res.Balls)

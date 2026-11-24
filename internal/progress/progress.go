@@ -54,7 +54,7 @@ type EpisodeStat struct {
 // page. Zero values are the defaults: completing an episode unlocks the next,
 // nothing is force-unlocked.
 type Settings struct {
-	// MinStars an episode must have earned before the next one unlocks (0–3).
+	// MinStars an episode must have earned before the next one unlocks (0–MaxStars).
 	MinStars int `json:"min_stars"`
 	// FreePlay unlocks every episode regardless of completion.
 	FreePlay bool `json:"free_play"`
@@ -89,6 +89,15 @@ type FluencyRun struct {
 	WCPM    int       `json:"wcpm"` // words read correctly per minute
 }
 
+// MaxStars is the best rating of an episode. Saves rated out of 3 (before
+// StarScale) are converted once at Open: old 1/2/3 → 1/3/5, generous on
+// purpose — no child loses a star to a change of scale.
+const MaxStars = 5
+
+var fromThreeStars = [4]int{0, 1, 3, 5}
+
+func threeToFive(n int) int { return fromThreeStars[max(0, min(3, n))] }
+
 // DefaultBattleLives is the battle heart count on a fresh (or pre-lives) save.
 const DefaultBattleLives = 3
 
@@ -103,9 +112,12 @@ func (s Settings) MinStarsFor(id string) int {
 
 // State is the whole savegame.
 type State struct {
-	Name    string `json:"name"`
-	Stars   int    `json:"stars"`
-	Pokedex []int  `json:"pokedex"`
+	Name  string `json:"name"`
+	Stars int    `json:"stars"`
+	// StarScale is the rating scale of BestStars and the star settings: 0 for
+	// a save from the 3-star days, MaxStars once converted.
+	StarScale int   `json:"star_scale,omitempty"`
+	Pokedex   []int `json:"pokedex"`
 	// Shiny lists Pokémon caught in their rare recolored form on a replay —
 	// a second, slower collection layered over the Pokédex.
 	Shiny    []int                  `json:"shiny,omitempty"`
@@ -344,6 +356,9 @@ func Open(path string, name string) (*Store, error) {
 	b, err := os.ReadFile(path)
 	switch {
 	case os.IsNotExist(err):
+		// Only a brand-new save starts on the 5-star scale: a file without the
+		// field is a 3-star save, converted below.
+		s.state.StarScale = MaxStars
 		if s.state.Name == "" {
 			s.state.Name = DefaultName
 		}
@@ -368,6 +383,12 @@ func Open(path string, name string) (*Store, error) {
 	// A save from before the lives system (or a fresh one) gets the default.
 	if s.state.Settings.BattleLives == 0 {
 		s.state.Settings.BattleLives = DefaultBattleLives
+	}
+	if s.state.StarScale != MaxStars {
+		s.toFiveStars()
+		if err := s.flush(); err != nil {
+			return nil, err
+		}
 	}
 
 	// Persist right away rather than waiting for the next Save(): the name is
@@ -480,6 +501,23 @@ func (s *Store) Answer(id string, correct bool, now time.Time) {
 		it.Box--
 	}
 	s.state.Items[id] = it
+}
+
+// toFiveStars converts a 3-star save: best ratings, the total (kept equal to
+// their sum), and the parent's star thresholds.
+func (s *Store) toFiveStars() {
+	total := 0
+	for id, st := range s.state.Episodes {
+		st.BestStars = threeToFive(st.BestStars)
+		total += st.BestStars
+		s.state.Episodes[id] = st
+	}
+	s.state.Stars = total
+	s.state.Settings.MinStars = threeToFive(s.state.Settings.MinStars)
+	for id, v := range s.state.Settings.EpisodeStars {
+		s.state.Settings.EpisodeStars[id] = threeToFive(v)
+	}
+	s.state.StarScale = MaxStars
 }
 
 // CompleteEpisode records a finished session and awards stars.
@@ -938,7 +976,7 @@ func contains(xs []int, x int) bool {
 func (s *Store) UpdateSettings(minStars int, freePlay bool, battleLives int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.state.Settings.MinStars = max(0, min(3, minStars))
+	s.state.Settings.MinStars = max(0, min(MaxStars, minStars))
 	s.state.Settings.FreePlay = freePlay
 	if battleLives == -1 || (battleLives >= 2 && battleLives <= 5) {
 		s.state.Settings.BattleLives = battleLives
@@ -956,7 +994,7 @@ func (s *Store) ResetRecords(game string) {
 	delete(s.state.Records, game)
 }
 
-// SetEpisodeStars sets (0–3) or clears (negative) one episode's own star
+// SetEpisodeStars sets (0–MaxStars) or clears (negative) one episode's own star
 // threshold, overriding the global policy for that episode only.
 func (s *Store) SetEpisodeStars(id string, stars int) {
 	s.mu.Lock()
@@ -968,7 +1006,7 @@ func (s *Store) SetEpisodeStars(id string, stars int) {
 	if s.state.Settings.EpisodeStars == nil {
 		s.state.Settings.EpisodeStars = map[string]int{}
 	}
-	s.state.Settings.EpisodeStars[id] = min(3, stars)
+	s.state.Settings.EpisodeStars[id] = min(MaxStars, stars)
 }
 
 // Rename changes the child's name without touching anything else.
@@ -988,12 +1026,13 @@ func (s *Store) Reset() {
 
 	name, settings, created, lock := s.state.Name, s.state.Settings, s.state.Created, s.state.Lock
 	s.state = State{
-		Name:     name,
-		Settings: settings,
-		Created:  created,
-		Lock:     lock,
-		Episodes: map[string]EpisodeStat{},
-		Items:    map[string]Item{},
+		Name:      name,
+		Settings:  settings,
+		Created:   created,
+		Lock:      lock,
+		Episodes:  map[string]EpisodeStat{},
+		Items:     map[string]Item{},
+		StarScale: MaxStars,
 	}
 }
 
