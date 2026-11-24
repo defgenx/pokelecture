@@ -12,4 +12,7 @@ const DevBuild = false
 // WithLocalAdmin does nothing outside a dev build.
 func (s *Server) WithLocalAdmin(bool) *Server { return s }
 
-func fromThisComputer(*http.Request) bool { return false }
+// LocalAdminKey is always empty outside a dev build.
+func (s *Server) LocalAdminKey() string { return "" }
+
+func (s *Server) devAdmin(http.ResponseWriter, *http.Request) bool { return false }

@@ -27,9 +27,8 @@ type Server struct {
 	web        http.Handler
 	webDir     string
 	base       string
-	auth       *Auth      // nil: the parent side is closed (see auth.go)
-	localAdmin bool       // -local-admin: this computer needs no sign-in (localadmin.go)
-	locks      *lockGuard // wrong picture codes, per player (players.go)
+	auth       *Auth  // nil: the parent side is closed (see auth.go)
+	localAdmin string // -local-admin: this run's key; "" off (localadmin.go)
 }
 
 // New returns a Server serving the frontend from webDir, mounted at base
@@ -44,7 +43,6 @@ func NewPlayers(cur *curriculum.Curriculum, players *progress.Registry, webDir, 
 	return &Server{
 		cur:     cur,
 		players: players,
-		locks:   &lockGuard{fails: map[string]int{}, until: map[string]time.Time{}},
 		web:     http.FileServer(http.Dir(webDir)),
 		webDir:  webDir,
 		base:    base,

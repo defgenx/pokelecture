@@ -11,12 +11,15 @@ import (
 	"github.com/adelvecchio/pokelecture/internal/progress"
 )
 
-func localAdminApp(t *testing.T, on bool) *httptest.Server {
+// localAdminApp serves a test app; key is its -local-admin key ("" when off
+// or in the production build).
+func localAdminApp(t *testing.T, on bool) (app *httptest.Server, key string) {
 	cur, _ := curriculum.Load(filepath.Join("..", "..", "data"))
 	reg, _ := progress.OpenRegistry(t.TempDir(), "Léo")
-	app := httptest.NewServer(NewPlayers(cur, reg, filepath.Join("..", "..", "web"), "/").WithLocalAdmin(on).Routes())
+	srv := NewPlayers(cur, reg, filepath.Join("..", "..", "web"), "/").WithLocalAdmin(on)
+	app = httptest.NewServer(srv.Routes())
 	t.Cleanup(app.Close)
-	return app
+	return app, srv.LocalAdminKey()
 }
 
 func do(t *testing.T, method, u string, hdr map[string]string) int {

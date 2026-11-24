@@ -13,7 +13,6 @@ import (
 	"github.com/adelvecchio/pokelecture/internal/curriculum"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/adelvecchio/pokelecture/internal/progress"
@@ -79,11 +78,7 @@ func (s *Server) deviceMAC(id, lockTag string) string {
 // A code is three Pokémon taken from this palette (the game draws the same).
 var lockPalette = map[int]bool{25: true, 4: true, 7: true, 1: true, 133: true, 39: true, 52: true, 143: true, 54: true}
 
-const (
-	lockLength   = 3
-	lockMaxFails = 5
-	lockWait     = 5 * time.Minute
-)
+const lockLength = 3
 
 func validCode(code []int) bool {
 	if len(code) != lockLength {
@@ -95,39 +90,6 @@ func validCode(code []int) bool {
 		}
 	}
 	return true
-}
-
-// lockGuard counts wrong codes per player: after lockMaxFails, a wait.
-type lockGuard struct {
-	mu    sync.Mutex
-	fails map[string]int
-	until map[string]time.Time
-}
-
-func (g *lockGuard) blocked(id string) time.Duration {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	if d := time.Until(g.until[id]); d > 0 {
-		return d
-	}
-	return 0
-}
-
-func (g *lockGuard) fail(id string) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.fails[id]++
-	if g.fails[id] >= lockMaxFails {
-		g.until[id] = time.Now().Add(lockWait)
-		g.fails[id] = 0
-	}
-}
-
-func (g *lockGuard) ok(id string) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	delete(g.fails, id)
-	delete(g.until, id)
 }
 
 // adminPlay runs an admin handler on the player named by ?player=, or the
@@ -152,17 +114,21 @@ func (s *Server) adminPlay(h func(*Server, http.ResponseWriter, *http.Request)) 
 }
 
 type playerView struct {
-	ID      string    `json:"id"`
-	Name    string    `json:"name"`
-	Locked  bool      `json:"locked"` // a picture code guards this save
-	Avatar  int       `json:"avatar"` // the partner's species: what the child recognises
-	Stars   int       `json:"stars"`
-	Caught  int       `json:"caught"`
-	Level   int       `json:"trainer_level"`
-	Updated time.Time `json:"updated_at"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Locked bool   `json:"locked"` // a picture code guards this save
+	Avatar int    `json:"avatar"` // the partner's species: what the child recognises
+	// The rest is left out for a private player on the game's list: anyone
+	// can open "Qui joue ?", and a name and a Pokémon are all it needs.
+	Stars   int       `json:"stars,omitzero"`
+	Caught  int       `json:"caught,omitzero"`
+	Level   int       `json:"trainer_level,omitzero"`
+	Updated time.Time `json:"updated_at,omitzero"`
 }
 
-func (s *Server) playerViews() []playerView {
+// playerViews lists the players; full adds a private player's progress
+// (the admin's list, behind the sign-in).
+func (s *Server) playerViews(full bool) []playerView {
 	var out []playerView
 	for _, p := range s.players.List() {
 		st, ok := s.players.Get(p.ID)
@@ -170,8 +136,10 @@ func (s *Server) playerViews() []playerView {
 			continue
 		}
 		snap := st.Snapshot()
-		v := playerView{ID: p.ID, Name: snap.Name, Locked: snap.Lock != nil, Avatar: 25, Stars: snap.Stars, Caught: len(snap.Pokedex),
-			Level: trainerOf(snap).Level, Updated: snap.UpdatedAt}
+		v := playerView{ID: p.ID, Name: snap.Name, Locked: snap.Lock != nil, Avatar: 25}
+		if full || snap.Lock == nil {
+			v.Stars, v.Caught, v.Level, v.Updated = snap.Stars, len(snap.Pokedex), trainerOf(snap).Level, snap.UpdatedAt
+		}
 		if pv := s.partnerView(snap); pv != nil {
 			v.Avatar = pv.Species
 		}
@@ -190,7 +158,7 @@ func (s *Server) handlePlayers(w http.ResponseWriter, r *http.Request) {
 		current = id
 	}
 	// ui: "Qui joue ?" and the code screen speak before any save is open.
-	writeJSON(w, http.StatusOK, map[string]any{"players": s.playerViews(), "current": current, "ui": curriculum.UIAudio()})
+	writeJSON(w, http.StatusOK, map[string]any{"players": s.playerViews(false), "current": current, "ui": curriculum.UIAudio()})
 }
 
 // handlePlayerSelect makes this device a player.
@@ -208,19 +176,16 @@ func (s *Server) handlePlayerSelect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "joueur inconnu", http.StatusNotFound)
 		return
 	}
-	if st.LockTag() != "" {
-		if wait := s.locks.blocked(req.ID); wait > 0 {
-			writeJSON(w, http.StatusTooManyRequests, map[string]any{"locked": true, "wait": int(wait.Seconds()) + 1})
-			return
-		}
-		if !st.CheckLock(req.Code) {
-			if req.Code != nil {
-				s.locks.fail(req.ID)
-			}
-			writeJSON(w, http.StatusForbidden, map[string]any{"locked": true})
-			return
-		}
-		s.locks.ok(req.ID)
+	switch res, wait := st.TryLock(req.Code); res {
+	case progress.LockWait:
+		writeJSON(w, http.StatusTooManyRequests, map[string]any{"locked": true, "wait": int(wait.Seconds()) + 1})
+		return
+	case progress.LockClosed:
+		writeJSON(w, http.StatusTooManyRequests, map[string]any{"locked": true, "closed": true})
+		return
+	case progress.LockWrong:
+		writeJSON(w, http.StatusForbidden, map[string]any{"locked": true})
+		return
 	}
 	http.SetCookie(w, s.playerCookie(r, req.ID))
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
@@ -240,7 +205,7 @@ func (s *Server) playerCookie(r *http.Request, id string) *http.Cookie {
 /* ---------------------------------------------------------------- admin --- */
 
 func (s *Server) handleAdminPlayers(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"players": s.playerViews()})
+	writeJSON(w, http.StatusOK, map[string]any{"players": s.playerViews(true)})
 }
 
 func (s *Server) handleAdminPlayerCreate(w http.ResponseWriter, r *http.Request) {
@@ -256,7 +221,7 @@ func (s *Server) handleAdminPlayerCreate(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"id": id, "players": s.playerViews()})
+	writeJSON(w, http.StatusOK, map[string]any{"id": id, "players": s.playerViews(true)})
 }
 
 // handleAdminLock sets (three palette Pokémon) or removes (empty) the
@@ -264,13 +229,18 @@ func (s *Server) handleAdminPlayerCreate(w http.ResponseWriter, r *http.Request)
 // enter the new code.
 func (s *Server) handleAdminLock(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Code []int `json:"code"`
+		Code   []int `json:"code"`
+		Reopen bool  `json:"reopen"` // keep the code, forget the wrong tries
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || (len(req.Code) > 0 && !validCode(req.Code)) {
 		http.Error(w, "un code, c'est trois Pokémon de la liste", http.StatusBadRequest)
 		return
 	}
-	s.store.SetLock(req.Code)
+	if req.Reopen {
+		s.store.ReopenLock()
+	} else {
+		s.store.SetLock(req.Code)
+	}
 	s.adminDone(w)
 }
 
@@ -279,7 +249,7 @@ func (s *Server) handleAdminPlayerDelete(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"players": s.playerViews()})
+	writeJSON(w, http.StatusOK, map[string]any{"players": s.playerViews(true)})
 }
 
 /* ------------------------------------------------------- from the game --- */

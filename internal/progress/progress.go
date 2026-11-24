@@ -150,11 +150,36 @@ type Today struct {
 	Claimed  []string       `json:"claimed,omitempty"`  // missions already rewarded
 }
 
-// Lock is a hashed picture code.
+// Lock is a hashed picture code, with its count of wrong tries.
 type Lock struct {
-	Salt string `json:"salt"`
-	Hash string `json:"hash"`
+	Salt  string    `json:"salt"`
+	Hash  string    `json:"hash"`
+	Fails int       `json:"fails,omitempty"` // wrong codes since the last right one
+	Until time.Time `json:"until,omitzero"`  // no try before this
 }
+
+// Wrong codes: every lockStep of them, a wait that grows; at LockClosedAt
+// the player stays closed until a parent reopens it (at most 15 tries of
+// 729: an attacker's odds stay under 2 %). Devices already in keep playing.
+const (
+	lockStep     = 5
+	LockClosedAt = 15
+)
+
+var lockWaits = map[int]time.Duration{5: 5 * time.Minute, 10: time.Hour}
+
+// LockResult is the outcome of a code try.
+type LockResult int
+
+const (
+	LockOpen   LockResult = iota // the right code, or no code needed
+	LockWrong                    // a wrong (or missing) code
+	LockWait                     // too many tries: wait
+	LockClosed                   // too many tries: a parent must reopen it
+)
+
+// now is the clock, swapped by tests.
+var now = time.Now
 
 func lockHash(salt string, code []int) string {
 	h := sha256.New()
@@ -165,7 +190,7 @@ func lockHash(salt string, code []int) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// SetLock sets the picture code; an empty code removes it.
+// SetLock sets the picture code (fresh count); an empty code removes it.
 func (s *Store) SetLock(code []int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -179,14 +204,50 @@ func (s *Store) SetLock(code []int) {
 	s.state.Lock = &Lock{Salt: salt, Hash: lockHash(salt, code)}
 }
 
-// CheckLock reports whether a code opens this save (always true unlocked).
-func (s *Store) CheckLock(code []int) bool {
+// ReopenLock clears the wrong tries, keeping the code (and every device in).
+func (s *Store) ReopenLock() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.state.Lock == nil {
-		return true
+	if s.state.Lock != nil {
+		s.state.Lock.Fails, s.state.Lock.Until = 0, time.Time{}
 	}
-	return subtle.ConstantTimeCompare([]byte(lockHash(s.state.Lock.Salt, code)), []byte(s.state.Lock.Hash)) == 1
+}
+
+// TryLock checks a code and counts it, in one step: concurrent tries cannot
+// slip past the count. A nil code (asking whether one is needed) is not
+// counted. The count is saved, so a restart does not reset it.
+func (s *Store) TryLock(code []int) (LockResult, time.Duration) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	l := s.state.Lock
+	if l == nil {
+		return LockOpen, 0
+	}
+	if l.Fails >= LockClosedAt {
+		return LockClosed, 0
+	}
+	if d := l.Until.Sub(now()); d > 0 {
+		return LockWait, d
+	}
+	if code == nil {
+		return LockWrong, 0
+	}
+	if subtle.ConstantTimeCompare([]byte(lockHash(l.Salt, code)), []byte(l.Hash)) == 1 {
+		if l.Fails != 0 || !l.Until.IsZero() {
+			l.Fails, l.Until = 0, time.Time{}
+			_ = s.write()
+		}
+		return LockOpen, 0
+	}
+	l.Fails++
+	if d, ok := lockWaits[l.Fails]; ok {
+		l.Until = now().Add(d)
+	}
+	_ = s.write()
+	if l.Fails >= LockClosedAt {
+		return LockClosed, 0
+	}
+	return LockWrong, 0
 }
 
 // LockTag identifies the current code ("" unlocked): a device's right to
@@ -242,7 +303,7 @@ func Open(path string, name string) (*Store, error) {
 			s.state.Name = DefaultName
 		}
 		s.state.Created = time.Now()
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			return nil, err
 		}
 		return s, s.flush()
@@ -817,12 +878,19 @@ func (s *Store) Save() error {
 
 func (s *Store) flush() error {
 	s.state.UpdatedAt = time.Now()
+	return s.write()
+}
+
+// write saves without touching UpdatedAt ("last played"): a wrong code is
+// not a game. Owner-only: a save holds the hashed code, which 729 tries undo.
+func (s *Store) write() error {
 	b, err := json.MarshalIndent(s.state, "", "  ")
 	if err != nil {
 		return err
 	}
 	tmp := s.path + ".tmp"
-	if err := os.WriteFile(tmp, b, 0o644); err != nil {
+	_ = os.Remove(tmp)
+	if err := os.WriteFile(tmp, b, 0o600); err != nil {
 		return err
 	}
 	return os.Rename(tmp, s.path)

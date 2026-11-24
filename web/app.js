@@ -29,8 +29,10 @@ async function api(path, body) {
     : {};
   const res = await fetch(path, opts);
   if (!res.ok) {
-    const err = new Error(`${path}: ${res.status} ${await res.text()}`);
+    const text = await res.text();
+    const err = new Error(`${path}: ${res.status} ${text}`);
     err.status = res.status; // 409 on a game call: no player picked on this device
+    try { err.data = JSON.parse(text); } catch (_) { err.data = null; }
     throw err;
   }
   return res.json();
@@ -694,7 +696,7 @@ const Players = {
           Sfx.pop();
           try { await api('api/players/select', { id: p.id }); } catch (err) {
             if (err.status === 403) this.askCode(p);
-            else if (err.status === 429) say('Trop d\'essais. Attends un peu, puis réessaie.');
+            else if (err.status === 429) this.tooMany(err);
             return;
           }
           this.enter();
@@ -709,6 +711,12 @@ const Players = {
     );
     App.screen(App.topbar(), el('div', { class: 'page' },
       el('div', { class: 'act' }, el('h2', {}, 'Qui joue ?'), hint('Qui joue ? Touche ton Pokémon !'), grid)));
+  },
+
+  // Too many wrong codes: wait, or — closed — a parent reopens it in the admin.
+  tooMany(err) {
+    if (err.data && err.data.closed) say('Ta partie est fermée. Demande à un grand de la rouvrir.');
+    else say('Trop d\'essais. Attends un peu, puis réessaie.');
   },
 
   async enter() {
@@ -742,7 +750,8 @@ const Players = {
         slots.classList.add('bad');
         Sfx.wrong();
         show();
-        say(err.status === 429 ? 'Trop d\'essais. Attends un peu, puis réessaie.' : 'Ce n\'est pas le bon code. Essaie encore !');
+        if (err.status === 429) return this.tooMany(err);
+        say('Ce n\'est pas le bon code. Essaie encore !');
         return;
       }
       Sfx.catch_();

@@ -104,7 +104,7 @@ func TestAdminActsOnTheNamedPlayer(t *testing.T) {
 	if got := post("/api/admin/lock?player="+mia, `{"code":[25,4,7]}`); got != http.StatusOK {
 		t.Fatalf("rendre Mia privée : %d", got)
 	}
-	if st, _ := reg.Get(mia); !st.CheckLock([]int{25, 4, 7}) || st.CheckLock(nil) {
+	if st, _ := reg.Get(mia); st.LockTag() == "" || func() bool { r, _ := st.TryLock([]int{25, 4, 7}); return r != progress.LockOpen }() {
 		t.Fatal("Mia doit être privée avec le code Pikachu, Salamèche, Carapuce")
 	}
 	if st, _ := reg.Get(leo); st.LockTag() != "" {
@@ -254,13 +254,25 @@ func TestPrivatePlayerNeedsItsCode(t *testing.T) {
 		t.Fatalf("code changé : l'appareil doit redemander, %d", got)
 	}
 
-	// Five wrong codes: wait.
+	// Five wrong codes: wait — even the right code, even from another device.
 	guess := device()
-	for i := 0; i < lockMaxFails; i++ {
+	for i := 0; i < 5; i++ {
 		pick(guess, nino, "[52,52,52]")
 	}
-	if got := pick(guess, nino, "[1,133,39]"); got != http.StatusTooManyRequests {
-		t.Fatalf("après %d essais ratés, même le bon code doit attendre : %d", lockMaxFails, got)
+	if got := pick(device(), nino, "[1,133,39]"); got != http.StatusTooManyRequests {
+		t.Fatalf("après 5 essais ratés, même le bon code doit attendre : %d", got)
+	}
+	// A device already in keeps playing.
+	tablet2 := device()
+	st.ReopenLock()
+	if got := pick(tablet2, nino, "[1,133,39]"); got != http.StatusOK {
+		t.Fatalf("rouvert : %d", got)
+	}
+	for i := 0; i < 5; i++ {
+		pick(guess, nino, "[52,52,52]")
+	}
+	if got := stateCode(tablet2); got != http.StatusOK {
+		t.Fatalf("un appareil déjà entré ne doit pas être bloqué par les essais d'un autre : %d", got)
 	}
 	// The player list says which are private — never the code.
 	resp, _ := device().Get(app.URL + "/api/players")
@@ -269,8 +281,15 @@ func TestPrivatePlayerNeedsItsCode(t *testing.T) {
 	}
 	_ = json.NewDecoder(resp.Body).Decode(&list)
 	for _, p := range list.Players {
-		if p["id"] == nino && p["locked"] != true {
-			t.Errorf("Nino doit apparaître privé")
+		if p["id"] == nino {
+			if p["locked"] != true {
+				t.Errorf("Nino doit apparaître privé")
+			}
+			for _, k := range []string{"stars", "caught", "trainer_level", "updated_at"} {
+				if _, ok := p[k]; ok {
+					t.Errorf("la liste publique montre %q d'un joueur privé", k)
+				}
+			}
 		}
 		for k := range p {
 			if strings.Contains(k, "hash") || strings.Contains(k, "salt") || k == "lock" {

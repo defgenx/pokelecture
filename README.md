@@ -85,9 +85,17 @@ s'ouvre d'un toucher, comme avant ; « Rendre public » retire le code.
   créée au premier démarrage) et lié au code : un cookie fabriqué à la main
   n'ouvre pas une partie privée, et **changer le code le redemande sur tous
   les appareils**.
-- Cinq codes faux d'affilée : cinq minutes d'attente pour ce joueur.
-- C'est un verrou contre la petite sœur sur la même tablette, pas un coffre :
-  1 combinaison sur 729.
+- Codes faux, comptés dans la sauvegarde (un redémarrage ne les efface pas) :
+  après 5, cinq minutes d'attente ; après 10, une heure ; à **15, le joueur
+  est fermé** jusqu'à ce qu'un parent clique **🔓 Rouvrir** dans l'admin (le
+  code et les appareils restent). Quelqu'un qui essaie depuis Internet a donc
+  au plus 15 chances sur 729 (2 %). Les appareils déjà entrés continuent de
+  jouer : les essais d'un autre ne bloquent jamais la tablette de l'enfant.
+- Chaque essai est vérifié et compté d'un seul coup : une rafale d'essais
+  simultanés n'en teste pas plus.
+- La liste publique « Qui joue ? » ne montre d'un joueur privé que son prénom
+  et son Pokémon. Les sauvegardes sont lisibles par leur seul propriétaire
+  (`var/players/` en 0700, fichiers en 0600).
 
 La sauvegarde de chaque joueur est un simple fichier JSON. `make reset`
 repart de zéro — ou, plus fin, l'**administration** sur l'ordinateur :
@@ -403,15 +411,21 @@ make run
 ```
 
 **En local, pas de connexion Google** : `make run` compile en **mode dev**
-(`go run -tags dev`) et passe `-local-admin`, qui ouvre l'admin et le studio voix **depuis cet ordinateur seulement** — une
-connexion directe en boucle locale (127.0.0.1 / ::1), adressée à `localhost`,
-sans aucun en-tête de proxy (`X-Forwarded-*`, `X-Real-IP`, `Forwarded`). La
+(`go run -tags dev`) et passe `-local-admin`. Au démarrage, il affiche un lien
+`http://localhost:8080/admin?k=…` : l'ouvrir une fois sur cet ordinateur
+pose un cookie (30 jours, la clé ne change pas d'un redémarrage à l'autre),
+puis `/admin` et le studio voix s'ouvrent sans Google. Il faut à la fois la
+clé **et** une connexion directe en boucle locale (127.0.0.1 / ::1), adressée
+à `localhost`, sans aucun en-tête de proxy (`X-Forwarded-*`, `X-Real-IP`,
+`Forwarded`, `Via`, `CF-Connecting-IP`…) : la clé arrête un tunnel ou une
+redirection de port (`ssh -R`, socat) qui ferait entrer Internet par la boucle
+locale. La
 tablette, sur le réseau, reste refusée ; une page d'un autre site ne peut ni
 écrire (contrôle d'origine) ni se faire passer pour localhost (contrôle du
 `Host`). C'est un **drapeau** et non une variable d'environnement, pour que le
 `env_file` d'un déploiement ne puisse jamais l'activer — et le serveur refuse
 de démarrer avec `-local-admin` si `POKELECTURE_URL` pointe ailleurs que sur
-localhost. **Le contournement n'existe que dans une build dev** : le code est
+localhost, ou dans un conteneur. **Le contournement n'existe que dans une build dev** : le code est
 derrière le build tag `dev` (`internal/api/localadmin.go`) ; la build normale
 — celle de l'image Docker, `make build` — ne le contient pas et refuse
 l'option (`flag provided but not defined: -local-admin`). En production,

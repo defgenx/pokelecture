@@ -47,7 +47,9 @@ type adminPokemonView struct {
 }
 
 type adminSummary struct {
-	Locked     bool               `json:"locked"` // private: a picture code guards it
+	Locked     bool               `json:"locked"`      // private: a picture code guards it
+	LockFails  int                `json:"lock_fails"`  // wrong codes since the last right one
+	LockClosed bool               `json:"lock_closed"` // too many: closed until reopened
 	Name       string             `json:"name"`
 	Stars      int                `json:"stars"`
 	Streak     int                `json:"streak"`
@@ -67,6 +69,8 @@ func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
 
 	out := adminSummary{
 		Locked:     st.Lock != nil,
+		LockFails:  lockFails(st),
+		LockClosed: st.Lock != nil && st.Lock.Fails >= progress.LockClosedAt,
 		Name:       st.Name,
 		Stars:      st.Stars,
 		Streak:     st.Streak,
@@ -289,4 +293,11 @@ func (s *Server) adminDone(w http.ResponseWriter) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
+}
+
+func lockFails(st progress.State) int {
+	if st.Lock == nil {
+		return 0
+	}
+	return st.Lock.Fails
 }

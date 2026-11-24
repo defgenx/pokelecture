@@ -9,17 +9,45 @@ import (
 )
 
 func TestLocalAdminOnlyOnThisComputer(t *testing.T) {
-	if got := do(t, "GET", localAdminApp(t, false).URL+"/api/admin/summary", nil); got != http.StatusForbidden {
+	off, _ := localAdminApp(t, false)
+	if got := do(t, "GET", off.URL+"/api/admin/summary", nil); got != http.StatusForbidden {
 		t.Fatalf("sans -local-admin, l'admin reste fermée : %d", got)
 	}
-	app := localAdminApp(t, true)
-	if got := do(t, "GET", app.URL+"/api/admin/summary", nil); got != http.StatusOK {
-		t.Fatalf("-local-admin depuis localhost : %d", got)
+	app, key := localAdminApp(t, true)
+	if len(key) < 40 {
+		t.Fatalf("clé trop courte : %q", key)
 	}
-	if got := do(t, "GET", app.URL+"/admin", nil); got != http.StatusOK {
-		t.Fatalf("page /admin depuis localhost : %d", got)
+	// Loopback alone is not enough: a tunnel (ssh -R, socat) arrives that way too.
+	if got := do(t, "GET", app.URL+"/api/admin/summary", nil); got == http.StatusOK {
+		t.Fatalf("sans la clé, même depuis localhost, l'admin reste fermée : %d", got)
 	}
-	if got := do(t, "POST", app.URL+"/api/admin/name", map[string]string{"Origin": app.URL}); got == http.StatusForbidden || got == http.StatusUnauthorized {
+	if got := do(t, "GET", app.URL+"/api/admin/summary?k=wrong", nil); got == http.StatusOK {
+		t.Fatalf("mauvaise clé : %d", got)
+	}
+	// The startup link sets the cookie; then the cookie is enough.
+	req, _ := http.NewRequest("GET", app.URL+"/admin?k="+key, nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	var cookie string
+	for _, c := range resp.Cookies() {
+		if c.Name == devAdminCookie {
+			cookie = c.Name + "=" + c.Value
+			if !c.HttpOnly || c.SameSite != http.SameSiteStrictMode {
+				t.Errorf("cookie d'admin locale : HttpOnly et SameSite=Strict attendus")
+			}
+		}
+	}
+	if resp.StatusCode != http.StatusOK || cookie == "" {
+		t.Fatalf("lien de démarrage : %d, cookie %q", resp.StatusCode, cookie)
+	}
+	ok := map[string]string{"Cookie": cookie}
+	if got := do(t, "GET", app.URL+"/api/admin/summary", ok); got != http.StatusOK {
+		t.Fatalf("avec le cookie : %d", got)
+	}
+	if got := do(t, "POST", app.URL+"/api/admin/name", map[string]string{"Cookie": cookie, "Origin": app.URL}); got == http.StatusForbidden || got == http.StatusUnauthorized {
 		t.Fatalf("écriture depuis nos pages : %d", got)
 	}
 	for name, hdr := range map[string]map[string]string{
@@ -29,7 +57,11 @@ func TestLocalAdminOnlyOnThisComputer(t *testing.T) {
 		"rebinding DNS (Host)":   {"Host": "evil.example"},
 		"proxy (X-Real-IP)":      {"X-Real-IP": "203.0.113.9"},
 		"proxy (Forwarded-Host)": {"X-Forwarded-Host": "delvecch.io"},
+		"proxy (Proto)":          {"X-Forwarded-Proto": "https"},
+		"proxy (Via)":            {"Via": "1.1 nginx"},
+		"proxy (Cloudflare)":     {"CF-Connecting-IP": "203.0.113.9"},
 	} {
+		hdr["Cookie"] = cookie // even holding the key
 		method := "GET"
 		if hdr["Origin"] != "" {
 			method = "POST"

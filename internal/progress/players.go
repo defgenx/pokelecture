@@ -60,9 +60,10 @@ type PlayerInfo struct {
 // that migrated player only.
 func OpenRegistry(varDir, legacyName string) (*Registry, error) {
 	r := &Registry{dir: filepath.Join(varDir, "players"), stores: map[string]*Store{}}
-	if err := os.MkdirAll(r.dir, 0o755); err != nil {
+	if err := os.MkdirAll(r.dir, 0o700); err != nil {
 		return nil, err
 	}
+	_ = os.Chmod(r.dir, 0o700) // owner-only, also for a folder made before
 	key, err := loadKey(r.dir)
 	if err != nil {
 		return nil, err
@@ -77,7 +78,7 @@ func OpenRegistry(varDir, legacyName string) (*Registry, error) {
 			if err != nil {
 				return nil, err
 			}
-			if err := os.WriteFile(filepath.Join(r.dir, id+".json"), b, 0o644); err != nil {
+			if err := os.WriteFile(filepath.Join(r.dir, id+".json"), b, 0o600); err != nil {
 				return nil, err
 			}
 			if err := os.Rename(legacy, legacy+".before-players"); err != nil {
@@ -229,7 +230,7 @@ func (r *Registry) Delete(id string) error {
 	}
 	if r.dir != "" {
 		trash := filepath.Join(r.dir, "trash")
-		if err := os.MkdirAll(trash, 0o755); err != nil {
+		if err := os.MkdirAll(trash, 0o700); err != nil {
 			return err
 		}
 		dst := filepath.Join(trash, fmt.Sprintf("%s-%s.json", id, time.Now().Format("20060102-150405")))

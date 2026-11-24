@@ -365,6 +365,11 @@ function lockSection(list, s) {
     el('p', { style: 'color:#6a7180;font-size:13px;margin-bottom:10px' }, s.locked
       ? `${s.name} est privé : le jeu demande son code (trois Pokémon, dans l'ordre) une fois par appareil. Changer le code le redemande sur tous les appareils.`
       : `${s.name} est public : n'importe qui peut jouer sa partie. Choisissez trois Pokémon, dans l'ordre, pour le rendre privé.`),
+    s.lock_closed ? el('div', { class: 'dangerzone' },
+      el('p', {}, `Fermé : ${s.lock_fails} codes faux d'affilée. Le jeu ne demande plus le code tant que vous ne rouvrez pas (les appareils déjà entrés continuent de jouer).`),
+      el('button', { onclick: () => act('api/admin/lock', { reopen: true }) }, '🔓 Rouvrir (même code)'),
+    ) : s.lock_fails ? el('p', { style: 'color:#b04a1d;font-size:13px;margin-bottom:10px' },
+      `${s.lock_fails} code(s) faux depuis la dernière ouverture.`) : null,
     pad,
     el('div', { class: 'namebox' }, slots,
       el('button', { class: 'linkbtn', onclick: () => { code.length = 0; show(); } }, 'Effacer'),

@@ -1186,6 +1186,7 @@ var UIPhrases = []string{
 	"Touche ton code secret : tes trois Pokémon, dans l'ordre !",
 	"Ce n'est pas le bon code. Essaie encore !",
 	"Trop d'essais. Attends un peu, puis réessaie.",
+	"Ta partie est fermée. Demande à un grand de la rouvrir.",
 	"Comment tu t'appelles ? Demande à un grand de t'aider à l'écrire.",
 	"Mission accomplie !",
 	"Tes missions du jour !",

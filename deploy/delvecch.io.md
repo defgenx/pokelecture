@@ -210,12 +210,12 @@ Vérifier :
 ```bash
 curl -sI https://delvecch.io/pokelecture/           # 200
 curl -s  https://delvecch.io/pokelecture/ | grep base   # <base href="/pokelecture/">
-curl -s  https://delvecch.io/pokelecture/api/state | head -c 200
+curl -s  https://delvecch.io/pokelecture/api/players | head -c 200
 
-# La voix : 200 et audio/mp4, sinon la tablette sera muette (voir étape 1).
+# La voix : 200 et audio/mpeg, sinon la tablette sera muette (voir étape 1).
 curl -s -o /dev/null -w '%{http_code} %{content_type}\n' \
-  "https://delvecch.io/pokelecture/$(curl -s https://delvecch.io/pokelecture/api/state \
-   | python3 -c 'import sys,json;print(json.load(sys.stdin)["pokedex"][0]["name_audio"])')"
+  "https://delvecch.io/pokelecture/$(curl -s https://delvecch.io/pokelecture/api/players \
+   | python3 -c 'import sys,json;print(next(iter(json.load(sys.stdin)["ui"].values())))')"
 ```
 
 ## Notes

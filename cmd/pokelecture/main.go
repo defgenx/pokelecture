@@ -73,10 +73,16 @@ func main() {
 		if u := os.Getenv("POKELECTURE_URL"); u != "" && !isLocalURL(u) {
 			log.Fatalf("-local-admin refusé : POKELECTURE_URL (%q) n'est pas une adresse locale — c'est un serveur en ligne", u)
 		}
-		log.Printf("admin et studio voix OUVERTS sans connexion depuis cet ordinateur (http://localhost%s/admin) — -local-admin", *addr)
+		if _, err := os.Stat("/.dockerenv"); err == nil {
+			log.Fatalf("-local-admin refusé dans un conteneur")
+		}
 	}
-
-	handler := api.NewPlayers(cur, players, filepath.Join(*root, "web"), mount).WithAuth(auth).WithLocalAdmin(*localAdmin).Routes()
+	app := api.NewPlayers(cur, players, filepath.Join(*root, "web"), mount).WithAuth(auth).WithLocalAdmin(*localAdmin)
+	if k := app.LocalAdminKey(); k != "" {
+		_, port, _ := net.SplitHostPort(*addr)
+		log.Printf("admin sans connexion, depuis cet ordinateur : http://localhost:%s%sadmin?k=%s", port, mount, k)
+	}
+	handler := app.Routes()
 
 	// Mounted under a sub-path, strip it before the app's own mux sees the
 	// request. Go's ServeMux also redirects /pokelecture → /pokelecture/ for us,

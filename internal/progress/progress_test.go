@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 )
@@ -170,5 +171,92 @@ func TestPartnerBallsAndGift(t *testing.T) {
 	}
 	if s.Snapshot().Balls != 6 {
 		t.Fatalf("two gifts of 3 balls, got %d", s.Snapshot().Balls)
+	}
+}
+
+func TestLockTriesGrowThenClose(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "p.json")
+	st, err := Open(path, "Nino")
+	if err != nil {
+		t.Fatal(err)
+	}
+	st.SetLock([]int{25, 4, 7})
+	clock := time.Date(2026, 11, 24, 18, 0, 0, 0, time.UTC)
+	now = func() time.Time { return clock }
+	defer func() { now = time.Now }()
+	wrong := []int{52, 52, 52}
+
+	if r, _ := st.TryLock(nil); r != LockWrong {
+		t.Fatalf("sans code : %v", r)
+	}
+	for i := 0; i < 4; i++ {
+		st.TryLock(wrong)
+	}
+	if r, _ := st.TryLock(nil); r != LockWrong {
+		t.Fatalf("un code absent ne compte pas : %v", r)
+	}
+	st.TryLock(wrong) // 5th
+	if r, d := st.TryLock([]int{25, 4, 7}); r != LockWait || d != 5*time.Minute {
+		t.Fatalf("après 5 : attendre 5 min, %v %v", r, d)
+	}
+	// The count survives a restart.
+	again, _ := Open(path, "")
+	if r, _ := again.TryLock([]int{25, 4, 7}); r != LockWait {
+		t.Fatalf("après redémarrage, toujours en attente : %v", r)
+	}
+	clock = clock.Add(6 * time.Minute)
+	for i := 0; i < 5; i++ {
+		st.TryLock(wrong)
+	}
+	if _, d := st.TryLock(wrong); d != time.Hour {
+		t.Fatalf("après 10 : attendre 1 h, %v", d)
+	}
+	clock = clock.Add(2 * time.Hour)
+	for i := 0; i < 5; i++ {
+		st.TryLock(wrong)
+	}
+	if r, _ := st.TryLock([]int{25, 4, 7}); r != LockClosed {
+		t.Fatalf("après 15 : fermé, même au bon code : %v", r)
+	}
+	clock = clock.Add(30 * 24 * time.Hour)
+	if r, _ := st.TryLock([]int{25, 4, 7}); r != LockClosed {
+		t.Fatalf("fermé ne s'ouvre pas avec le temps : %v", r)
+	}
+	tag := st.LockTag()
+	st.ReopenLock()
+	if r, _ := st.TryLock([]int{25, 4, 7}); r != LockOpen || st.LockTag() != tag {
+		t.Fatalf("rouvert, même code, mêmes appareils : %v", r)
+	}
+	if info, _ := os.Stat(path); info.Mode().Perm() != 0o600 {
+		t.Errorf("la sauvegarde doit être 0600 : %v", info.Mode().Perm())
+	}
+}
+
+// Concurrent tries are counted one by one: a burst cannot test more codes
+// than the limit allows.
+func TestLockTriesAreAtomic(t *testing.T) {
+	st, _ := Open(filepath.Join(t.TempDir(), "p.json"), "Nino")
+	st.SetLock([]int{0, 0, 0}) // never in the burst: no success resets the count
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	tested := 0
+	for _, a := range []int{25, 4, 7, 1, 133, 39, 52, 143, 54} {
+		for _, b := range []int{25, 4, 7, 1, 133, 39, 52, 143, 54} {
+			for _, c := range []int{25, 4, 7, 1, 133, 39, 52, 143, 54} {
+				wg.Add(1)
+				go func(code []int) {
+					defer wg.Done()
+					if r, _ := st.TryLock(code); r == LockWrong {
+						mu.Lock()
+						tested++
+						mu.Unlock()
+					}
+				}([]int{a, b, c})
+			}
+		}
+	}
+	wg.Wait()
+	if tested > 5 {
+		t.Fatalf("%d codes évalués d'un coup, 5 au plus", tested)
 	}
 }
