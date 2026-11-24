@@ -70,6 +70,25 @@ studio sont communs. Supprimer un joueur déplace sa sauvegarde dans
 gardé en `progress.json.before-players` ; `POKELECTURE_NAME` ne s'applique que
 tant qu'il n'y a qu'un joueur.
 
+**🔒 Privé / 🌐 Public** : dans l'administration (onglet Réglages), un joueur
+peut être rendu privé par un **code de trois Pokémon, dans l'ordre**, choisis
+parmi neuf (Pikachu, Salamèche, Carapuce, Bulbizarre, Évoli, Rondoudou,
+Miaouss, Ronflex, Psykokwak) — un enfant qui ne lit pas peut le taper. Sur
+« Qui joue ? », un joueur privé porte un 🔒 ; le toucher ouvre l'écran du code
+(dit à voix haute), demandé **une fois par appareil**. Un joueur public
+s'ouvre d'un toucher, comme avant ; « Rendre public » retire le code.
+
+- Le code n'est stocké que haché et salé (`lock` dans la sauvegarde) : il ne
+  peut pas être réaffiché — notez-le. Ni la liste des joueurs, ni l'état, ni
+  l'admin ne l'exposent.
+- Le cookie de l'appareil est signé (HMAC, clé `var/players/.device-key`,
+  créée au premier démarrage) et lié au code : un cookie fabriqué à la main
+  n'ouvre pas une partie privée, et **changer le code le redemande sur tous
+  les appareils**.
+- Cinq codes faux d'affilée : cinq minutes d'attente pour ce joueur.
+- C'est un verrou contre la petite sœur sur la même tablette, pas un coffre :
+  1 combinaison sur 729.
+
 La sauvegarde de chaque joueur est un simple fichier JSON. `make reset`
 repart de zéro — ou, plus fin, l'**administration** sur l'ordinateur :
 `http://localhost:8080/admin` (voir plus bas).

@@ -5,7 +5,12 @@
 package progress
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -124,6 +129,9 @@ type State struct {
 
 	// Created dates the save (players are listed oldest first).
 	Created time.Time `json:"created,omitempty"`
+	// Lock is the player's secret picture code (three Pokémon in order),
+	// hashed: never sent to any page. Nil: no code, anyone may play this save.
+	Lock *Lock `json:"lock,omitempty"`
 
 	Settings  Settings  `json:"settings"`
 	Streak    int       `json:"streak"`
@@ -140,6 +148,56 @@ type Today struct {
 	Quests   []string       `json:"quests,omitempty"`   // today's mission ids
 	Progress map[string]int `json:"progress,omitempty"` // per mission kind
 	Claimed  []string       `json:"claimed,omitempty"`  // missions already rewarded
+}
+
+// Lock is a hashed picture code.
+type Lock struct {
+	Salt string `json:"salt"`
+	Hash string `json:"hash"`
+}
+
+func lockHash(salt string, code []int) string {
+	h := sha256.New()
+	h.Write([]byte(salt))
+	for _, c := range code {
+		fmt.Fprintf(h, "|%d", c)
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// SetLock sets the picture code; an empty code removes it.
+func (s *Store) SetLock(code []int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(code) == 0 {
+		s.state.Lock = nil
+		return
+	}
+	b := make([]byte, 16)
+	_, _ = rand.Read(b)
+	salt := hex.EncodeToString(b)
+	s.state.Lock = &Lock{Salt: salt, Hash: lockHash(salt, code)}
+}
+
+// CheckLock reports whether a code opens this save (always true unlocked).
+func (s *Store) CheckLock(code []int) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state.Lock == nil {
+		return true
+	}
+	return subtle.ConstantTimeCompare([]byte(lockHash(s.state.Lock.Salt, code)), []byte(s.state.Lock.Hash)) == 1
+}
+
+// LockTag identifies the current code ("" unlocked): a device's right to
+// play is bound to it, so changing the code asks every device again.
+func (s *Store) LockTag() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state.Lock == nil {
+		return ""
+	}
+	return s.state.Lock.Hash
 }
 
 // Partner is the child's own Pokémon. Its level and form derive from XP.
@@ -259,6 +317,10 @@ func (s *Store) copyLocked() State {
 	if s.state.Partner != nil {
 		pt := *s.state.Partner
 		out.Partner = &pt
+	}
+	if s.state.Lock != nil {
+		l := *s.state.Lock
+		out.Lock = &l
 	}
 	out.Team = make(map[int]int, len(s.state.Team))
 	for k, v := range s.state.Team {
@@ -721,11 +783,12 @@ func (s *Store) Reset() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	name, settings, created := s.state.Name, s.state.Settings, s.state.Created
+	name, settings, created, lock := s.state.Name, s.state.Settings, s.state.Created, s.state.Lock
 	s.state = State{
 		Name:     name,
 		Settings: settings,
 		Created:  created,
+		Lock:     lock,
 		Episodes: map[string]EpisodeStat{},
 		Items:    map[string]Item{},
 	}

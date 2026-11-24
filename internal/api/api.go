@@ -27,7 +27,8 @@ type Server struct {
 	web     http.Handler
 	webDir  string
 	base    string
-	auth    *Auth // nil: the parent side is closed (see auth.go)
+	auth    *Auth      // nil: the parent side is closed (see auth.go)
+	locks   *lockGuard // wrong picture codes, per player (players.go)
 }
 
 // New returns a Server serving the frontend from webDir, mounted at base
@@ -42,6 +43,7 @@ func NewPlayers(cur *curriculum.Curriculum, players *progress.Registry, webDir, 
 	return &Server{
 		cur:     cur,
 		players: players,
+		locks:   &lockGuard{fails: map[string]int{}, until: map[string]time.Time{}},
 		web:     http.FileServer(http.Dir(webDir)),
 		webDir:  webDir,
 		base:    base,
@@ -125,6 +127,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /api/admin/players", s.guard(s.handleAdminPlayers))
 	mux.HandleFunc("POST /api/admin/players", s.guard(s.handleAdminPlayerCreate))
 	mux.HandleFunc("POST /api/admin/players/{id}/delete", s.guard(s.handleAdminPlayerDelete))
+	mux.HandleFunc("POST /api/admin/lock", s.guard(s.adminPlay((*Server).handleAdminLock)))
 
 	// Parent-side voice recording — behind the Google sign-in when it is on.
 	mux.HandleFunc("GET /api/texts", s.guard(s.handleTexts))

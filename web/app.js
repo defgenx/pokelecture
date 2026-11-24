@@ -198,10 +198,7 @@ const REGION_EMOJI = {
 // state payload outside a session (home, Pokédex) — and degrades to the browser
 // voice when the audio track has not been generated yet.
 function say(phrase) {
-  const url = (Session.data && Session.data.ui && Session.data.ui[phrase])
-    || (App.state && App.state.ui && App.state.ui[phrase])
-    || null;
-  return Voice.play(url, phrase);
+  return Voice.play(uiAudio(phrase), phrase);
 }
 
 // hint() is a screen's instruction: shown, read out as the screen opens, and
@@ -218,6 +215,7 @@ function hint(text, speak = true) {
 function uiAudio(phrase) {
   return (Session.data && Session.data.ui && Session.data.ui[phrase])
     || (App.state && App.state.ui && App.state.ui[phrase])
+    || (Players.ui && Players.ui[phrase]) // before any save is open
     || null;
 }
 
@@ -688,18 +686,22 @@ const Players = {
     Voice.stop();
     let data;
     try { data = await api('api/players'); } catch (_) { return; }
+    this.ui = data.ui;
     const grid = el('div', { class: 'player-grid' },
       data.players.map((p) => el('button', {
         class: `player-card ${p.id === data.current ? 'current' : ''}`,
         onclick: async () => {
           Sfx.pop();
-          try { await api('api/players/select', { id: p.id }); } catch (_) { return; }
-          App.state = await api('api/state');
-          this.next();
+          try { await api('api/players/select', { id: p.id }); } catch (err) {
+            if (err.status === 403) this.askCode(p);
+            else if (err.status === 429) say('Trop d\'essais. Attends un peu, puis réessaie.');
+            return;
+          }
+          this.enter();
         },
       },
         el('img', { src: `sprites/art/${p.avatar}.png`, alt: '' }),
-        el('b', {}, p.name),
+        el('b', {}, p.locked ? `🔒 ${p.name}` : p.name),
         p.trainer_level ? el('small', {}, `🎖 N.${p.trainer_level} · ⭐ ${p.stars}`) : null,
       )),
       el('button', { class: 'player-card new', onclick: () => this.askName('new') },
@@ -707,6 +709,66 @@ const Players = {
     );
     App.screen(App.topbar(), el('div', { class: 'page' },
       el('div', { class: 'act' }, el('h2', {}, 'Qui joue ?'), hint('Qui joue ? Touche ton Pokémon !'), grid)));
+  },
+
+  async enter() {
+    App.state = await api('api/state');
+    this.next();
+  },
+
+  // The Pokémon a private player's code is made of; the same nine as
+  // lockPalette in internal/api/players.go and LOCK_PALETTE in admin.js.
+  PALETTE: [25, 4, 7, 1, 133, 39, 52, 143, 54],
+
+  /* A private player: three Pokémon, in order, chosen by the parents in the
+     admin. Asked once per device — the device then stays this player's. */
+  askCode(p) {
+    const code = [];
+    const slots = el('div', { class: 'code-slots' }, [0, 1, 2].map(() => el('span', { class: 'code-slot' })));
+    const show = () => {
+      [...slots.children].forEach((s, i) => {
+        s.innerHTML = '';
+        if (code[i]) s.append(el('img', { src: `sprites/art/${code[i]}.png`, alt: '' }));
+        s.classList.toggle('filled', !!code[i]);
+      });
+    };
+    const send = async () => {
+      try {
+        await api('api/players/select', { id: p.id, code });
+      } catch (err) {
+        code.length = 0;
+        slots.classList.remove('bad');
+        void slots.offsetWidth; // restart the shake
+        slots.classList.add('bad');
+        Sfx.wrong();
+        show();
+        say(err.status === 429 ? 'Trop d\'essais. Attends un peu, puis réessaie.' : 'Ce n\'est pas le bon code. Essaie encore !');
+        return;
+      }
+      Sfx.catch_();
+      burst('🔓');
+      this.enter();
+    };
+    const pad = el('div', { class: 'code-pad' }, this.PALETTE.map((n) => el('button', {
+      class: 'code-key',
+      onclick: () => {
+        if (code.length >= 3) return;
+        Sfx.pop();
+        code.push(n);
+        show();
+        if (code.length === 3) setTimeout(send, 250);
+      },
+    }, el('img', { src: `sprites/art/${n}.png`, alt: '' }))));
+    const back = el('button', { class: 'btn-icon', onclick: () => {
+      if (code.length) { code.pop(); show(); } else this.pick();
+    } }, '⌫');
+    App.screen(App.topbar(el('button', { class: 'btn-icon', onclick: () => this.pick() }, '✕')), el('div', { class: 'page' },
+      el('div', { class: 'act' },
+        el('h2', {}, `🔒 ${p.name}`),
+        hint('Touche ton code secret : tes trois Pokémon, dans l\'ordre !'),
+        el('div', { class: 'code-row' }, slots, back),
+        pad,
+      )));
   },
 };
 

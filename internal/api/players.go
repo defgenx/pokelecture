@@ -6,9 +6,14 @@ package api
 // choosing. The voice track and the studio recordings are shared.
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
+	"github.com/adelvecchio/pokelecture/internal/curriculum"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/adelvecchio/pokelecture/internal/progress"
@@ -35,14 +40,94 @@ func (s *Server) play(h func(*Server, http.ResponseWriter, *http.Request)) http.
 	}
 }
 
+// deviceStore is the save this device may play: the player its signed
+// cookie names — the signature binds the player's current code, so a forged
+// cookie or a changed code asks again — or a lone player without a code.
 func (s *Server) deviceStore(r *http.Request) (*progress.Store, bool) {
-	if c, err := r.Cookie(playerCookie); err == nil {
-		if st, ok := s.players.Get(c.Value); ok {
-			return st, true
+	if id, ok := s.devicePlayer(r); ok {
+		st, _ := s.players.Get(id)
+		return st, true
+	}
+	if _, st, ok := s.players.Only(); ok && st.LockTag() == "" {
+		return st, true
+	}
+	return nil, false
+}
+
+func (s *Server) devicePlayer(r *http.Request) (string, bool) {
+	c, err := r.Cookie(playerCookie)
+	if err != nil {
+		return "", false
+	}
+	id, mac, _ := strings.Cut(c.Value, ".")
+	st, ok := s.players.Get(id)
+	if !ok {
+		return "", false
+	}
+	if mac == "" { // a cookie from before codes existed: fine while unlocked
+		return id, st.LockTag() == ""
+	}
+	return id, hmac.Equal([]byte(mac), []byte(s.deviceMAC(id, st.LockTag())))
+}
+
+func (s *Server) deviceMAC(id, lockTag string) string {
+	m := hmac.New(sha256.New, s.players.Key())
+	m.Write([]byte("device|" + id + "|" + lockTag))
+	return base64.RawURLEncoding.EncodeToString(m.Sum(nil))
+}
+
+// A code is three Pokémon taken from this palette (the game draws the same).
+var lockPalette = map[int]bool{25: true, 4: true, 7: true, 1: true, 133: true, 39: true, 52: true, 143: true, 54: true}
+
+const (
+	lockLength   = 3
+	lockMaxFails = 5
+	lockWait     = 5 * time.Minute
+)
+
+func validCode(code []int) bool {
+	if len(code) != lockLength {
+		return false
+	}
+	for _, c := range code {
+		if !lockPalette[c] {
+			return false
 		}
 	}
-	_, st, ok := s.players.Only()
-	return st, ok
+	return true
+}
+
+// lockGuard counts wrong codes per player: after lockMaxFails, a wait.
+type lockGuard struct {
+	mu    sync.Mutex
+	fails map[string]int
+	until map[string]time.Time
+}
+
+func (g *lockGuard) blocked(id string) time.Duration {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if d := time.Until(g.until[id]); d > 0 {
+		return d
+	}
+	return 0
+}
+
+func (g *lockGuard) fail(id string) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.fails[id]++
+	if g.fails[id] >= lockMaxFails {
+		g.until[id] = time.Now().Add(lockWait)
+		g.fails[id] = 0
+	}
+}
+
+func (g *lockGuard) ok(id string) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	delete(g.fails, id)
+	delete(g.until, id)
 }
 
 // adminPlay runs an admin handler on the player named by ?player=, or the
@@ -69,6 +154,7 @@ func (s *Server) adminPlay(h func(*Server, http.ResponseWriter, *http.Request)) 
 type playerView struct {
 	ID      string    `json:"id"`
 	Name    string    `json:"name"`
+	Locked  bool      `json:"locked"` // a picture code guards this save
 	Avatar  int       `json:"avatar"` // the partner's species: what the child recognises
 	Stars   int       `json:"stars"`
 	Caught  int       `json:"caught"`
@@ -84,7 +170,7 @@ func (s *Server) playerViews() []playerView {
 			continue
 		}
 		snap := st.Snapshot()
-		v := playerView{ID: p.ID, Name: snap.Name, Avatar: 25, Stars: snap.Stars, Caught: len(snap.Pokedex),
+		v := playerView{ID: p.ID, Name: snap.Name, Locked: snap.Lock != nil, Avatar: 25, Stars: snap.Stars, Caught: len(snap.Pokedex),
 			Level: trainerOf(snap).Level, Updated: snap.UpdatedAt}
 		if pv := s.partnerView(snap); pv != nil {
 			v.Avatar = pv.Species
@@ -98,39 +184,55 @@ func (s *Server) playerViews() []playerView {
 // one this device is.
 func (s *Server) handlePlayers(w http.ResponseWriter, r *http.Request) {
 	current := ""
-	if c, err := r.Cookie(playerCookie); err == nil {
-		if _, ok := s.players.Get(c.Value); ok {
-			current = c.Value
-		}
+	if id, ok := s.devicePlayer(r); ok {
+		current = id
+	} else if id, st, ok := s.players.Only(); ok && st.LockTag() == "" {
+		current = id
 	}
-	if current == "" {
-		if id, _, ok := s.players.Only(); ok {
-			current = id
-		}
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"players": s.playerViews(), "current": current})
+	// ui: "Qui joue ?" and the code screen speak before any save is open.
+	writeJSON(w, http.StatusOK, map[string]any{"players": s.playerViews(), "current": current, "ui": curriculum.UIAudio()})
 }
 
 // handlePlayerSelect makes this device a player.
 func (s *Server) handlePlayerSelect(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		ID string `json:"id"`
+		ID   string `json:"id"`
+		Code []int  `json:"code"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "corps invalide", http.StatusBadRequest)
 		return
 	}
-	if _, ok := s.players.Get(req.ID); !ok {
+	st, ok := s.players.Get(req.ID)
+	if !ok {
 		http.Error(w, "joueur inconnu", http.StatusNotFound)
 		return
+	}
+	if st.LockTag() != "" {
+		if wait := s.locks.blocked(req.ID); wait > 0 {
+			writeJSON(w, http.StatusTooManyRequests, map[string]any{"locked": true, "wait": int(wait.Seconds()) + 1})
+			return
+		}
+		if !st.CheckLock(req.Code) {
+			if req.Code != nil {
+				s.locks.fail(req.ID)
+			}
+			writeJSON(w, http.StatusForbidden, map[string]any{"locked": true})
+			return
+		}
+		s.locks.ok(req.ID)
 	}
 	http.SetCookie(w, s.playerCookie(r, req.ID))
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 func (s *Server) playerCookie(r *http.Request, id string) *http.Cookie {
+	tag := ""
+	if st, ok := s.players.Get(id); ok {
+		tag = st.LockTag()
+	}
 	return &http.Cookie{
-		Name: playerCookie, Value: id, Path: s.base, HttpOnly: true,
+		Name: playerCookie, Value: id + "." + s.deviceMAC(id, tag), Path: s.base, HttpOnly: true,
 		SameSite: http.SameSiteLaxMode, Secure: s.scheme(r) == "https", MaxAge: int(playerTTL.Seconds()),
 	}
 }
@@ -155,6 +257,21 @@ func (s *Server) handleAdminPlayerCreate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"id": id, "players": s.playerViews()})
+}
+
+// handleAdminLock sets (three palette Pokémon) or removes (empty) the
+// picture code of the player named by ?player=. Every device must then
+// enter the new code.
+func (s *Server) handleAdminLock(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Code []int `json:"code"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || (len(req.Code) > 0 && !validCode(req.Code)) {
+		http.Error(w, "un code, c'est trois Pokémon de la liste", http.StatusBadRequest)
+		return
+	}
+	s.store.SetLock(req.Code)
+	s.adminDone(w)
 }
 
 func (s *Server) handleAdminPlayerDelete(w http.ResponseWriter, r *http.Request) {

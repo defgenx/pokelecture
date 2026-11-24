@@ -225,6 +225,8 @@ function dangerTab(list) {
       'Change le prénom sans toucher à la progression, au Pokédex ni aux étoiles.'),
   ));
 
+  lockSection(list, s);
+
   // Progression policy: what "done enough to move on" means is the parent's call.
   const set = s.settings || { min_stars: 0, free_play: false, battle_lives: 3 };
   const minStars = el('select', {},
@@ -328,6 +330,51 @@ function dangerTab(list) {
   ));
 }
 
+// The nine Pokémon a code is made of; the same list as lockPalette in
+// internal/api/players.go and Players.PALETTE in app.js.
+const LOCK_PALETTE = [[25, 'Pikachu'], [4, 'Salamèche'], [7, 'Carapuce'], [1, 'Bulbizarre'],
+  [133, 'Évoli'], [39, 'Rondoudou'], [52, 'Miaouss'], [143, 'Ronflex'], [54, 'Psykokwak']];
+
+/* 🔒 Privé: the game asks this player's three-Pokémon code once per device.
+   🌐 Public: anyone on the tablet can play it. The code itself is stored
+   hashed, so it cannot be shown again — write it down before saving. */
+function lockSection(list, s) {
+  const code = [];
+  const slots = el('div', { class: 'lock-slots' });
+  const save = el('button', { class: 'linkbtn', disabled: true, onclick: () => {
+    const names = code.map((n) => LOCK_PALETTE.find(([id]) => id === n)[1]).join(' → ');
+    if (window.confirm(`Code de ${s.name} : ${names}\nNotez-le : il ne pourra pas être réaffiché.`)) {
+      act('api/admin/lock', { code: code.slice() });
+    }
+  } }, s.locked ? 'Changer le code' : 'Rendre privé avec ce code');
+  const show = () => {
+    slots.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      slots.append(el('span', { class: 'lock-slot' },
+        code[i] ? el('img', { src: `sprites/art/${code[i]}.png`, alt: '' }) : `${i + 1}`));
+    }
+    save.disabled = code.length !== 3;
+  };
+  const pad = el('div', { class: 'lock-pad' }, LOCK_PALETTE.map(([n, name]) => el('button', {
+    class: 'lock-key', title: name,
+    onclick: () => { if (code.length < 3) { code.push(n); show(); } },
+  }, el('img', { src: `sprites/art/${n}.png`, alt: name }))));
+  show();
+  list.append(el('div', { class: 'section' },
+    el('h2', {}, s.locked ? '🔒 Privé' : '🌐 Public'),
+    el('p', { style: 'color:#6a7180;font-size:13px;margin-bottom:10px' }, s.locked
+      ? `${s.name} est privé : le jeu demande son code (trois Pokémon, dans l'ordre) une fois par appareil. Changer le code le redemande sur tous les appareils.`
+      : `${s.name} est public : n'importe qui peut jouer sa partie. Choisissez trois Pokémon, dans l'ordre, pour le rendre privé.`),
+    pad,
+    el('div', { class: 'namebox' }, slots,
+      el('button', { class: 'linkbtn', onclick: () => { code.length = 0; show(); } }, 'Effacer'),
+      save,
+      s.locked ? el('button', { class: 'linkbtn', onclick: () => {
+        if (window.confirm(`Rendre ${s.name} public ? Plus aucun code ne sera demandé.`)) act('api/admin/lock', { code: [] });
+      } }, '🌐 Rendre public') : null),
+  ));
+}
+
 /* The players: one save each. Pick whose save the page shows, add one,
    remove one (its file goes to var/players/trash/, recoverable). */
 function playerBar() {
@@ -338,7 +385,7 @@ function playerBar() {
     bar.append(el('button', {
       class: `player-chip ${p.id === state.player ? 'on' : ''}`,
       onclick: async () => { state.player = p.id; await load(); render(); },
-    }, el('img', { src: `sprites/art/${p.avatar}.png`, alt: '' }), `${p.name} · ⭐ ${p.stars}`));
+    }, el('img', { src: `sprites/art/${p.avatar}.png`, alt: '' }), `${p.locked ? '🔒 ' : ''}${p.name} · ⭐ ${p.stars}`));
   });
   bar.append(el('button', {
     class: 'player-chip add',

@@ -47,6 +47,7 @@ type adminPokemonView struct {
 }
 
 type adminSummary struct {
+	Locked     bool               `json:"locked"` // private: a picture code guards it
 	Name       string             `json:"name"`
 	Stars      int                `json:"stars"`
 	Streak     int                `json:"streak"`
@@ -65,6 +66,7 @@ func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 
 	out := adminSummary{
+		Locked:     st.Lock != nil,
 		Name:       st.Name,
 		Stars:      st.Stars,
 		Streak:     st.Streak,

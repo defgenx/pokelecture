@@ -23,6 +23,28 @@ type Registry struct {
 	mu     sync.Mutex
 	dir    string // var/players ("" for an in-memory registry: tests)
 	stores map[string]*Store
+	key    []byte // signs each device's right to play a player
+}
+
+// Key signs the device cookies: kept in var/players/.device-key, so a
+// restart does not ask every device for its codes again.
+func (r *Registry) Key() []byte { return r.key }
+
+func loadKey(dir string) ([]byte, error) {
+	if dir == "" {
+		k := make([]byte, 32)
+		_, err := rand.Read(k)
+		return k, err
+	}
+	path := filepath.Join(dir, ".device-key")
+	if b, err := os.ReadFile(path); err == nil && len(b) >= 32 {
+		return b, nil
+	}
+	k := make([]byte, 32)
+	if _, err := rand.Read(k); err != nil {
+		return nil, err
+	}
+	return k, os.WriteFile(path, k, 0o600)
 }
 
 // PlayerInfo is one row of the player list.
@@ -41,6 +63,11 @@ func OpenRegistry(varDir, legacyName string) (*Registry, error) {
 	if err := os.MkdirAll(r.dir, 0o755); err != nil {
 		return nil, err
 	}
+	key, err := loadKey(r.dir)
+	if err != nil {
+		return nil, err
+	}
+	r.key = key
 	legacy := filepath.Join(varDir, "progress.json")
 	if _, err := os.Stat(legacy); err == nil {
 		files, _ := filepath.Glob(filepath.Join(r.dir, "*.json"))
@@ -87,7 +114,8 @@ func OpenRegistry(varDir, legacyName string) (*Registry, error) {
 
 // Single wraps one store as a one-player registry (tests, tools).
 func Single(st *Store) *Registry {
-	return &Registry{stores: map[string]*Store{"p1": st}}
+	key, _ := loadKey("")
+	return &Registry{stores: map[string]*Store{"p1": st}, key: key}
 }
 
 func newID() string {

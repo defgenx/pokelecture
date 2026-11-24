@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -94,6 +95,28 @@ func TestAdminActsOnTheNamedPlayer(t *testing.T) {
 	if got := post("/api/admin/name?player="+mia, `{"name":"Mia-Rose"}`); got != http.StatusOK {
 		t.Fatalf("renommer Mia : %d", got)
 	}
+	// 🔒 Privé / 🌐 Public: only the palette's Pokémon, exactly three; [] clears.
+	for _, bad := range []string{`{"code":[25,4]}`, `{"code":[25,4,999]}`, `{"code":[25,4,7,1]}`} {
+		if got := post("/api/admin/lock?player="+mia, bad); got != http.StatusBadRequest {
+			t.Errorf("code refusé attendu pour %s : %d", bad, got)
+		}
+	}
+	if got := post("/api/admin/lock?player="+mia, `{"code":[25,4,7]}`); got != http.StatusOK {
+		t.Fatalf("rendre Mia privée : %d", got)
+	}
+	if st, _ := reg.Get(mia); !st.CheckLock([]int{25, 4, 7}) || st.CheckLock(nil) {
+		t.Fatal("Mia doit être privée avec le code Pikachu, Salamèche, Carapuce")
+	}
+	if st, _ := reg.Get(leo); st.LockTag() != "" {
+		t.Fatal("Léo doit rester public")
+	}
+	if got := post("/api/admin/lock?player="+mia, `{"code":[]}`); got != http.StatusOK {
+		t.Fatalf("rendre Mia publique : %d", got)
+	}
+	if st, _ := reg.Get(mia); st.LockTag() != "" {
+		t.Fatal("Mia doit être redevenue publique")
+	}
+
 	l, _ := reg.Get(leo)
 	m, _ := reg.Get(mia)
 	if l.Snapshot().Name != "Léo" || m.Snapshot().Name != "Mia-Rose" {
@@ -161,5 +184,98 @@ func TestTheGameNamesAndCreatesPlayers(t *testing.T) {
 	}
 	if got := post("/api/players", `{"name":"Un de trop"}`); got != http.StatusConflict {
 		t.Fatalf("au-delà de %d joueurs : %d, attendu 409", maxPlayers, got)
+	}
+}
+
+func TestPrivatePlayerNeedsItsCode(t *testing.T) {
+	cur, _ := curriculum.Load(filepath.Join("..", "..", "data"))
+	reg, _ := progress.OpenRegistry(t.TempDir(), "Nino")
+	nino := reg.List()[0].ID
+	mia, _ := reg.Create("Mia") // public
+	st, _ := reg.Get(nino)
+	st.SetLock([]int{25, 4, 7}) // private: Pikachu, Salamèche, Carapuce
+	app := httptest.NewServer(NewPlayers(cur, reg, filepath.Join("..", "..", "web"), "/").Routes())
+	defer app.Close()
+	device := func() *http.Client { jar, _ := cookiejar.New(nil); return &http.Client{Jar: jar} }
+	pick := func(c *http.Client, id, code string) int {
+		body := `{"id":"` + id + `"`
+		if code != "" {
+			body += `,"code":` + code
+		}
+		resp, err := c.Post(app.URL+"/api/players/select", "application/json", strings.NewReader(body+"}"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	stateCode := func(c *http.Client) int {
+		resp, _ := c.Get(app.URL + "/api/state")
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+
+	tablet := device()
+	if got := pick(tablet, nino, ""); got != http.StatusForbidden {
+		t.Fatalf("privé sans code : %d, attendu 403", got)
+	}
+	if got := pick(tablet, nino, "[25,7,4]"); got != http.StatusForbidden {
+		t.Fatalf("mauvais ordre : %d, attendu 403", got)
+	}
+	if got := stateCode(tablet); got != http.StatusConflict {
+		t.Fatalf("sans le bon code, la sauvegarde ne s'ouvre pas : %d", got)
+	}
+	if got := pick(tablet, nino, "[25,4,7]"); got != http.StatusOK {
+		t.Fatalf("bon code : %d", got)
+	}
+	if got := stateCode(tablet); got != http.StatusOK {
+		t.Fatalf("après le bon code : %d", got)
+	}
+	// Public players need nothing.
+	if got := pick(device(), mia, ""); got != http.StatusOK {
+		t.Fatalf("joueur public : %d", got)
+	}
+
+	// A hand-made cookie naming Nino does not open the save.
+	forger := device()
+	u, _ := url.Parse(app.URL)
+	forger.Jar.SetCookies(u, []*http.Cookie{{Name: playerCookie, Value: nino, Path: "/"}})
+	if got := stateCode(forger); got != http.StatusConflict {
+		t.Fatalf("cookie forgé (sans signature) : %d, attendu 409", got)
+	}
+	forger.Jar.SetCookies(u, []*http.Cookie{{Name: playerCookie, Value: nino + ".AAAA", Path: "/"}})
+	if got := stateCode(forger); got != http.StatusConflict {
+		t.Fatalf("cookie à fausse signature : %d, attendu 409", got)
+	}
+
+	// A new code asks every device again.
+	st.SetLock([]int{1, 133, 39})
+	if got := stateCode(tablet); got != http.StatusConflict {
+		t.Fatalf("code changé : l'appareil doit redemander, %d", got)
+	}
+
+	// Five wrong codes: wait.
+	guess := device()
+	for i := 0; i < lockMaxFails; i++ {
+		pick(guess, nino, "[52,52,52]")
+	}
+	if got := pick(guess, nino, "[1,133,39]"); got != http.StatusTooManyRequests {
+		t.Fatalf("après %d essais ratés, même le bon code doit attendre : %d", lockMaxFails, got)
+	}
+	// The player list says which are private — never the code.
+	resp, _ := device().Get(app.URL + "/api/players")
+	var list struct {
+		Players []map[string]any `json:"players"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&list)
+	for _, p := range list.Players {
+		if p["id"] == nino && p["locked"] != true {
+			t.Errorf("Nino doit apparaître privé")
+		}
+		for k := range p {
+			if strings.Contains(k, "hash") || strings.Contains(k, "salt") || k == "lock" {
+				t.Errorf("la liste des joueurs expose %q", k)
+			}
+		}
 	}
 }
