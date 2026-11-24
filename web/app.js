@@ -21,6 +21,13 @@ function el(tag, attrs, ...kids) {
   return n;
 }
 
+// put is node.append() minus the empty kids: append() itself prints a null
+// as the text "null". append_null_test.go flags a native append that needs it.
+function put(parent, ...kids) {
+  parent.append(...kids.flat().filter((k) => k !== null && k !== undefined && k !== false));
+  return parent;
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function api(path, body) {
@@ -1069,7 +1076,7 @@ function renderDecouverte(a, body, done) {
     onclick: () => { letter.classList.remove('ping'); void letter.offsetWidth; letter.classList.add('ping'); Voice.play(g.sound_audio, g.display); },
   }, g.display);
 
-  body.append(
+  put(body,
     el('h2', {}, a.title),
     letter,
     hint(a.instruction),
@@ -1658,7 +1665,7 @@ function renderReward(a, body, done) {
 
   setTimeout(async () => {
     stage.innerHTML = '';
-    stage.append(
+    put(stage,
       el('img', { class: `art ${r.shiny ? 'shiny' : ''}`, src: `sprites/art/${r.pokemon}.png`, alt: '' }),
       r.shiny ? el('span', { class: 'shinymark' }, '✨ chromatique ✨') : null,
       syllableWord(r.syllables, r.name, r.syllable_audio),

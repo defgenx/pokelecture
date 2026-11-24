@@ -431,7 +431,7 @@ const Wild = {
     const isNew = res.new;
     Sfx.catch_();
     confetti(isNew ? 80 : 40);
-    zone.append(
+    put(zone,
       el('div', { class: 'score' }, `Et hop ! ${p.name} est attrapé !`),
       isNew ? el('div', { class: 'score newrecord' }, shiny ? '✨ Nouveau chromatique !' : '🆕 Il rejoint ton Pokédex sauvage !') : null,
     );
@@ -439,7 +439,7 @@ const Wild = {
     await Voice.play(p.name_audio, p.name);
     if (isNew) await say(shiny ? 'Ouah ! Un Pokémon chromatique !' : 'Il rejoint ton Pokédex sauvage !');
     await celebrateAll(res);
-    zone.append(
+    put(zone,
       res.partner_event ? Partner.gainRow(res.partner_event) : null,
       el('div', { class: 'home-row' },
         el('button', { class: 'btn btn-huge btn-go', onclick: () => this.enter() }, 'ENCORE 🌿'),

@@ -260,7 +260,7 @@ const Overworld = {
         const beaten = (App.state.beaten || []).includes(`${this.region}:${n}`);
         t.classList.add('ow-trainer');
         if (beaten) t.classList.add('beaten');
-        t.append(el('span', {}, OW_TRAINER[(this.region * 2 + n) % OW_TRAINER.length]),
+        put(t, el('span', {}, OW_TRAINER[(this.region * 2 + n) % OW_TRAINER.length]),
           beaten ? null : el('i', { class: 'ow-bang' }, '!'));
         break;
       }
