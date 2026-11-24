@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,6 +25,8 @@ func main() {
 	// back to progress.DefaultName on a fresh one.
 	name := flag.String("name", envOr("POKELECTURE_NAME", ""), "prénom de l'enfant (défaut: celui de la sauvegarde)")
 	base := flag.String("base", envOr("POKELECTURE_BASE", "/"), "chemin de montage, ex. /pokelecture/")
+	// A flag, not an env var: a deployment's env_file must never be able to turn it on.
+	localAdmin := flag.Bool("local-admin", false, "ouvre l'admin sans connexion Google, depuis cet ordinateur seulement (localhost)")
 	flag.Parse()
 
 	mount := normalizeBase(*base)
@@ -62,7 +65,14 @@ func main() {
 		log.Printf("connexion Google active (%d adresse(s) autorisée(s))", len(auth.Allowed))
 	}
 
-	handler := api.NewPlayers(cur, players, filepath.Join(*root, "web"), mount).WithAuth(auth).Routes()
+	if *localAdmin {
+		if u := os.Getenv("POKELECTURE_URL"); u != "" && !isLocalURL(u) {
+			log.Fatalf("-local-admin refusé : POKELECTURE_URL (%q) n'est pas une adresse locale — c'est un serveur en ligne", u)
+		}
+		log.Printf("admin et studio voix OUVERTS sans connexion depuis cet ordinateur (http://localhost%s/admin) — -local-admin", *addr)
+	}
+
+	handler := api.NewPlayers(cur, players, filepath.Join(*root, "web"), mount).WithAuth(auth).WithLocalAdmin(*localAdmin).Routes()
 
 	// Mounted under a sub-path, strip it before the app's own mux sees the
 	// request. Go's ServeMux also redirects /pokelecture → /pokelecture/ for us,
@@ -153,4 +163,14 @@ func playerNames(r *progress.Registry) string {
 		names = append(names, p.Name)
 	}
 	return strings.Join(names, ", ")
+}
+
+// isLocalURL: a POKELECTURE_URL on this computer (http://localhost:8080/…).
+func isLocalURL(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	h := strings.ToLower(u.Hostname())
+	return h == "localhost" || h == "127.0.0.1" || h == "::1"
 }

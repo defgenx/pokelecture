@@ -232,6 +232,16 @@ func (s *Server) cookie(r *http.Request, name, value string, ttl time.Duration) 
 // the SameSite cookie), and the pages refuse to be framed by another site.
 func (s *Server) guard(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if s.localAdmin && fromThisComputer(r) {
+			w.Header().Set("X-Frame-Options", "DENY")
+			w.Header().Set("Content-Security-Policy", "frame-ancestors 'none'")
+			if r.Method != http.MethodGet && r.Method != http.MethodHead && !s.sameOrigin(r) {
+				http.Error(w, "requête d'une autre origine refusée", http.StatusForbidden)
+				return
+			}
+			h(w, r)
+			return
+		}
 		if s.auth == nil {
 			// No sign-in configured means no allowlist: nobody gets in.
 			if isParentPage(r) {
@@ -279,7 +289,7 @@ func (s *Server) sameOrigin(r *http.Request) bool {
 	if err != nil {
 		return false
 	}
-	if s.auth.PublicURL != "" {
+	if s.auth != nil && s.auth.PublicURL != "" {
 		pub, err := url.Parse(s.auth.PublicURL)
 		return err == nil && strings.EqualFold(u.Host, pub.Host) && u.Scheme == pub.Scheme
 	}

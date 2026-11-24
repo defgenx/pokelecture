@@ -21,14 +21,15 @@ import (
 
 // Server wires the curriculum, the savegame and the static frontend together.
 type Server struct {
-	cur     *curriculum.Curriculum
-	players *progress.Registry
-	store   *progress.Store // the save a request is served with (see play / adminPlay)
-	web     http.Handler
-	webDir  string
-	base    string
-	auth    *Auth      // nil: the parent side is closed (see auth.go)
-	locks   *lockGuard // wrong picture codes, per player (players.go)
+	cur        *curriculum.Curriculum
+	players    *progress.Registry
+	store      *progress.Store // the save a request is served with (see play / adminPlay)
+	web        http.Handler
+	webDir     string
+	base       string
+	auth       *Auth      // nil: the parent side is closed (see auth.go)
+	localAdmin bool       // -local-admin: this computer needs no sign-in (localadmin.go)
+	locks      *lockGuard // wrong picture codes, per player (players.go)
 }
 
 // New returns a Server serving the frontend from webDir, mounted at base

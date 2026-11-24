@@ -22,7 +22,7 @@ sprites:
 # .env.local (git-ignored) carries the secrets: ElevenLabs, and the Google
 # sign-in for the parent pages (GOOGLE_CLIENT_ID, …, see README).
 run:
-	@set -a; if [ -f .env.local ]; then . ./.env.local; fi; set +a; go run ./cmd/pokelecture -name "$(NAME)"
+	@set -a; if [ -f .env.local ]; then . ./.env.local; fi; set +a; go run ./cmd/pokelecture -local-admin -name "$(NAME)"
 
 build:
 	go build -o bin/pokelecture ./cmd/pokelecture
