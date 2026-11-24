@@ -75,3 +75,12 @@
 .lock-key img, .lock-slot img { width: 100%; height: 100%; object-fit: contain; }
 .lock-slots { display: flex; gap: 6px; }
 .lock-slot { width: 44px; height: 44px; padding: 3px; display: grid; place-items: center; border-radius: 10px; border: 2px dashed #c6ccd6; color: #9aa1ad; font-weight: 700; }
+
+/* Exams and the fluency check. */
+.btn { font: inherit; font-weight: 700; padding: 10px 16px; border-radius: 10px; border: 2px solid #d8dbe6; background: #fff; cursor: pointer; }
+.btn:hover { border-color: var(--blue, #3b4cca); }
+.btn.ok { border-color: #63bb5b; color: #2f7a28; font-size: 20px; padding: 16px 26px; }
+.btn.ko { border-color: #f0b9b9; color: #c40d0d; font-size: 20px; padding: 16px 26px; }
+.fluency { display: grid; gap: 14px; justify-items: center; padding: 18px; border-radius: 14px; background: #f6f7fb; }
+.fluency-word { font-size: clamp(42px, 9vw, 84px); font-weight: 800; letter-spacing: .02em; }
+.fluency-clock { font-size: 18px; color: #6a7180; font-variant-numeric: tabular-nums; }

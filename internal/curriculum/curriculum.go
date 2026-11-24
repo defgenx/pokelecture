@@ -368,6 +368,8 @@ func Load(dir string) (*Curriculum, error) {
 	if len(c.Episodes) == 0 {
 		return nil, fmt.Errorf("curriculum: no episode found in %s/episodes", dir)
 	}
+	allSigns = c.allGraphemes()
+	soundKeys.Clear()
 	for i := range c.Episodes {
 		if c.Episodes[i].Region == "" {
 			c.Episodes[i].Region = "Lecturia"

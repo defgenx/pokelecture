@@ -188,6 +188,13 @@ function confetti(n = 44) {
 const PRAISE = ['Bravo !', 'Super !', 'Génial !', 'Bien joué !'];
 let praiseIdx = 0;
 
+// applyFont sets the reading font chosen in the admin (body.font-*).
+function applyFont() {
+  const f = (App.state && App.state.font) || '';
+  document.body.classList.remove('font-andika', 'font-cursive');
+  if (f) document.body.classList.add(`font-${f}`);
+}
+
 // One picto per region on the maps; regions come from the episode data.
 const REGION_EMOJI = {
   'Forêt Émeraude': '🌲',
@@ -228,8 +235,14 @@ function startClock(set) {
   set(performance.now());
   if (Voice.leading) Voice.leading.then(() => set(performance.now()), () => set(performance.now()));
 }
+// Once the server knows his usual time for a kind (Session.data.speed), fast
+// means a little quicker than his own habit, bounded so it never gets silly.
 function fastLimit(id, extra = 0) {
-  return (FAST_MS[String(id).split(':')[0]] || 7000) + extra;
+  const kind = String(id).split(':')[0];
+  const fixed = FAST_MS[kind] || 7000;
+  const usual = Session.data && Session.data.speed && Session.data.speed[kind];
+  const limit = usual ? Math.min(2 * fixed, Math.max(1500, Math.round(usual * 1.25))) : fixed;
+  return limit + extra;
 }
 
 // say() prefers the recorded phrase — from the session payload, or from the
@@ -420,6 +433,7 @@ const App = {
   },
 
   screen(...children) {
+    applyFont();
     const app = $('#app');
     app.innerHTML = '';
     app.append(...children.flat());
@@ -908,9 +922,10 @@ const Session = {
   // ms/limit time the answer: a right one within its limit counts as fast.
   record(id, correct, ms, limit) {
     if (!id) return;
-    this.answers.push({ id, correct });
+    const timed = typeof ms === 'number' && limit;
+    this.answers.push(timed ? { id, correct, ms: Math.round(ms) } : { id, correct });
     if (correct) this.right++; else this.wrong++;
-    if (typeof ms === 'number' && limit) {
+    if (timed) {
       this.timed++;
       if (correct && ms <= limit) this.fast++;
     }
@@ -1105,7 +1120,7 @@ const Session = {
     burst('🏆');
     Sfx.fanfare();
     confetti();
-    await say(slow ? 'Bravo ! Lis un peu plus vite pour gagner la troisième étoile !' : stars === 3 ? 'Super !' : 'Bravo !');
+    await say(stars === 3 ? 'Super !' : 'Bravo !');
     if (catches.length) await say('Tu as attrapé un nouveau Pokémon !');
     if ((res.new_games || []).length) { Sfx.badge(); await say('Un nouveau mini-jeu est débloqué !'); }
     if (res.balls_won) await say('Tu gagnes des Poké Balls !');
@@ -1686,8 +1701,15 @@ function renderCombat(a, body, done) {
     });
 
     // The attack word is shown whole: segmenting it into syllables is the
-    // exercise, so no colour hints and no tap-to-hear here.
-    stage.append(el('div', { class: 'word' }, item.prompt), slots, tray);
+    // exercise, so no colour hints and no tap-to-hear here. A dictation round
+    // (item.dictee, the finale) hides it: he hears it and spells it.
+    if (item.dictee) {
+      const ear = el('button', { class: 'btn btn-huge dictee', onclick: () => Voice.play(item.audio, item.prompt) }, '🔊 ÉCOUTE LE MOT');
+      stage.append(el('div', { class: 'shout-sub' }, '🙈 MOT CACHÉ !'), ear, hint('Le mot est caché ! Écoute-le, et remets ses syllabes dans l\'ordre.'), slots, tray);
+      Voice.play(item.audio, item.prompt);
+    } else {
+      stage.append(el('div', { class: 'word' }, item.prompt), slots, tray);
+    }
   };
 
   const attack = async (item, missed) => {
@@ -2459,10 +2481,23 @@ const Arcade = {
     const scoreChip = el('span', { class: 'chip' }, 'Points : 0');
     const stage = el('div', { class: 'act', style: 'width:100%' });
 
+    const byText = new Map(syllables.map((x) => [x.text, x]));
+    let round = 0;
     const ask = () => {
       const shuffled = [...syllables].sort(() => Math.random() - 0.5);
-      const target = shuffled[0];
-      const options = shuffled.slice(0, 4).sort(() => Math.random() - 0.5);
+      // Every other round, a target with a confusable neighbour (ba/da,
+      // fa/va…) and that neighbour among the choices: the ear's real work.
+      const pairable = shuffled.filter((x) => (x.near || []).some((n) => byText.has(n)));
+      const target = (round++ % 2 === 0 && pairable[0]) || shuffled[0];
+      const options = [target];
+      const near = (target.near || []).map((n) => byText.get(n)).filter(Boolean);
+      if (near.length) options.push(near[Math.floor(Math.random() * near.length)]);
+      // Never two syllables that sound the same: he would be right and told no.
+      for (const x of shuffled) {
+        if (options.length >= 4) break;
+        if (!options.some((o) => o === x || (o.sound && o.sound === x.sound))) options.push(x);
+      }
+      options.sort(() => Math.random() - 0.5);
 
       stage.innerHTML = '';
       const listen = el('button', { class: 'btn', onclick: () => Voice.play(target.audio, target.text) }, '🔊 ÉCOUTE');

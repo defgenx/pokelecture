@@ -12,6 +12,7 @@ import (
 var GameUnlocks = []struct{ Game, After string }{
 	{"memory", "ep01"},
 	{"chasse", "ep02"},
+	{"livre", "ep02"},
 	{"lecture", "ep03"},
 	{"oreille", "ep03b"},
 	{"atelier", "ep05"},

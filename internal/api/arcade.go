@@ -38,6 +38,22 @@ type arcadeSound struct {
 type arcadeSyllable struct {
 	Text  string `json:"text"`
 	Audio string `json:"audio"`
+	// Sound is what the ear hears ("s·an" for san and sen): two syllables with
+	// the same Sound are never offered together. Near lists the pool's
+	// minimal pairs (ba/da, fa/va) for L'oreille fine.
+	Sound string   `json:"sound"`
+	Near  []string `json:"near,omitempty"`
+}
+
+// arcadeSentence is one page of « Mon livre »: a sentence already read.
+type arcadeSentence struct {
+	Text      string   `json:"text"`
+	Audio     string   `json:"audio"`
+	Words     []string `json:"words"`
+	WordAudio []string `json:"word_audio"`
+	Emoji     string   `json:"emoji,omitempty"`
+	Sprite    string   `json:"sprite,omitempty"`
+	Icon      string   `json:"icon,omitempty"`
 }
 
 // arcadePokemon is one face of the mini-games' roster: the course's Pokémon,
@@ -55,7 +71,8 @@ type arcadeView struct {
 	Pokemon   []arcadePokemon  `json:"pokemon"`
 	Sounds    []arcadeSound    `json:"sounds"`
 	// Homophones: graphemes never offered side by side (curriculum.Homophones).
-	Homophones [][]string `json:"homophones"`
+	Homophones [][]string       `json:"homophones"`
+	Sentences  []arcadeSentence `json:"sentences"`
 }
 
 // handleArcade returns everything learned so far, for the games to draw from.
@@ -69,7 +86,7 @@ func (s *Server) handleArcade(w http.ResponseWriter, r *http.Request) {
 
 	known := s.cur.KnownGraphemes(s.lastDone(st))
 	out := arcadeView{Words: []arcadeWord{}, Syllables: []arcadeSyllable{}, Pokemon: []arcadePokemon{}, Sounds: []arcadeSound{},
-		Homophones: curriculum.Homophones}
+		Homophones: curriculum.Homophones, Sentences: []arcadeSentence{}}
 	for _, id := range s.cur.GraphemeOrder {
 		for _, k := range known {
 			if k == id {
@@ -105,10 +122,27 @@ func (s *Server) handleArcade(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	for _, syl := range syllables {
-		out.Syllables = append(out.Syllables, arcadeSyllable{
+		v := arcadeSyllable{
 			Text:  syl,
 			Audio: speech.URL(curriculum.SpokenSyllable(syl), speech.StyleSyllable),
-		})
+			Sound: curriculum.SoundKey(syl),
+		}
+		for _, o := range syllables {
+			if curriculum.MinimalPair(syl, o) {
+				v.Near = append(v.Near, o)
+			}
+		}
+		out.Syllables = append(out.Syllables, v)
+	}
+	for _, sn := range s.cur.SentencesUpTo(s.lastDone(st)) {
+		pic := sn.Pic()
+		v := arcadeSentence{Text: sn.Text, Audio: speech.URL(sn.Spoken(), speech.StyleWord),
+			Emoji: pic.Emoji, Sprite: pic.Sprite, Icon: pic.Icon}
+		for _, wd := range curriculum.SentenceWords(sn.Text) {
+			v.Words = append(v.Words, wd)
+			v.WordAudio = append(v.WordAudio, speech.URL(wd, speech.StyleWord))
+		}
+		out.Sentences = append(out.Sentences, v)
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -125,7 +159,7 @@ type recordRequest struct {
 	} `json:"items"`
 }
 
-var arcadeGames = map[string]bool{
+var arcadeGames = map[string]bool{"livre": true,
 	"memory": true, "chasse": true, "lecture": true, "oreille": true,
 	"atelier": true, "mystere": true, "paires": true,
 	"tambour": true, "trou": true,

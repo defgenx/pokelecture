@@ -139,6 +139,23 @@ func (c *Curriculum) EventToday(st progress.State, now time.Time) *Event {
 			return ev
 		}
 	}
+	// At most one exam a week: an exam tried in the last days keeps the others
+	// away (a retry the same day stays possible).
+	today := now.Format("2006-01-02")
+	recent := false
+	for _, ev := range c.Events {
+		r := st.Exams[ev.ID]
+		if r.LastAt.IsZero() || now.Sub(r.LastAt) >= ExamGap {
+			continue
+		}
+		if r.LastAt.Format("2006-01-02") == today && !r.Passed {
+			return c.eventPtr(ev.ID)
+		}
+		recent = true
+	}
+	if recent {
+		return nil
+	}
 	for i := range c.Events {
 		ev := c.Events[i]
 		if c.Eligible(ev, st) && ev.appearsOn(now) {
@@ -147,6 +164,14 @@ func (c *Curriculum) EventToday(st progress.State, now time.Time) *Event {
 	}
 	return nil
 }
+
+func (c *Curriculum) eventPtr(id string) *Event {
+	ev, _ := c.Event(id)
+	return ev
+}
+
+// ExamGap: after an exam attempt, no other exam for this long.
+const ExamGap = 6 * 24 * time.Hour
 
 // ExamInfo rides on an exam session: what to reach, and what passing gives.
 type ExamInfo struct {
@@ -212,37 +237,6 @@ func (c *Curriculum) soundItems(known []string, n int, st progress.State) []Item
 		}
 	}
 	return out
-}
-
-// SyllablesAlike: same number of signs, each pair the same sound — "san" and
-// "sen", "ca" and "ka", "son" and "çon" can only be told apart by eye.
-func SyllablesAlike(a, b string, known []string) bool {
-	if strings.EqualFold(a, b) {
-		return true
-	}
-	ga, ea := Segment(a, known)
-	gb, eb := Segment(b, known)
-	if ea != nil || eb != nil || len(ga) != len(gb) {
-		return false
-	}
-	for i := range ga {
-		if !soundsAlike(ga[i], gb[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-// examSyllableItem is ecouteItem without a distractor that sounds the same:
-// a one-shot exam cannot afford a question with two right answers.
-func (c *Curriculum) examSyllableItem(syl string, all []string, known []string) Item {
-	var pool []string
-	for _, s := range all {
-		if !SyllablesAlike(s, syl, known) {
-			pool = append(pool, s)
-		}
-	}
-	return ecouteItem(syl, append([]string{syl}, pool...), 4)
 }
 
 // soundItem is one "hear the sound, touch its letters" question.
@@ -317,7 +311,7 @@ func (c *Curriculum) BuildExam(ev *Event, st progress.State, now time.Time) (Ses
 		if len(sylItems) == ev.Questions[SectionSyllabes] {
 			break
 		}
-		it := c.examSyllableItem(strings.TrimPrefix(k, "syl:"), p.syllables, known)
+		it := ecouteItem(strings.TrimPrefix(k, "syl:"), p.syllables, 4)
 		it.ID = k
 		sylItems = append(sylItems, it)
 	}

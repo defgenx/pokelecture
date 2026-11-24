@@ -98,7 +98,7 @@ func TestGamesOpenAlongTheStory(t *testing.T) {
 	}
 	// An arena done but its route replayed-as-new: still open.
 	st.Episodes = map[string]progress.EpisodeStat{"ep03b": {Completions: 1}}
-	if got := c.GamesOpen(st); len(got) != 4 {
+	if got := c.GamesOpen(st); len(got) != 5 {
 		t.Fatalf("after ep03b only: %v", got)
 	}
 	st.Settings.FreePlay = true

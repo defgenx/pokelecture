@@ -47,21 +47,23 @@ type adminPokemonView struct {
 }
 
 type adminSummary struct {
-	Locked     bool               `json:"locked"`      // private: a picture code guards it
-	LockFails  int                `json:"lock_fails"`  // wrong codes since the last right one
-	LockClosed bool               `json:"lock_closed"` // too many: closed until reopened
-	Name       string             `json:"name"`
-	Stars      int                `json:"stars"`
-	Streak     int                `json:"streak"`
-	LastDay    string             `json:"last_day"`
-	UpdatedAt  time.Time          `json:"updated_at"`
-	TowerFloor int                `json:"tower_floor"`
-	Records    map[string]int     `json:"records"`
-	Settings   progress.Settings  `json:"settings"`
-	Episodes   []adminEpisodeView `json:"episodes"`
-	Items      []adminItemView    `json:"items"`
-	Pokedex    []adminPokemonView `json:"pokedex"`
-	Exams      []adminExamView    `json:"exams"`
+	Locked     bool                          `json:"locked"`      // private: a picture code guards it
+	LockFails  int                           `json:"lock_fails"`  // wrong codes since the last right one
+	LockClosed bool                          `json:"lock_closed"` // too many: closed until reopened
+	Name       string                        `json:"name"`
+	Stars      int                           `json:"stars"`
+	Streak     int                           `json:"streak"`
+	LastDay    string                        `json:"last_day"`
+	UpdatedAt  time.Time                     `json:"updated_at"`
+	TowerFloor int                           `json:"tower_floor"`
+	Records    map[string]int                `json:"records"`
+	Settings   progress.Settings             `json:"settings"`
+	Episodes   []adminEpisodeView            `json:"episodes"`
+	Items      []adminItemView               `json:"items"`
+	Pokedex    []adminPokemonView            `json:"pokedex"`
+	Exams      []adminExamView               `json:"exams"`
+	Fluency    []progress.FluencyRun         `json:"fluency"`
+	Speed      map[string]progress.SpeedStat `json:"speed"`
 }
 
 func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
@@ -81,6 +83,8 @@ func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
 		Records:    st.Records,
 		Settings:   st.Settings,
 		Exams:      s.adminExams(st),
+		Fluency:    st.Fluency,
+		Speed:      st.Speed,
 	}
 
 	unlocked := true

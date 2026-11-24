@@ -677,9 +677,15 @@ l'examen et de la fenêtre de jours : aléatoire, mais stable sur la journée),
 | Examen | Apparaît après | Questions (sons / syllabes / mots / phrases) | Réussite | Pokémon |
 |---|---|---|---|---|
 | Examen surprise | Arène de l'Orage | 6 / 5 / 5 / 2 | 70 % | Créfadet |
-| Examen surprise | Arène du Volcan | 8 / 6 / 6 / 3 | 75 % | Créfollet |
-| Le Grand Examen | Tour du Ciel (8 badges) | 10 / 6 / 8 / 4 | 80 % | Créhelf |
-| L'Examen de Maître | Arène du Savoir | 12 / 6 / 8 / 4 | 85 % | Arceus |
+| Examen surprise | Arène du Volcan | 7 / 5 / 5 / 3 | 75 % | Créfollet |
+| Le Grand Examen | Tour du Ciel (8 badges) | 8 / 4 / 5 / 3 | 80 % | Créhelf |
+| L'Examen de Maître | Arène du Savoir | 8 / 4 / 5 / 3 | 85 % | Arceus |
+
+**Vingt questions au plus, un examen par semaine au plus** : après une
+tentative, aucun autre examen n'apparaît pendant six jours (celui du jour
+reste là pour réessayer). Un examen de 30 questions sans aucune aide, c'est
+trop long à cet âge, et trois examens éligibles en même temps en faisaient
+apparaître un un jour sur deux.
 
 C'est une vraie évaluation : **une seule réponse par question**, aucune aide
 avant de répondre (pas de syllabe à toucher, pas de karaoké), la bonne
@@ -716,12 +722,59 @@ troisième :
 - ★★ : 70 % de bonnes réponses ;
 - ★★★ : 90 % de bonnes réponses **et** au moins 60 % des réponses rapides.
 
-Une réponse est rapide sous 5 s pour un son ou une syllabe, 7 s pour un mot ;
-le chrono part quand la consigne parlée et la question sont finies. Les
+**Rapide, c'est par rapport à lui-même.** Tant que le jeu ne le connaît pas
+(moins de 10 réponses justes chronométrées d'un type), une réponse est rapide
+sous 5 s pour un son ou une syllabe, 7 s pour un mot. Ensuite, le serveur
+garde **son temps habituel** par type (moyenne glissante, `State.Speed` ; un
+toucher sous 0,3 s ou une absence de plus d'une minute ne comptent pas) et
+« rapide » veut dire un peu plus vite que d'habitude (×1,25, borné entre
+1,5 s et deux fois la limite fixe). Une limite fixe pousse à deviner ; battre
+son propre rythme fait progresser. Le chrono part quand la consigne parlée et
+la question sont finies. L'écran de fin montre la ligne ⚡ ; aucune phrase ne
+lui dit « plus vite ». Les
 phrases (lues à voix haute, à son rythme) et le combat ne sont **pas**
 chronométrés pour l'étoile : sinon taper « J'AI LU ! » sans lire serait
 « rapide », et une règle « ★★★ pour la suite » pourrait bloquer l'aventure sur
-la vitesse d'un enfant de 5 ans. Une troisième étoile perdue seulement au chrono est dite : « Lis un
+la vitesse d'un enfant de 5 ans.
+
+### Ce que les exercices font travailler (et comment ils évitent les pièges)
+
+- **L'échauffement redemande deux sons** à chaque séance — les plus fragiles
+  des routes précédentes : on entend le son, on touche ses lettres. Le lien
+  lettre → son est le cœur de la lecture ; il n'était travaillé qu'à sa
+  découverte.
+- **« Lis le mot » propose des images de mots qui se ressemblent** (même
+  première syllabe, sinon même première lettre) : la première lettre ne suffit
+  plus à deviner, il faut lire le mot jusqu'au bout.
+- **Aucune question n'offre deux syllabes qui se disent pareil** (`san`/`sen`,
+  `ca`/`ka`, `ta`/`tta`) : `sameSound` (`internal/curriculum/sounds.go`)
+  compare les sons, pas les lettres, pour l'écoute, les examens et les
+  syllabes intruses du combat.
+- **La dictée du combat** : le dernier mot d'une arène (le coup GIGAMAX) et
+  celui des étages de la Tour à partir du 10ᵉ est **caché** — on l'entend, on
+  le reconstruit. Écrire n'est plus recopier. Seulement si aucune tuile ne se
+  dit comme une autre (« Rattata », `ta`/`tta`, n'est jamais dicté).
+- **L'oreille fine** : un tour sur deux, la syllabe est mise à côté de sa
+  **paire minimale** (b/d, p/b, f/v, ch/j, t/d, k/g, s/ch, m/n…), les sons que
+  l'oreille d'un enfant confond.
+
+### La police de lecture
+
+Admin, onglet Réglages : les mots, syllabes et phrases à lire s'affichent dans
+la police du jeu, en **Andika** (SIL, faite pour les lecteurs débutants : `a`
+et `g` d'école) ou en **cursive** (Playwrite France Moderne, l'écriture
+attachée de l'école). Le reste de l'écran ne change pas. Les polices sont
+servies par le jeu (`web/fonts/`, licence OFL, réduites aux lettres latines et
+`œ` : 24 Ko et 98 Ko) et gardées hors ligne par le service worker.
+
+### La lecture chronométrée (admin, onglet Lecture)
+
+Le vrai remplaçant de la reconnaissance vocale : un parent s'assoit à côté
+de lui, lance la minute, et pour chaque mot (pris dans ce qu'il a appris)
+touche **✓ bien lu** ou **✗ raté**. Résultat : **mots bien lus par minute**,
+gardés dans un historique (une fois par semaine suffit pour voir la courbe),
+et chaque mot va dans les boîtes de révision. L'onglet montre aussi son temps
+de réponse habituel dans le jeu. Une troisième étoile perdue seulement au chrono est dite : « Lis un
 peu plus vite pour gagner la troisième étoile ! ». La vitesse ne fait jamais
 rater : elle ne retire que la troisième étoile.
 
@@ -899,9 +952,9 @@ premier événement d'un nouveau jour.
 
 ## Mini-jeux — chronos, scores et records
 
-Un coin **🎮 Mini-jeux** sur l'accueil (et à la fin de chaque séance) : neuf
+Un coin **🎮 Mini-jeux** sur l'accueil (et à la fin de chaque séance) : dix
 jeux, **débloqués un à un dans l'aventure** (`curriculum.GameUnlocks`) —
-Memory après la route 1, la chasse après la 2, Lis et attrape après la 3,
+Memory après la route 1, la chasse et **Mon livre** après la 2, Lis et attrape après la 3,
 l'oreille fine après l'Arène de Glace, l'atelier après la route 5, Pokémon
 mystère après l'Arène de l'Orage, les paires après la route 8, le tambour
 après l'Arène Psy, le son manquant après l'Arène du Volcan. Un jeu fermé
@@ -930,6 +983,10 @@ lecture déguisée :
   bon nombre de syllabes ; la réponse est rejouée syllabe par syllabe, un coup
   de tambour chacune. Les mots finis par une syllabe muette (« Salamèche » :
   trois syllabes à l'oral, quatre à l'écrit) en sont exclus.
+- **📚 Mon livre** : cinq phrases déjà lues dans l'aventure (les plus
+  récentes d'abord), une par page avec son image. Il lit à voix haute (chaque
+  mot se touche), puis « J'AI LU ! » relit la page en karaoké. Relire, c'est ce
+  qui rend la lecture fluide. Le score est le nombre de mots lus.
 - **🧩 Le son manquant** : un mot avec un trou, trois graphèmes à proposer
   (chacun se fait entendre quand on le touche). Jamais deux homophones parmi
   les choix (`o`/`au`/`eau`, `an`/`en`…) : il aurait raison et on lui dirait

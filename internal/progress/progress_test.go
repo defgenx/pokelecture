@@ -260,3 +260,15 @@ func TestLockTriesAreAtomic(t *testing.T) {
 		t.Fatalf("%d codes évalués d'un coup, 5 au plus", tested)
 	}
 }
+
+func TestAddTimesIgnoresAbsurdTimes(t *testing.T) {
+	s, err := Open(filepath.Join(t.TempDir(), "p.json"), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.AddTimes(map[string][]int{"mot": {4000, 100, 120000, 2000}})
+	got := s.Snapshot().Speed["mot"]
+	if got.N != 2 || got.MS != 4000+(2000-4000)/8 {
+		t.Fatalf("got %+v", got)
+	}
+}

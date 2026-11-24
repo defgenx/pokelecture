@@ -144,6 +144,9 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /api/admin/episodes/{id}/stars", s.guard(s.adminPlay((*Server).handleAdminEpisodeStars)))
 	mux.HandleFunc("POST /api/admin/records/reset", s.guard(s.adminPlay((*Server).handleAdminRecordsReset)))
 	mux.HandleFunc("POST /api/admin/events/{id}/today", s.guard(s.adminPlay((*Server).handleAdminEventToday)))
+	mux.HandleFunc("GET /api/admin/fluency/words", s.guard(s.adminPlay((*Server).handleAdminFluencyWords)))
+	mux.HandleFunc("POST /api/admin/fluency", s.guard(s.adminPlay((*Server).handleAdminFluency)))
+	mux.HandleFunc("POST /api/admin/font", s.guard(s.adminPlay((*Server).handleAdminFont)))
 
 	// Google sign-in for the parent pages.
 	mux.HandleFunc("GET /auth/login", s.handleLogin)
@@ -244,6 +247,7 @@ type stateView struct {
 	// Event is today's surprise exam on the map; Games the open mini-games.
 	Event *eventView `json:"event,omitempty"`
 	Games []string   `json:"games"`
+	Font  string     `json:"font,omitempty"` // reading font (admin setting)
 }
 
 type wildCount struct {
@@ -268,6 +272,7 @@ func (s *Server) state() stateView {
 	}
 	out.Quests = s.questViews()
 	out.Event = s.eventToday(st)
+	out.Font = st.Settings.Font
 	out.Games = s.cur.GamesOpen(st)
 	if out.Games == nil {
 		out.Games = []string{}
@@ -398,7 +403,7 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "les Dresseurs attendent ta première route terminée", http.StatusConflict)
 			return
 		}
-		writeJSON(w, http.StatusOK, sess)
+		writeJSON(w, http.StatusOK, s.speedy(sess))
 		return
 	}
 	if evID, ok := isExam(id); ok {
@@ -412,7 +417,7 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "l'examen attend ta première route terminée", http.StatusConflict)
 			return
 		}
-		writeJSON(w, http.StatusOK, sess)
+		writeJSON(w, http.StatusOK, s.speedy(sess))
 		return
 	}
 	if id == curriculum.TowerID {
@@ -423,7 +428,7 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "la Tour ouvre après le premier épisode terminé", http.StatusConflict)
 			return
 		}
-		writeJSON(w, http.StatusOK, sess)
+		writeJSON(w, http.StatusOK, s.speedy(sess))
 		return
 	}
 	ep, ok := s.cur.Episode(id)
@@ -432,13 +437,14 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess := s.cur.BuildSession(ep, s.store.Snapshot(), time.Now())
-	writeJSON(w, http.StatusOK, sess)
+	writeJSON(w, http.StatusOK, s.speedy(sess))
 }
 
 type resultRequest struct {
 	Items []struct {
 		ID      string `json:"id"`
 		Correct bool   `json:"correct"`
+		MS      int    `json:"ms,omitempty"` // answer time, drill items only
 	} `json:"items"`
 	Stars     int  `json:"stars"`
 	Completed bool `json:"completed"`
@@ -499,11 +505,16 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now()
+	times := map[string][]int{}
 	for _, it := range req.Items {
 		if it.ID != "" {
 			s.store.Answer(it.ID, it.Correct, now)
 		}
+		if kind, _, ok := strings.Cut(it.ID, ":"); ok && it.MS > 0 && it.Correct {
+			times[kind] = append(times[kind], it.MS)
+		}
 	}
+	s.store.AddTimes(times)
 
 	right := 0
 	for _, it := range req.Items {
@@ -594,6 +605,23 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, http.StatusOK, res)
+}
+
+// speedMinAnswers: below this many timed answers, his usual speed is unknown
+// and the client keeps its fixed limits.
+const speedMinAnswers = 10
+
+// speedy adds his usual answer times to a session.
+func (s *Server) speedy(sess curriculum.Session) curriculum.Session {
+	for kind, v := range s.store.Snapshot().Speed {
+		if v.N >= speedMinAnswers {
+			if sess.Speed == nil {
+				sess.Speed = map[string]int{}
+			}
+			sess.Speed[kind] = v.MS
+		}
+	}
+	return sess
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {

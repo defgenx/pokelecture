@@ -22,9 +22,9 @@
     "pass": 75,
     "pokemon": 481,
     "questions": {
-      "son": 8,
-      "syl": 6,
-      "mot": 6,
+      "son": 7,
+      "syl": 5,
+      "mot": 5,
       "phrase": 3
     },
     "story": "Un examen surprise ! Créfollet a préparé des questions sur tout ce que tu as appris. Concentre-toi !"
@@ -37,10 +37,10 @@
     "pass": 80,
     "pokemon": 480,
     "questions": {
-      "son": 10,
-      "syl": 6,
-      "mot": 8,
-      "phrase": 4
+      "son": 8,
+      "syl": 4,
+      "mot": 5,
+      "phrase": 3
     },
     "story": "Le Grand Examen ! Tu as tes huit badges. Créhelf, le Pokémon du savoir, vérifie que tu sais tout lire."
   },
@@ -52,10 +52,10 @@
     "pass": 85,
     "pokemon": 493,
     "questions": {
-      "son": 12,
-      "syl": 6,
-      "mot": 8,
-      "phrase": 4
+      "son": 8,
+      "syl": 4,
+      "mot": 5,
+      "phrase": 3
     },
     "story": "L'Examen de Maître ! Arceus descend du ciel. Seul un vrai Maître Lecteur peut le réussir !"
   }

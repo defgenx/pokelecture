@@ -1819,3 +1819,48 @@ img.shiny { filter: hue-rotate(300deg) saturate(1.3) brightness(1.06) drop-shado
 .speed-row { font-weight: 700; color: var(--blue); }
 .speed-row.slow { color: #c27c00; }
 .game-card.locked { filter: grayscale(1); opacity: .6; }
+
+/* ------------------------------------------- reading font (admin setting) --- */
+/* Andika (SIL, OFL): letters shaped for early readers. Playwrite France
+   Moderne (OFL): French school cursive. Subset to Latin + œ, woff2. */
+@font-face { font-family: 'Andika'; src: url('fonts/andika-regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Andika'; src: url('fonts/andika-bold.woff2') format('woff2'); font-weight: 700 900; font-display: swap; }
+@font-face { font-family: 'Playwrite FR'; src: url('fonts/playwrite-fr-moderne.woff2') format('woff2'); font-weight: 100 400; font-display: swap; }
+/* Only what he reads changes font; the game's chrome keeps its own. */
+body.font-andika .word,
+body.font-andika .syl,
+body.font-andika .sentence,
+body.font-andika .read-word,
+body.font-andika .read-sentence,
+body.font-andika .syl-btn,
+body.font-andika .slot,
+body.font-andika .tile,
+body.font-andika .letter,
+body.font-andika .fusion-tile,
+body.font-andika .fusion-result,
+body.font-andika .exam-word,
+body.font-andika .exam-label {
+  font-family: 'Andika', system-ui, sans-serif;
+}
+body.font-cursive .word,
+body.font-cursive .syl,
+body.font-cursive .sentence,
+body.font-cursive .read-word,
+body.font-cursive .read-sentence,
+body.font-cursive .syl-btn,
+body.font-cursive .slot,
+body.font-cursive .tile,
+body.font-cursive .letter,
+body.font-cursive .fusion-tile,
+body.font-cursive .fusion-result,
+body.font-cursive .exam-word,
+body.font-cursive .exam-label {
+  font-family: 'Playwrite FR', cursive;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* ------------------------------------------------- dictation, the book --- */
+.dictee { animation: ow-prof-bob 1.2s ease-in-out infinite; }
+.book-page { display: grid; gap: 1rem; justify-items: center; padding: 1rem; border-radius: 1.2rem; background: #fffdf4; box-shadow: 0 6px 0 rgba(0, 0, 0, .08); width: min(100%, 36rem); }
+.book-pic { width: 7rem; height: 7rem; object-fit: contain; font-size: 5rem; line-height: 7rem; text-align: center; }

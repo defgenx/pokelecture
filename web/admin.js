@@ -23,6 +23,7 @@ const TABS = [
   ['items', 'Révisions'],
   ['pokedex', 'Pokédex'],
   ['exams', 'Examens'],
+  ['fluency', 'Lecture'],
   ['danger', 'Réglages'],
 ];
 
@@ -225,6 +226,82 @@ function examsTab(list) {
   });
 }
 
+/* « Lecture » — the one-minute fluency check: the child reads the words
+   aloud, the parent taps ✓ or ✗ for each. Words read correctly per minute,
+   and every answer goes to the review boxes. */
+const FLUENCY_SECONDS = 60;
+
+function fluencyTab(list) {
+  const runs = state.sum.fluency || [];
+  const speed = state.sum.speed || {};
+  list.append(el('p', { style: 'color:#6a7180;font-size:13px' },
+    'Assieds-toi à côté de lui avec la tablette. Il lit chaque mot à voix haute ; ' +
+    'touche ✓ s\'il est bien lu, ✗ sinon. Au bout d\'une minute : les mots bien lus par minute. ' +
+    'Une fois par semaine suffit pour voir les progrès.'));
+  const stage = el('div', { class: 'section fluency' });
+  const start = el('button', { class: 'btn', onclick: () => runFluency(stage) }, '▶ Commencer (1 minute)');
+  stage.append(start);
+  list.append(stage);
+  if (runs.length) {
+    list.append(el('h2', {}, 'Historique'));
+    runs.slice().reverse().forEach((r) => list.append(el('div', { class: 'row' },
+      el('div', { class: 'txt' }, el('b', {}, `${r.wcpm} mots/min`),
+        el('small', {}, `${fmtDate(r.at)} · ${r.right} bien lus, ${r.wrong} ratés en ${r.seconds} s`)),
+    )));
+  }
+  const kinds = { syl: 'syllabe entendue', son: 'son entendu', mot: 'mot lu' };
+  const known = Object.entries(speed).filter(([k]) => kinds[k]);
+  if (known.length) {
+    list.append(el('h2', {}, 'Son temps de réponse habituel (jeu)'));
+    known.forEach(([k, v]) => list.append(el('div', { class: 'row' },
+      el('div', { class: 'txt' }, el('b', {}, `${(v.ms / 1000).toFixed(1)} s par ${kinds[k]}`),
+        el('small', {}, `sur ${v.n} réponses — la 3e étoile se gagne un peu plus vite que ça`)))));
+  }
+}
+
+async function runFluency(stage) {
+  let words = [];
+  try {
+    const res = await fetch(withPlayer('api/admin/fluency/words'));
+    if (!res.ok) throw new Error(await res.text());
+    words = (await res.json()).words || [];
+  } catch (err) { warn(`Impossible : ${err.message}`); return; }
+  if (!words.length) return;
+  const right = [];
+  const wrong = [];
+  let i = 0;
+  const t0 = Date.now();
+  const word = el('div', { class: 'fluency-word' }, words[0]);
+  const clock = el('div', { class: 'fluency-clock' }, `${FLUENCY_SECONDS} s`);
+  const next = (ok) => {
+    (ok ? right : wrong).push(words[i]);
+    i++;
+    if (i >= words.length) return finish();
+    word.textContent = words[i];
+  };
+  const finish = async () => {
+    clearInterval(timer);
+    const seconds = Math.max(10, Math.round((Date.now() - t0) / 1000));
+    stage.innerHTML = '';
+    try {
+      await post('api/admin/fluency', { seconds, right, wrong });
+      await load();
+      render();
+    } catch (err) { warn(`Enregistrement impossible : ${err.message}`); }
+  };
+  const timer = setInterval(() => {
+    const left = FLUENCY_SECONDS - Math.floor((Date.now() - t0) / 1000);
+    clock.textContent = `${Math.max(0, left)} s`;
+    if (left <= 0) finish();
+  }, 250);
+  stage.innerHTML = '';
+  stage.append(clock, word, el('div', { class: 'namebox' },
+    el('button', { class: 'btn ok', onclick: () => next(true) }, '✓ Bien lu'),
+    el('button', { class: 'btn ko', onclick: () => next(false) }, '✗ Raté'),
+    el('button', { class: 'linkbtn', onclick: finish }, 'Arrêter'),
+  ));
+}
+
 function pokedexTab(list) {
   state.sum.pokedex.forEach((p) => {
     list.append(el('div', { class: 'row' },
@@ -262,6 +339,23 @@ function dangerTab(list) {
   ));
 
   lockSection(list, s);
+
+  // The reading font: what school uses is what he should see.
+  const font = el('select', {},
+    [['', 'Police du jeu'], ['andika', 'Andika — lettres d\'école (a et g simples)'], ['cursive', 'Cursive (écriture attachée de l\'école)']]
+      .map(([v, label]) => {
+        const o = el('option', { value: v }, label);
+        if (v === ((s.settings && s.settings.font) || '')) o.selected = true;
+        return o;
+      }),
+  );
+  font.addEventListener('change', () => act('api/admin/font', { font: font.value }));
+  list.append(el('div', { class: 'section' },
+    el('h2', {}, 'Police de lecture'),
+    el('div', { class: 'namebox' }, el('label', {}, 'Les mots à lire s\'écrivent en : '), font),
+    el('p', { style: 'color:#6a7180;font-size:13px;margin-top:8px' },
+      'Seuls les mots, syllabes et phrases à lire changent ; choisis ce que l\'école utilise.'),
+  ));
 
   // Progression policy: what "done enough to move on" means is the parent's call.
   const set = s.settings || { min_stars: 0, free_play: false, battle_lives: 3 };
@@ -449,7 +543,7 @@ function render() {
   tally();
   const list = $('#list');
   list.innerHTML = '';
-  ({ episodes: episodesTab, items: itemsTab, pokedex: pokedexTab, exams: examsTab, danger: dangerTab })[state.tab](list);
+  ({ episodes: episodesTab, items: itemsTab, pokedex: pokedexTab, exams: examsTab, fluency: fluencyTab, danger: dangerTab })[state.tab](list);
 }
 
 /* ------------------------------------------------------------------ boot --- */

@@ -32,6 +32,8 @@ type Item struct {
 	SyllableAudio []string `json:"syllable_audio,omitempty"`
 	Choices       []Choice `json:"choices,omitempty"`
 	Tray          []string `json:"tray,omitempty"`
+	// Dictee hides the battle word: he hears it and builds it from syllables.
+	Dictee bool `json:"dictee,omitempty"`
 }
 
 // GraphemeCard is the "new sound of the day" screen.
@@ -124,7 +126,10 @@ type Session struct {
 	// Lives is the battle heart count from the parental settings: -1 means
 	// unlimited, otherwise each wrong tap in a fight costs one and running out
 	// loses the battle.
-	Lives      int               `json:"lives"`
+	Lives int `json:"lives"`
+	// Speed is his usual answer time per item kind (ms), once known: the
+	// client's "fast" is relative to it.
+	Speed      map[string]int    `json:"speed,omitempty"`
 	UI         map[string]string `json:"ui"`
 	Activities []Activity        `json:"activities"`
 }
@@ -395,6 +400,39 @@ func badgePhrase(b BadgeDecl) string {
 	return "Tu as gagné le " + b.Name + " !"
 }
 
+// cand is one warm-up candidate; lower score = more urgent.
+type cand struct {
+	id    string
+	item  Item
+	score int
+}
+
+// maxReviewSounds: sound questions in every warm-up.
+const maxReviewSounds = 2
+
+// weakSounds picks the due sounds of earlier routes, weakest box first.
+func (c *Curriculum) weakSounds(idx int, st progress.State, now time.Time) []cand {
+	known := c.KnownGraphemes(idx)
+	var ids []string
+	for _, g := range c.KnownGraphemes(idx - 1) {
+		id := SectionSons + ":" + g
+		if rec, tracked := st.Items[id]; !tracked || rec.Due(now) {
+			ids = append(ids, id)
+		}
+	}
+	weakestFirst(ids, st)
+	var out []cand
+	for _, id := range ids {
+		if len(out) == maxReviewSounds {
+			break
+		}
+		if it, ok := c.soundItem(strings.TrimPrefix(id, SectionSons+":"), known); ok {
+			out = append(out, cand{id: id, item: it, score: st.Items[id].Box})
+		}
+	}
+	return out
+}
+
 // reviewActivity picks the weakest due material from earlier episodes. It mixes
 // syllables and words in one screen so the warm-up stays short.
 func (c *Curriculum) reviewActivity(idx int, p pool, st progress.State, now time.Time, diff difficulty) *Activity {
@@ -403,11 +441,6 @@ func (c *Curriculum) reviewActivity(idx int, p pool, st progress.State, now time
 	}
 	prev := c.poolUpTo(idx - 1)
 
-	type cand struct {
-		id    string
-		item  Item
-		score int // lower = more urgent
-	}
 	var cands []cand
 
 	for _, syl := range prev.syllables {
@@ -430,19 +463,7 @@ func (c *Curriculum) reviewActivity(idx int, p pool, st progress.State, now time
 		it.ID = id
 		cands = append(cands, cand{id: id, item: it, score: rec.Box})
 	}
-	// Sounds enter the warm-up once an exam has asked them: a missed one comes
-	// back here until it climbs its boxes again.
-	known := c.KnownGraphemes(idx)
-	for id, rec := range st.Items {
-		g, isSound := strings.CutPrefix(id, SectionSons+":")
-		if !isSound || !rec.Due(now) || rec.Box >= 2 {
-			continue
-		}
-		if it, ok := c.soundItem(g, known); ok {
-			cands = append(cands, cand{id: id, item: it, score: rec.Box})
-		}
-	}
-	if len(cands) == 0 {
+	if len(cands) == 0 && idx <= 0 {
 		return nil
 	}
 
@@ -453,10 +474,17 @@ func (c *Curriculum) reviewActivity(idx int, p pool, st progress.State, now time
 			cands[j], cands[j-1] = cands[j-1], cands[j]
 		}
 	}
-	if len(cands) > maxReview {
-		cands = cands[:maxReview]
+	if len(cands) > maxReview-maxReviewSounds {
+		cands = cands[:maxReview-maxReviewSounds]
 	}
+	// The grapheme→sound link is the core of reading: every warm-up asks the
+	// weakest sounds of earlier routes too (hear it, touch its letters).
+	cands = append(cands, c.weakSounds(idx, st, now)...)
+	rand.Shuffle(len(cands), func(i, j int) { cands[i], cands[j] = cands[j], cands[i] })
 
+	if len(cands) == 0 {
+		return nil
+	}
 	act := Activity{
 		Kind:        "revision",
 		Title:       "Échauffement",
@@ -543,7 +571,8 @@ func ecouteItem(syl string, allSyllables []string, nChoices int) Item {
 func pickDistractors(target string, all []string, n int) []string {
 	var near, far []string
 	for _, s := range all {
-		if s == target {
+		// A syllable that sounds the same is a second right answer, not a trap.
+		if s == target || sameSound(s, target) {
 			continue
 		}
 		if len(s) == len(target) && differsByOne(s, target) {
@@ -608,6 +637,18 @@ func lectureItem(w Word, allWords []Word, nChoices int) Item {
 		}
 	}
 	rand.Shuffle(len(others), func(i, j int) { others[i], others[j] = others[j], others[i] })
+	// Look-alike words first (same first syllable, then same first letter):
+	// otherwise the first letter alone picks the image and he stops decoding.
+	alike := func(o Word) int {
+		switch {
+		case len(o.Syllables) > 0 && len(w.Syllables) > 0 && strings.EqualFold(o.Syllables[0], w.Syllables[0]):
+			return 0
+		case strings.EqualFold(firstRune(o.Text), firstRune(w.Text)):
+			return 1
+		}
+		return 2
+	}
+	sortStable(others, func(a, b Word) bool { return alike(a) < alike(b) })
 
 	// Distractors must also look different from each other, or the child faces
 	// two identical wrong tiles and the "wrong" answer becomes a coin flip.
@@ -627,6 +668,25 @@ func lectureItem(w Word, allWords []Word, nChoices int) Item {
 	rand.Shuffle(len(choices), func(i, j int) { choices[i], choices[j] = choices[j], choices[i] })
 	it.Choices = choices
 	return it
+}
+
+// SentenceWords is sentenceWords for the mini-games.
+func SentenceWords(text string) []string { return sentenceWords(text) }
+
+// SentencesUpTo lists the sentences of episodes 0..idx, in course order.
+func (c *Curriculum) SentencesUpTo(idx int) []Sentence {
+	var out []Sentence
+	for i := 0; i <= idx && i < len(c.Episodes); i++ {
+		out = append(out, c.Episodes[i].Sentences...)
+	}
+	return out
+}
+
+func firstRune(s string) string {
+	for _, r := range s {
+		return string(r)
+	}
+	return ""
 }
 
 // sentenceWords splits a sentence into its word tiles, punctuation stripped:
@@ -774,8 +834,41 @@ func (c *Curriculum) fight(ep *Episode, words []Word, allSyllables []string, dif
 	if len(f.Rounds) == 0 {
 		return nil
 	}
+	if ep.Legendary {
+		dictateLast(f.Rounds)
+	}
 	f.HP = min(f.HP, len(f.Rounds))
 	return f
+}
+
+// DicteeFrom: Tower floors from this one end on a dictation round.
+const DicteeFrom = 10
+
+// dictateLast turns the last round fair for dictation into one: every tile
+// of its tray must sound different, or hearing the word could not tell
+// "ta" from "tta". It is moved to the end, the Gigamax finale.
+func dictateLast(rounds []Item) {
+	for i := len(rounds) - 1; i >= 0; i-- {
+		if !fairDictee(rounds[i].Tray) {
+			continue
+		}
+		it := rounds[i]
+		it.Dictee = true
+		copy(rounds[i:], rounds[i+1:])
+		rounds[len(rounds)-1] = it
+		return
+	}
+}
+
+func fairDictee(tray []string) bool {
+	for i := range tray {
+		for j := i + 1; j < len(tray); j++ {
+			if sameSound(tray[i], tray[j]) {
+				return false
+			}
+		}
+	}
+	return len(tray) > 1
 }
 
 func (c *Curriculum) reward(id int) *Reward {
@@ -1018,6 +1111,9 @@ func (c *Curriculum) BuildTower(st progress.State, floor int, now time.Time) (Se
 		})
 	}
 
+	if floor >= DicteeFrom {
+		dictateLast(f.Rounds)
+	}
 	return Session{
 		EpisodeID: TowerID,
 		Title:     fmt.Sprintf("Tour de Combat — Étage %d", floor),
@@ -1291,16 +1387,20 @@ var UIPhrases = []string{
 	ExamDialog,
 	ExamWhere,
 	ExamDone,
-	SlowStar,
 	NewGame,
 	GameLocked,
+	DicteeHint,
+	BookHint,
+	BookEnd,
 }
 
-// Voice lines of the speed star and the mini-game unlocks.
+// Voice lines of the mini-game unlocks, the battle dictation and « Mon livre ».
 const (
-	SlowStar   = "Bravo ! Lis un peu plus vite pour gagner la troisième étoile !"
 	NewGame    = "Un nouveau mini-jeu est débloqué !"
 	GameLocked = "Ce jeu s'ouvrira plus loin dans l'aventure !"
+	DicteeHint = "Le mot est caché ! Écoute-le, et remets ses syllabes dans l'ordre."
+	BookHint   = "Lis la page à voix haute, puis touche J'AI LU !"
+	BookEnd    = "Bravo ! Tu as lu tout le livre !"
 )
 
 // Fmt is a tiny helper for episode titles in logs.

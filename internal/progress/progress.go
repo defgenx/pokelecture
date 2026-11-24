@@ -65,6 +65,28 @@ type Settings struct {
 	// and the episode restarts: -1 = unlimited, otherwise 2–5. The zero value
 	// means "never configured" and is migrated to the default at Open().
 	BattleLives int `json:"battle_lives,omitempty"`
+	// Font is the reading font: "" (the game's), "andika" (print for early
+	// readers) or "cursive" (French school cursive).
+	Font string `json:"font,omitempty"`
+}
+
+// Fonts the reading text can use (web/styles.css, .font-*).
+var Fonts = map[string]bool{"": true, "andika": true, "cursive": true}
+
+// SpeedStat is his usual answer time for one kind of question: a moving
+// average, so "fast" means faster than he usually is.
+type SpeedStat struct {
+	MS int `json:"ms"`
+	N  int `json:"n"`
+}
+
+// FluencyRun is one timed reading a parent scored in the admin.
+type FluencyRun struct {
+	At      time.Time `json:"at"`
+	Seconds int       `json:"seconds"`
+	Right   int       `json:"right"`
+	Wrong   int       `json:"wrong"`
+	WCPM    int       `json:"wcpm"` // words read correctly per minute
 }
 
 // DefaultBattleLives is the battle heart count on a fresh (or pre-lives) save.
@@ -95,6 +117,10 @@ type State struct {
 	Records map[string]int `json:"records,omitempty"`
 	// Exams holds the surprise exam results, by event id.
 	Exams map[string]ExamRecord `json:"exams,omitempty"`
+	// Speed: his usual answer time per item kind ("syl", "mot", "son").
+	Speed map[string]SpeedStat `json:"speed,omitempty"`
+	// Fluency: the timed readings scored by a parent, oldest first.
+	Fluency []FluencyRun `json:"fluency,omitempty"`
 
 	// Partner is the starter chosen on first launch: one species line, levelled
 	// by experience earned reading. Nil until the child has picked one.
@@ -392,6 +418,11 @@ func (s *Store) copyLocked() State {
 		out.Today.Progress[k] = v
 	}
 	out.WildShiny = append([]int(nil), s.state.WildShiny...)
+	out.Fluency = append([]FluencyRun(nil), s.state.Fluency...)
+	out.Speed = make(map[string]SpeedStat, len(s.state.Speed))
+	for k, v := range s.state.Speed {
+		out.Speed[k] = v
+	}
 	out.Exams = make(map[string]ExamRecord, len(s.state.Exams))
 	for k, v := range s.state.Exams {
 		v.Missed = append([]string(nil), v.Missed...)
@@ -532,6 +563,49 @@ func (s *Store) ClearFloor(floor int) {
 	if floor > s.state.TowerFloor {
 		s.state.TowerFloor = floor
 	}
+}
+
+// AddTimes folds answer times (ms, by kind) into his usual speed. Absurd
+// times (a tap under 300 ms, a minute away from the tablet) are ignored.
+func (s *Store) AddTimes(times map[string][]int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state.Speed == nil {
+		s.state.Speed = map[string]SpeedStat{}
+	}
+	for kind, list := range times {
+		st := s.state.Speed[kind]
+		for _, ms := range list {
+			if ms < 300 || ms > 60000 {
+				continue
+			}
+			if st.N == 0 {
+				st.MS = ms
+			} else {
+				st.MS += (ms - st.MS) / 8
+			}
+			st.N++
+		}
+		s.state.Speed[kind] = st
+	}
+}
+
+// AddFluency stores a timed reading.
+func (s *Store) AddFluency(r FluencyRun) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.state.Fluency = append(s.state.Fluency, r)
+}
+
+// SetFont chooses the reading font; false if unknown.
+func (s *Store) SetFont(font string) bool {
+	if !Fonts[font] {
+		return false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.state.Settings.Font = font
+	return true
 }
 
 // RecordExam stores an exam attempt; true when it is the first pass.

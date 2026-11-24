@@ -36,6 +36,50 @@ function muteFinal(syl) {
 }
 
 Object.assign(Arcade, {
+  /* 📚 Mon livre: five sentences he has already read, one per page, with
+     their picture. He reads aloud (any word can be tapped), then « J'AI LU ! »
+     reads the page back word by word. Re-reading is what builds fluency.
+     The score is the number of words read. */
+  async livre() {
+    const all = this.pool.sentences || [];
+    if (!all.length) return this.hub();
+    // The latest pages first: what he learned most recently needs it most.
+    const pages = all.slice(-12).sort(() => Math.random() - 0.5).slice(0, 5);
+    let page = 0;
+    let words = 0;
+    const stage = el('div', { class: 'act', style: 'width:100%' });
+    const pips = el('div', { class: 'pips-holder' });
+    this.screen('📚 Mon livre', 'Lis la page à voix haute, puis touche J\'AI LU !', pips, stage);
+
+    const turn = () => {
+      pips.innerHTML = '';
+      pips.append(progressPips(page, pages.length));
+      if (page >= pages.length) {
+        confetti(60);
+        say('Bravo ! Tu as lu tout le livre !');
+        return this.gameOver('livre', words, false, '📚 Mon livre');
+      }
+      const p = pages[page];
+      const chips = p.words.map((w, k) => el('button', { class: 'read-word', onclick: () => Voice.play(p.word_audio[k], w) }, w));
+      const pic = p.sprite ? el('img', { class: 'book-pic', src: p.sprite, alt: '' })
+        : p.icon ? iconEl(p.icon, 'book-pic') : el('span', { class: 'book-pic em' }, p.emoji || '📖');
+      const read = el('button', { class: 'btn btn-huge btn-go' }, 'J\'AI LU ! 🔊');
+      read.addEventListener('click', async () => {
+        read.disabled = true;
+        await karaoke(p.audio, p.text, chips);
+        words += p.words.length;
+        cheerCompanion();
+        Sfx.correct();
+        await sleep(400);
+        page++;
+        turn();
+      }, { once: true });
+      stage.innerHTML = '';
+      stage.append(el('div', { class: 'book-page' }, pic, el('div', { class: 'read-sentence' }, chips)), read);
+    };
+    turn();
+  },
+
   /* 🥁 Ten words: hear it, tap the number of beats, then the drum plays it
      back syllable by syllable. */
   async tambour() {
@@ -208,6 +252,7 @@ function displayChunks(text, graphemes) {
 }
 
 Arcade.GAMES.push(
+  { id: 'livre', icon: '📚', name: 'Mon livre', desc: 'Relis tes histoires, page par page. La voix lit avec toi !', lower: false, unit: ' mots' },
   { id: 'tambour', icon: '🥁', name: 'Le tambour des syllabes', desc: 'Écoute le mot et compte ses syllabes. 10 mots !', lower: false, unit: '' },
   { id: 'trou', icon: '🧩', name: 'Le son manquant', desc: 'Un son a disparu du mot : retrouve-le ! 10 mots.', lower: false, unit: '' },
 );
