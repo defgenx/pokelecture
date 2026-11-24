@@ -131,9 +131,33 @@ func (e Event) appearsOn(now time.Time) bool {
 	return day%n == int(h.Sum64()%uint64(n))
 }
 
-// EventToday is the exam waiting on the map today, if any: the one a parent
-// called up from the admin, else the first eligible event whose day it is.
+// Gated: the episode's entry exam is not passed yet, and he has not been
+// past it already (a save from before the gate keeps its way).
+func (c *Curriculum) Gated(ep Episode, st progress.State) bool {
+	return ep.RequiresExam != "" && !st.Exams[ep.RequiresExam].Passed && !c.ReachedEpisode(ep.ID, st)
+}
+
+// GateToday is the entry exam of the door he stands at: the episode before
+// the gated one is done. It waits on the map every day until passed.
+func (c *Curriculum) GateToday(st progress.State) *Event {
+	for i, ep := range c.Episodes {
+		if i == 0 || !c.Gated(ep, st) || st.Episodes[c.Episodes[i-1].ID].Completions == 0 {
+			continue
+		}
+		if ev, ok := c.Event(ep.RequiresExam); ok {
+			return ev
+		}
+	}
+	return nil
+}
+
+// EventToday is the exam waiting on the map today, if any: an entry exam at
+// his door, the one a parent called up from the admin, else the first
+// eligible event whose day it is.
 func (c *Curriculum) EventToday(st progress.State, now time.Time) *Event {
+	if ev := c.GateToday(st); ev != nil {
+		return ev
+	}
 	if st.Today.Day == now.Format("2006-01-02") && st.Today.Event != "" {
 		if ev, ok := c.Event(st.Today.Event); ok && !st.Exams[ev.ID].Passed {
 			return ev
@@ -283,6 +307,7 @@ const (
 	ExamDialog     = "C'est l'examen surprise ! Tu es prêt ?"
 	ExamWhere      = "Réussis un examen surprise pour l'attraper !"
 	ExamDone       = "Tu as déjà réussi cet examen. Bravo !"
+	ExamGate       = "Pour entrer ici, réussis l'examen du professeur ! Il t'attend sur la carte."
 )
 
 // BuildExam generates an exam: four strict sections drawn from everything
@@ -406,6 +431,18 @@ func ExamScore(items map[string]bool) (percent int, sections map[string][2]int) 
 func (c *Curriculum) validateEvents() []error {
 	var errs []error
 	seen := map[string]bool{}
+	for i, ep := range c.Episodes {
+		if ep.RequiresExam == "" {
+			continue
+		}
+		ev, ok := c.Event(ep.RequiresExam)
+		switch {
+		case !ok:
+			errs = append(errs, fmt.Errorf("%s: requires_exam %q absent de events.json", ep.ID, ep.RequiresExam))
+		case c.Index(ev.After) >= i:
+			errs = append(errs, fmt.Errorf("%s: l'examen %q n'apparaît qu'après %s — il ne peut pas en ouvrir la porte", ep.ID, ev.ID, ev.After))
+		}
+	}
 	for _, ev := range c.Events {
 		switch {
 		case ev.ID == "" || seen[ev.ID]:

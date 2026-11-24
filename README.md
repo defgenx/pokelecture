@@ -717,6 +717,15 @@ des questions est un échec.
   section, ce qui est à revoir, et **« Faire apparaître aujourd'hui »** pour le
   poser sur la carte sans attendre le tirage.
 
+**L'examen d'entrée.** Un épisode peut déclarer `"requires_exam": "<id>"` :
+sa porte reste fermée tant que l'examen n'est pas réussi. C'est le cas de
+l'Académie (`ep36` → le Grand Examen) : pour être à l'Académie, il faut
+prouver qu'on sait lire. Arrivé devant la porte, le partenaire s'y pose
+comme sur une route (une 🎓 sur la Poké Ball), JOUER lance l'examen, et
+l'examen attend sur la carte **chaque jour** jusqu'à la réussite (ni tirage,
+ni pause d'une semaine). Une sauvegarde déjà entrée avant la porte n'est pas
+bloquée ; le mode libre l'ignore.
+
 Ajouter un examen = une entrée de `events.json` (`id`, `title`, `story`,
 `after`, `every`, `pass`, `pokemon`, `questions`) ; `pokecontent check`
 vérifie l'épisode, le Pokémon et les sections.
@@ -841,8 +850,11 @@ réguliers, phrases sujet-verbe-complément, aucune notion de CE1 (pas de
   deux libère un Pokémon exclusif à la Tour** : vingt Pokémon (Psykokwak,
   Onix, Ectoplasma, Lokhlass… jusqu'à Dracolosse à l'étage 40) qu'on ne peut
   obtenir nulle part ailleurs. **Au-delà de l'étage 40, chaque étage** en
-  libère un : 32 de plus (Pichu, Nidoking à l'étage 50, Steelix au 60,
-  Cizayox au 70… Leveinard au 72, Pomdepik au 73). Leur ordre est celui des `"tower": true`
+  libère un : 75 de plus, jusqu'à l'étage 115 (Pichu, Nidoking à l'étage 50,
+  Steelix au 60, Cizayox au 70, Alakazam au 80, Typhlosion au 90, Tyranocif
+  au 100, Méganium au 110…) — tous les Pokémon des générations 1 et 2 qui ne
+  vivent pas dans les hautes herbes. Un Pokémon déjà obtenu dans le Pokédex
+  sauvage par évolution (Roucoups, Raichu…) compte comme attrapé. Leur ordre est celui des `"tower": true`
   dans `pokemon.json` ; leur ligne « où le trouver » est commune
   (« tout en haut de la Tour »), une ligne de voix par étage coûterait cher. On ne passe pas à l'étage suivant tant que
   l'étage courant n'est pas réussi ; chaque mot lu alimente la répétition
@@ -933,8 +945,8 @@ suivie d'une voyelle, un `er` au milieu du mot, un `s` entre voyelles, un
   Pokédex, ou le Pokédex sauvage) : un autre chemin pour les compléter.
 - **Le Pokédex dit où trouver chacun.** Toucher une silhouette : « Il t'attend
   sur la route 7 ! », « … à l'étage 12 de la Tour de Combat ! », « Fais
-  évoluer un de tes Pokémon pour l'avoir ! » (`curriculum.Where`). Les 150 sont
-  attrapables : routes, arènes, Tour (étages 2 à 72), examens surprises — `pokecontent check`
+  évoluer un de tes Pokémon pour l'avoir ! » (`curriculum.Where`). Les 192 sont
+  attrapables : routes, arènes, Tour (étages 2 à 115), examens surprises — `pokecontent check`
   refuse un Pokémon qui ne l'est nulle part. **Tous les 10 Pokémon**, une
   récompense (Super Ball + 2 Poké Balls).
 - **Missions du jour (📜).** Trois par jour, tirées de sept (attraper, lire dix
@@ -969,6 +981,11 @@ mystère après l'Arène de l'Orage, les paires après la route 8, le tambour
 après l'Arène Psy, le son manquant après l'Arène du Volcan. Un jeu fermé
 montre un 🔒 et se dit « plus loin dans l'aventure » ; l'écran de fin
 annonce le jeu qui vient de s'ouvrir. Le mode libre de l'admin ouvre tout.
+**Les tickets 🎟️** : Memory et La chasse sont les deux jeux sans lecture ;
+une partie coûte un ticket, et les tickets se gagnent **en lisant** — une
+route terminée, un étage de la Tour, un examen réussi, un livre de « Mon
+livre » : un ticket chacun. Chaque sauvegarde en reçoit 3 au départ. Sans
+ticket, le jeu le dit : « Lis une route ou ton livre pour en gagner. »
 Chacun a **un record enregistré à battre** — nouveau
 record = feux d'artifice. Deux sont de la pure récompense, deux sont de la
 lecture déguisée :

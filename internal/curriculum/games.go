@@ -22,6 +22,16 @@ var GameUnlocks = []struct{ Game, After string }{
 	{"trou", "ep12b"},
 }
 
+// TicketGames are the pure-fun games (no reading in them): each round costs
+// a ticket, and tickets are earned by reading (README « Les tickets »).
+var TicketGames = map[string]bool{"memory": true, "chasse": true}
+
+// Voice lines of the tickets.
+const (
+	NoTicket  = "Il te faut un ticket ! Lis une route ou ton livre pour en gagner."
+	TicketWon = "Tu gagnes un ticket de jeu !"
+)
+
 // GamesOpen lists the unlocked mini-games, in schedule order. A game stays
 // open once any episode from its own onward is done (replay-as-new, skips).
 func (c *Curriculum) GamesOpen(st progress.State) []string {

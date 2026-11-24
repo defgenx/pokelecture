@@ -174,6 +174,10 @@ type Episode struct {
 
 	RewardPokemon int  `json:"reward_pokemon"`
 	Boss          Boss `json:"boss"`
+
+	// RequiresExam: a surprise exam (events.json id) that must be passed to
+	// enter this episode — the exam is the door (README « examen d'entrée »).
+	RequiresExam string `json:"requires_exam,omitempty"`
 }
 
 // CatchablePokemon lists every Pokémon completing this episode adds to the

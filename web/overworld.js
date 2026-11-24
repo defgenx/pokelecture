@@ -291,6 +291,7 @@ const Overworld = {
           if (ep.done > 0) t.classList.add('done');
           if (isNext) t.classList.add('next');
           if (!ep.unlocked) t.classList.add('locked');
+          if (ep.gate) t.append(el('i', { class: 'ow-gate' }, '🎓'));
           t.append(pokeball('ow-ball'),
             el('img', { src: `sprites/art/${ep.reward_pokemon}.png`, alt: '', loading: 'lazy' }),
             el('small', {}, stopLabel(ep)));
@@ -474,6 +475,11 @@ const Overworld = {
   },
 
   stopDialog(ep, first) {
+    // A door with an entry exam: the exam is how one goes in.
+    if (ep.gate) {
+      return this.show(`🎓 ${ep.title}`, '🔒', 'EXAMEN ▶', () => Session.start(`examen-${ep.gate}`),
+        spoken('Pour entrer ici, réussis l\'examen du professeur ! Il t\'attend sur la carte.'));
+    }
     const stars = '★'.repeat(ep.stars) + '☆'.repeat(3 - ep.stars);
     const sounds = el('span', { class: 'sounds' }, (ep.sounds || []).map((g) => el('i', {}, g)));
     if (!ep.unlocked) return this.show(`🔒 ${ep.legendary ? 'Arène légendaire' : `Route ${ep.route}`}`, '', null, null, spoken('Termine la route précédente !'));

@@ -564,7 +564,7 @@ const App = {
                 const node = el('button', {
                   class: `waypoint ${e.done > 0 ? 'done' : ''} ${isNext ? 'next' : ''} ${e.unlocked ? '' : 'locked'}`,
                   title: e.title,
-                  onclick: () => (e.unlocked ? Session.start(e.id) : say('Termine la route précédente !')),
+                  onclick: () => (e.gate ? Session.start(`examen-${e.gate}`) : e.unlocked ? Session.start(e.id) : say('Termine la route précédente !')),
                 },
                   pokeball('pokeball-sm'),
                   el('img', { class: 'wp-reward', src: `sprites/art/${e.reward_pokemon}.png`, alt: '', loading: 'lazy' }),
@@ -600,12 +600,13 @@ const App = {
     const conseil = e.legendary && !e.badge;
     return el('button', {
       class: `route ${e.unlocked ? '' : 'locked'} ${e.legendary ? 'legend' : ''} ${isNext ? 'next' : ''}`,
-      onclick: () => (e.unlocked ? Session.start(e.id) : say('Termine la route précédente !')),
+      onclick: () => (e.gate ? Session.start(`examen-${e.gate}`) : e.unlocked ? Session.start(e.id) : say('Termine la route précédente !')),
     },
       el('span', { class: 'no' }, stopLabel(e)),
       el('img', { src: `sprites/art/${e.reward_pokemon}.png`, alt: '', loading: 'lazy' }),
       el('div', { class: 't' },
-        el('b', {}, e.unlocked ? e.title
+        el('b', {}, e.gate ? `${e.title} — 🎓 examen d'entrée`
+          : e.unlocked ? e.title
           : conseil ? 'Conseil des 4 — 🔒'
           : e.legendary ? 'Arène légendaire — 🔒'
           : `Route ${e.route} — 🔒`),
@@ -678,6 +679,12 @@ const App = {
 };
 
 // ballsWon is the "+3 Poké Balls" line on a result screen.
+// ticketsWon: the game tickets a result paid (curriculum.TicketGames).
+function ticketsWon(n) {
+  if (!n) return null;
+  return el('div', { class: 'balls-won' }, el('span', { class: 'ticket-pop' }, '🎟️'), el('b', {}, `+${n} ticket${n > 1 ? 's' : ''} de jeu`));
+}
+
 function ballsWon(n) {
   if (!n) return null;
   const row = el('div', { class: 'ball-row small' });
@@ -1044,6 +1051,7 @@ const Session = {
           el('div', { class: 'act' },
             el('h2', {}, won ? '🏆 Tu as battu le Dresseur !' : '⚔️ Combat de Dresseur'),
             ballsWon(res.balls_won),
+            ticketsWon(res.tickets_won),
             Partner.gainRow(res.partner_event),
             el('button', { class: 'btn btn-huge btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
           ),
@@ -1076,6 +1084,7 @@ const Session = {
               el('div', { class: 'catchrow' }, el('img', { class: 'shiny', src: `sprites/art/${res.new_shiny}.png`, alt: '' })),
             ) : null,
             ballsWon(res.balls_won),
+            ticketsWon(res.tickets_won),
             Partner.gainRow(res.partner_event),
             el('button', { class: 'btn btn-huge', onclick: () => Session.start('tour') },
               passed ? `ÉTAGE ${towerInfo.floor + 1} ▶` : 'RÉESSAYER 🔄'),
@@ -1111,6 +1120,7 @@ const Session = {
               catches.map((id) => el('img', { src: `sprites/art/${id}.png`, alt: '' }))),
           ) : null,
           ballsWon(res.balls_won),
+            ticketsWon(res.tickets_won),
           Partner.gainRow(res.partner_event),
           el('button', { class: 'btn btn-huge btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
           el('button', { class: 'btn', onclick: () => Arcade.hub() }, '🎮 MINI-JEUX'),
@@ -1124,6 +1134,7 @@ const Session = {
     if (catches.length) await say('Tu as attrapé un nouveau Pokémon !');
     if ((res.new_games || []).length) { Sfx.badge(); await say('Un nouveau mini-jeu est débloqué !'); }
     if (res.balls_won) await say('Tu gagnes des Poké Balls !');
+    if (res.tickets_won) await say('Tu gagnes un ticket de jeu !');
     await celebrateAll(res);
     await say('À demain !');
   },
@@ -1490,6 +1501,7 @@ async function finishExam(exam, res) {
           el('span', { class: 'score' }, '🎉 Il rejoint ta collection !'),
           el('div', { class: 'catchrow' }, catches.map((id) => el('img', { src: `sprites/art/${id}.png`, alt: '' })))) : null,
         ballsWon(res.balls_won),
+            ticketsWon(res.tickets_won),
         Partner.gainRow(res.partner_event),
         r.passed ? null : el('button', { class: 'btn btn-huge', onclick: () => Session.start(`examen-${exam.id}`) }, 'RÉESSAYER 🔄'),
         el('button', { class: 'btn btn-huge btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
@@ -1905,8 +1917,8 @@ const Arcade = {
     { id: 'oreille', icon: '👂', name: 'L\'oreille fine', desc: 'Écoute la syllabe, touche-la. 60 secondes !', lower: false, unit: '' },
     { id: 'mystere', icon: '❓', name: 'Pokémon mystère', desc: 'Qui est cette ombre ? Lis les noms pour le découvrir. 60 secondes !', lower: false, unit: '' },
     { id: 'paires', icon: '🔤', name: 'Les paires mot-image', desc: 'Associe chaque mot écrit à son image, le plus vite possible.', lower: true, unit: 's' },
-    { id: 'memory', icon: '🃏', name: 'Memory Pokémon', desc: 'Retrouve les paires le plus vite possible.', lower: true, unit: 's' },
-    { id: 'chasse', icon: '🌿', name: 'La chasse', desc: 'Attrape les Pokémon avant qu\'ils se cachent. 45 secondes !', lower: false, unit: '' },
+    { id: 'memory', icon: '🃏', name: 'Memory Pokémon', desc: 'Retrouve les paires le plus vite possible.', lower: true, unit: 's', ticket: true },
+    { id: 'chasse', icon: '🌿', name: 'La chasse', desc: 'Attrape les Pokémon avant qu\'ils se cachent. 45 secondes !', lower: false, unit: '', ticket: true },
   ],
 
   stop() {
@@ -1977,6 +1989,20 @@ const Arcade = {
     return ((App.state && App.state.pokedex) || []).filter((p) => p.caught);
   },
 
+  // play starts a game; a ticket game spends its ticket first (the server
+  // refuses with 409 when there is none). The hub and REJOUER both go here.
+  async play(g) {
+    if (!g.ticket) return this[g.id]();
+    try {
+      const res = await api('api/ticket', { game: g.id });
+      App.state = res.state;
+    } catch (_) {
+      Sfx.wrong();
+      return say('Il te faut un ticket ! Lis une route ou ton livre pour en gagner.');
+    }
+    return this[g.id]();
+  },
+
   record(id) {
     return (App.state && App.state.records && App.state.records[id]) || null;
   },
@@ -1988,8 +2014,11 @@ const Arcade = {
     if (!this.pool) {
       try { this.pool = await api('api/arcade'); } catch (_) { this.pool = { words: [], syllables: [], pokemon: [] }; }
     }
-    // Games open one by one along the story (curriculum.GameUnlocks).
+    // Games open one by one along the story (curriculum.GameUnlocks);
+    // the pure-fun ones cost a ticket, earned by reading.
     const open = new Set((App.state && App.state.games) || []);
+    const tickets = (App.state && App.state.bag && App.state.bag.ticket) || 0;
+    const play = (g) => this.play(g);
     const cards = this.GAMES.map((g) => {
       const best = this.record(g.id);
       if (!open.has(g.id)) {
@@ -1998,15 +2027,16 @@ const Arcade = {
           el('b', {}, '???'),
           el('small', {}, 'Continue l\'aventure pour l\'ouvrir !'));
       }
-      return el('button', { class: 'game-card', onclick: () => this[g.id]() },
+      return el('button', { class: `game-card ${g.ticket && !tickets ? 'no-ticket' : ''}`, onclick: () => play(g) },
         el('span', { class: 'game-icon' }, g.icon),
         el('b', {}, g.name),
+        g.ticket ? el('span', { class: 'game-ticket' }, '🎟️ 1 ticket') : null,
         el('small', {}, g.desc),
         el('span', { class: 'game-record' }, best !== null ? `🏆 Record : ${best}${g.unit}` : 'Pas encore de record'),
       );
     });
     App.screen(
-      App.topbar(el('button', { class: 'btn-icon', onclick: () => App.home() }, '✕')),
+      App.topbar(el('span', { class: 'chip' }, `🎟️ ${tickets}`), el('button', { class: 'btn-icon', onclick: () => App.home() }, '✕')),
       el('div', { class: 'page' },
         el('div', { class: 'act' },
           el('h2', {}, '🎮 Mini-jeux'),
@@ -2080,8 +2110,9 @@ const Arcade = {
           el('div', { class: 'bigscore' }, `${score}${g.unit}`),
           beaten ? el('div', { class: 'score newrecord' }, '🏆 NOUVEAU RECORD !') : el('div', { class: 'score' }, `Record : ${this.record(game)}${g.unit}`),
           ballsWon(res.balls_won),
+            ticketsWon(res.tickets_won),
           Partner.gainRow(res.partner_event),
-          el('button', { class: 'btn btn-huge', onclick: () => this[game]() }, 'REJOUER 🔄'),
+          el('button', { class: 'btn btn-huge', onclick: () => this.play(g) }, 'REJOUER 🔄'),
           el('button', { class: 'btn btn-ghost', onclick: () => this.hub() }, '🎮 Mini-jeux'),
           el('button', { class: 'btn btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
         ),

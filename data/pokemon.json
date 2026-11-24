@@ -2115,5 +2115,617 @@
       "Insecte"
     ],
     "dex": "Il pend aux branches comme une pomme de pin."
+  },
+  {
+    "id": 2,
+    "name": "Herbizarre",
+    "tower": true,
+    "syllables": [
+      "Her",
+      "bi",
+      "zarre"
+    ],
+    "types": [
+      "Plante",
+      "Poison"
+    ],
+    "dex": "Le bourgeon sur son dos devient lourd. Il va bientôt fleurir."
+  },
+  {
+    "id": 11,
+    "name": "Chrysacier",
+    "tower": true,
+    "syllables": [
+      "Chry",
+      "sa",
+      "cier"
+    ],
+    "types": [
+      "Insecte"
+    ],
+    "dex": "Il reste immobile dans sa coque dure. Il attend de devenir papillon."
+  },
+  {
+    "id": 17,
+    "name": "Roucoups",
+    "tower": true,
+    "syllables": [
+      "Rou",
+      "coups"
+    ],
+    "types": [
+      "Normal",
+      "Vol"
+    ],
+    "dex": "Il défend son coin de forêt avec ses griffes pointues."
+  },
+  {
+    "id": 187,
+    "name": "Granivol",
+    "tower": true,
+    "syllables": [
+      "Gra",
+      "ni",
+      "vol"
+    ],
+    "types": [
+      "Plante",
+      "Vol"
+    ],
+    "dex": "Il est si léger que le vent l'emporte très loin."
+  },
+  {
+    "id": 158,
+    "name": "Kaiminus",
+    "tower": true,
+    "syllables": [
+      "Kai",
+      "mi",
+      "nus"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Il mord tout ce qui bouge, même pour jouer."
+  },
+  {
+    "id": 179,
+    "name": "Wattouat",
+    "tower": true,
+    "syllables": [
+      "Wa",
+      "ttouat"
+    ],
+    "types": [
+      "Électrik"
+    ],
+    "dex": "Sa laine se remplit d'électricité quand on la frotte."
+  },
+  {
+    "id": 65,
+    "name": "Alakazam",
+    "tower": true,
+    "syllables": [
+      "A",
+      "la",
+      "ka",
+      "zam"
+    ],
+    "types": [
+      "Psy"
+    ],
+    "dex": "Son cerveau grandit tous les jours. Il se souvient de tout."
+  },
+  {
+    "id": 183,
+    "name": "Marill",
+    "tower": true,
+    "syllables": [
+      "Ma",
+      "rill"
+    ],
+    "types": [
+      "Eau",
+      "Fée"
+    ],
+    "dex": "Sa queue ronde est une bouée qui le fait flotter."
+  },
+  {
+    "id": 153,
+    "name": "Macronium",
+    "tower": true,
+    "syllables": [
+      "Ma",
+      "cro",
+      "nium"
+    ],
+    "types": [
+      "Plante"
+    ],
+    "dex": "Les feuilles autour de son cou sentent bon les épices."
+  },
+  {
+    "id": 155,
+    "name": "Héricendre",
+    "tower": true,
+    "syllables": [
+      "Hé",
+      "ri",
+      "cendre"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Quand il a peur, des flammes sortent de son dos."
+  },
+  {
+    "id": 43,
+    "name": "Mystherbe",
+    "tower": true,
+    "syllables": [
+      "Mys",
+      "ther",
+      "be"
+    ],
+    "types": [
+      "Plante",
+      "Poison"
+    ],
+    "dex": "Le jour, il se cache sous la terre. La nuit, il se promène."
+  },
+  {
+    "id": 42,
+    "name": "Nosferalto",
+    "tower": true,
+    "syllables": [
+      "Nos",
+      "fe",
+      "ral",
+      "to"
+    ],
+    "types": [
+      "Poison",
+      "Vol"
+    ],
+    "dex": "Il vole la nuit et adore les grottes sombres."
+  },
+  {
+    "id": 53,
+    "name": "Persian",
+    "tower": true,
+    "syllables": [
+      "Per",
+      "sian"
+    ],
+    "types": [
+      "Normal"
+    ],
+    "dex": "Un chat fier et élégant. Le bijou sur son front brille."
+  },
+  {
+    "id": 47,
+    "name": "Parasect",
+    "tower": true,
+    "syllables": [
+      "Pa",
+      "ra",
+      "sect"
+    ],
+    "types": [
+      "Insecte",
+      "Plante"
+    ],
+    "dex": "Un gros champignon a poussé sur son dos."
+  },
+  {
+    "id": 246,
+    "name": "Embrylex",
+    "tower": true,
+    "syllables": [
+      "Em",
+      "bry",
+      "lex"
+    ],
+    "types": [
+      "Roche",
+      "Sol"
+    ],
+    "dex": "Il mange la terre des montagnes pour grandir."
+  },
+  {
+    "id": 180,
+    "name": "Lainergie",
+    "tower": true,
+    "syllables": [
+      "Lai",
+      "ner",
+      "gie"
+    ],
+    "types": [
+      "Électrik"
+    ],
+    "dex": "Sa laine est tombée, mais l'électricité reste dans sa peau."
+  },
+  {
+    "id": 157,
+    "name": "Typhlosion",
+    "tower": true,
+    "syllables": [
+      "Ty",
+      "phlo",
+      "sion"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Ses flammes deviennent énormes quand il se fâche."
+  },
+  {
+    "id": 119,
+    "name": "Poissoroy",
+    "tower": true,
+    "syllables": [
+      "Poi",
+      "sso",
+      "roy"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Il creuse son nid dans les rochers de la rivière."
+  },
+  {
+    "id": 117,
+    "name": "Hypocéan",
+    "tower": true,
+    "syllables": [
+      "Hy",
+      "po",
+      "cé",
+      "an"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Il fait des tourbillons dans la mer avec ses nageoires."
+  },
+  {
+    "id": 93,
+    "name": "Spectrum",
+    "tower": true,
+    "syllables": [
+      "Spec",
+      "trum"
+    ],
+    "types": [
+      "Spectre",
+      "Poison"
+    ],
+    "dex": "Il passe à travers les murs pour faire des farces."
+  },
+  {
+    "id": 55,
+    "name": "Akwakwak",
+    "tower": true,
+    "syllables": [
+      "A",
+      "kwa",
+      "kwak"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Il nage plus vite que tous les nageurs du monde."
+  },
+  {
+    "id": 57,
+    "name": "Colossinge",
+    "tower": true,
+    "syllables": [
+      "Co",
+      "lo",
+      "ssin",
+      "ge"
+    ],
+    "types": [
+      "Combat"
+    ],
+    "dex": "Il est toujours en colère, même quand il dort."
+  },
+  {
+    "id": 62,
+    "name": "Tartard",
+    "tower": true,
+    "syllables": [
+      "Tar",
+      "tard"
+    ],
+    "types": [
+      "Eau",
+      "Combat"
+    ],
+    "dex": "Ses bras sont très forts. Il nage sans jamais se fatiguer."
+  },
+  {
+    "id": 87,
+    "name": "Lamantine",
+    "tower": true,
+    "syllables": [
+      "La",
+      "man",
+      "tine"
+    ],
+    "types": [
+      "Eau",
+      "Glace"
+    ],
+    "dex": "Il dort sur la glace et nage dans l'eau gelée."
+  },
+  {
+    "id": 139,
+    "name": "Amonistar",
+    "tower": true,
+    "syllables": [
+      "A",
+      "mo",
+      "nis",
+      "tar"
+    ],
+    "types": [
+      "Roche",
+      "Eau"
+    ],
+    "dex": "Un Pokémon très ancien. Sa coquille est trop lourde pour nager vite."
+  },
+  {
+    "id": 247,
+    "name": "Ymphect",
+    "tower": true,
+    "syllables": [
+      "Ym",
+      "phect"
+    ],
+    "types": [
+      "Roche",
+      "Sol"
+    ],
+    "dex": "Il se cache dans une coquille de pierre très dure."
+  },
+  {
+    "id": 248,
+    "name": "Tyranocif",
+    "tower": true,
+    "syllables": [
+      "Ty",
+      "ra",
+      "no",
+      "cif"
+    ],
+    "types": [
+      "Roche",
+      "Ténèbres"
+    ],
+    "dex": "Il est si fort qu'il change la forme des montagnes."
+  },
+  {
+    "id": 184,
+    "name": "Azumarill",
+    "tower": true,
+    "syllables": [
+      "A",
+      "zu",
+      "ma",
+      "rill"
+    ],
+    "types": [
+      "Eau",
+      "Fée"
+    ],
+    "dex": "Il entend tout ce qui bouge au fond de la rivière."
+  },
+  {
+    "id": 45,
+    "name": "Rafflesia",
+    "tower": true,
+    "syllables": [
+      "Ra",
+      "ffle",
+      "si",
+      "a"
+    ],
+    "types": [
+      "Plante",
+      "Poison"
+    ],
+    "dex": "Sa fleur est la plus grande du monde. Elle sent très fort."
+  },
+  {
+    "id": 26,
+    "name": "Raichu",
+    "say_as": "Raïtchou",
+    "tower": true,
+    "syllables": [
+      "Rai",
+      "chu"
+    ],
+    "types": [
+      "Électrik"
+    ],
+    "dex": "Sa queue touche le sol pour se vider de son électricité."
+  },
+  {
+    "id": 38,
+    "name": "Feunard",
+    "tower": true,
+    "syllables": [
+      "Feu",
+      "nard"
+    ],
+    "types": [
+      "Feu"
+    ],
+    "dex": "Il a neuf queues magnifiques. On dit qu'il vit mille ans."
+  },
+  {
+    "id": 31,
+    "name": "Nidoqueen",
+    "say_as": "Nidokouine",
+    "tower": true,
+    "syllables": [
+      "Ni",
+      "do",
+      "queen"
+    ],
+    "types": [
+      "Poison",
+      "Sol"
+    ],
+    "dex": "Sa peau est dure comme une armure. Elle protège ses petits."
+  },
+  {
+    "id": 112,
+    "name": "Rhinoféros",
+    "tower": true,
+    "syllables": [
+      "Rhi",
+      "no",
+      "fé",
+      "ros"
+    ],
+    "types": [
+      "Sol",
+      "Roche"
+    ],
+    "dex": "Sa corne tourne comme une perceuse et casse les rochers."
+  },
+  {
+    "id": 192,
+    "name": "Héliatronc",
+    "tower": true,
+    "syllables": [
+      "Hé",
+      "lia",
+      "tronc"
+    ],
+    "types": [
+      "Plante"
+    ],
+    "dex": "Il tourne son visage vers le soleil toute la journée."
+  },
+  {
+    "id": 71,
+    "name": "Empiflor",
+    "tower": true,
+    "syllables": [
+      "Em",
+      "pi",
+      "flor"
+    ],
+    "types": [
+      "Plante",
+      "Poison"
+    ],
+    "dex": "Une grande fleur qui avale tout ce qui tombe dans sa bouche."
+  },
+  {
+    "id": 186,
+    "name": "Tarpaud",
+    "tower": true,
+    "syllables": [
+      "Tar",
+      "paud"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Le roi des grenouilles. Quand il chante, les Ptitard arrivent."
+  },
+  {
+    "id": 154,
+    "name": "Méganium",
+    "tower": true,
+    "syllables": [
+      "Mé",
+      "ga",
+      "nium"
+    ],
+    "types": [
+      "Plante"
+    ],
+    "dex": "Son souffle fait repousser les fleurs fanées."
+  },
+  {
+    "id": 202,
+    "name": "Qulbutoké",
+    "tower": true,
+    "syllables": [
+      "Qul",
+      "bu",
+      "to",
+      "ké"
+    ],
+    "types": [
+      "Psy"
+    ],
+    "dex": "Il ne frappe jamais le premier. Il renvoie les attaques."
+  },
+  {
+    "id": 222,
+    "name": "Corayon",
+    "tower": true,
+    "syllables": [
+      "Co",
+      "ra",
+      "yon"
+    ],
+    "types": [
+      "Eau",
+      "Roche"
+    ],
+    "dex": "Il vit dans la mer chaude. Ses cornes repoussent quand elles cassent."
+  },
+  {
+    "id": 224,
+    "name": "Octillery",
+    "tower": true,
+    "syllables": [
+      "Oc",
+      "til",
+      "le",
+      "ry"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Une pieuvre qui crache de l'encre noire pour se cacher."
+  },
+  {
+    "id": 236,
+    "name": "Debugant",
+    "tower": true,
+    "syllables": [
+      "De",
+      "bu",
+      "gant"
+    ],
+    "types": [
+      "Combat"
+    ],
+    "dex": "Il veut toujours se battre, même contre plus grand que lui."
+  },
+  {
+    "id": 169,
+    "name": "Nostenfer",
+    "tower": true,
+    "syllables": [
+      "Nos",
+      "ten",
+      "fer"
+    ],
+    "types": [
+      "Poison",
+      "Vol"
+    ],
+    "dex": "Il a quatre ailes et vole sans le moindre bruit la nuit."
   }
 ]

@@ -89,5 +89,6 @@
     "pokemon": 471,
     "hp": 4,
     "taunt": "Givrali fait tomber la neige sur la classe ! Lis vite !"
-  }
+  },
+  "requires_exam": "grand"
 }

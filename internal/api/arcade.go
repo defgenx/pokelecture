@@ -195,6 +195,10 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request) {
 			words++
 		}
 	}
+	tickets := 0
+	if req.Game == "livre" { // reading the book earns a ticket
+		tickets = s.payTicket()
+	}
 	done := append(s.progress("arcade", 1), s.progress("words", words)...)
 	tev, m := s.settle()
 	if err := s.store.Save(); err != nil {
@@ -204,6 +208,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"beaten":        beaten,
 		"balls_won":     balls,
+		"tickets_won":   tickets,
 		"partner_event": ev,
 		"quests_done":   done,
 		"trainer_event": tev,

@@ -135,6 +135,8 @@ type State struct {
 	GiftDay string `json:"gift_day,omitempty"`
 	// BallsGranted marks the one-time starter bag of Poké Balls as handed out.
 	BallsGranted bool `json:"balls_granted,omitempty"`
+	// TicketsGranted marks the starter tickets (StarterTickets) as handed out.
+	TicketsGranted bool `json:"tickets_granted,omitempty"`
 
 	// Team holds the XP of every other Pokémon that has been the partner,
 	// keyed by the first stage of its line; Active is the one walking with
@@ -876,6 +878,23 @@ func (s *Store) Beat(trainer string, now time.Time, quests func(day string) []st
 	}
 	s.state.Today.Beaten = append(s.state.Today.Beaten, trainer)
 	return true
+}
+
+// StarterTickets: game tickets every save receives once.
+const StarterTickets = 3
+
+// GrantTickets hands out the starter tickets once per save.
+func (s *Store) GrantTickets() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state.TicketsGranted {
+		return
+	}
+	if s.state.Bag == nil {
+		s.state.Bag = map[string]int{}
+	}
+	s.state.Bag["ticket"] += StarterTickets
+	s.state.TicketsGranted = true
 }
 
 // AddItem gives (or, negative, takes) a bag item; false if there was none to take.

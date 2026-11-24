@@ -86,6 +86,7 @@ func (s *Server) gradeExam(evID string, req resultRequest, res *resultResponse, 
 			res.NewCatches = append(res.NewCatches, ev.Pokemon)
 		}
 		res.Balls = examBalls
+		res.Tickets = s.payTicket()
 	}
 	res.Exam = r
 	return true

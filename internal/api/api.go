@@ -107,6 +107,7 @@ func (s *Server) Routes() http.Handler {
 	// Mini-games: learned material to play with, and best scores to beat.
 	mux.HandleFunc("GET /api/arcade", s.play((*Server).handleArcade))
 	mux.HandleFunc("POST /api/records", s.play((*Server).handleRecord))
+	mux.HandleFunc("POST /api/ticket", s.play((*Server).handleTicket))
 
 	// The partner, the daily gift and the tall grass.
 	mux.HandleFunc("POST /api/partner", s.play((*Server).handlePartner))
@@ -190,6 +191,8 @@ type episodeView struct {
 	Sounds    []string `json:"sounds"`
 	Legendary bool     `json:"legendary,omitempty"`
 	Badge     string   `json:"badge,omitempty"`
+	// Gate: the entry exam (event id) still to pass before this door opens.
+	Gate string `json:"gate,omitempty"`
 }
 
 type badgeView struct {
@@ -258,6 +261,15 @@ type wildCount struct {
 }
 
 func (s *Server) state() stateView {
+	// A Pokémon moved from the arcade roster into the course (the Tower
+	// ladder) may already be in his wild Pokédex, reached by evolution: it
+	// counts as caught in the course Pokédex too.
+	for _, id := range s.store.Snapshot().Wild {
+		if _, inCourse := s.cur.Pokemon[id]; inCourse {
+			s.store.Catch(id)
+		}
+	}
+	s.store.GrantTickets()
 	st := s.store.Snapshot()
 
 	out := stateView{
@@ -302,6 +314,17 @@ func (s *Server) state() stateView {
 	unlocked := true
 	for _, ep := range s.cur.Episodes {
 		stat := st.Episodes[ep.ID]
+		// An entry exam closes the door; the door stays the next stop, and
+		// JOUER on it starts the exam (handleSession).
+		if s.cur.Gated(ep, st) && !st.Settings.FreePlay {
+			if unlocked && out.NextID == "" {
+				out.NextID = ep.ID
+			}
+			out.Episodes = append(out.Episodes, episodeView{ID: ep.ID, Route: ep.Route, Title: ep.Title, Region: ep.Region,
+				Reward: ep.RewardPokemon, Sounds: ep.NewGraphemes, Legendary: ep.Legendary, Gate: ep.RequiresExam})
+			unlocked = false
+			continue
+		}
 		v := episodeView{
 			ID:        ep.ID,
 			Route:     ep.Route,
@@ -436,6 +459,14 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "épisode inconnu", http.StatusNotFound)
 		return
 	}
+	// A closed door plays its entry exam.
+	if st := s.store.Snapshot(); s.cur.Gated(*ep, st) && !st.Settings.FreePlay {
+		ev, _ := s.cur.Event(ep.RequiresExam)
+		if sess, built := s.cur.BuildExam(ev, st, time.Now()); built {
+			writeJSON(w, http.StatusOK, s.speedy(sess))
+			return
+		}
+	}
 	sess := s.cur.BuildSession(ep, s.store.Snapshot(), time.Now())
 	writeJSON(w, http.StatusOK, s.speedy(sess))
 }
@@ -467,8 +498,9 @@ type resultResponse struct {
 	TowerPassed bool `json:"tower_passed"`
 	TowerNeed   int  `json:"tower_need"`
 	NewShiny    int  `json:"new_shiny,omitempty"` // a guardian floor's shiny legendary
-	// What the session paid: Poké Balls, and the partner's experience.
+	// What the session paid: Poké Balls, game tickets, the partner's experience.
 	Balls        int           `json:"balls_won"`
+	Tickets      int           `json:"tickets_won,omitempty"`
 	PartnerEvent *partnerEvent `json:"partner_event"`
 	TrainerWon   bool          `json:"trainer_won,omitempty"`
 	QuestsDone   []questView   `json:"quests_done"`
@@ -565,6 +597,7 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			res.Balls = towerBalls
+			res.Tickets = s.payTicket()
 		}
 		res.PartnerEvent = s.award(min(maxSessionXP, right+req.Points))
 	} else if req.Completed {
@@ -579,6 +612,7 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 			s.store.MarkShiny(ep.RewardPokemon)
 		}
 		res.Balls = episodeBalls + stars
+		res.Tickets = s.payTicket()
 		res.PartnerEvent = s.award(min(maxSessionXP, right+sessionBonusXP+starXP*stars))
 	}
 	if res.Balls > 0 {
