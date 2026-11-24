@@ -29,8 +29,13 @@ reste allumé pendant une séance (wake lock, en HTTPS).
 écran (manifeste `"display": "fullscreen"`). Dans un onglet de navigateur, il
 passe en plein écran au toucher de COMMENCER, et un bouton dans la barre du
 haut (ou la touche `F`) l'enlève ou le remet ; le choix est mémorisé sur
-l'appareil. Safari sur iPhone ne permet pas le plein écran d'une page : le
-bouton n'y apparaît pas, l'installation sur l'écran d'accueil le remplace.
+l'appareil. Android (et iPadOS) quittent le plein écran dès que le jeu passe en
+arrière-plan (autre appli, écran verrouillé) : au retour, le premier toucher le
+rétablit, sauf s'il a été coupé avec le bouton. Safari sur iPhone ne permet
+pas le plein écran d'une page : le bouton n'y apparaît pas, l'installation sur
+l'écran d'accueil le remplace. Sur Android, en HTTP simple, « Ajouter à l'écran
+d'accueil » crée un raccourci qui s'ouvre dans un onglet : c'est alors le plein
+écran automatique qui joue ; le vrai mode application installée demande HTTPS.
 
 En **paysage**, la mise en page change vraiment : arène de combat à gauche et
 mots à droite (plus de défilement en plein combat), carte des routes sur deux

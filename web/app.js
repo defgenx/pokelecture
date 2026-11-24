@@ -346,6 +346,16 @@ const Fullscreen = {
   paint() { document.querySelectorAll('.fs-btn').forEach((b) => { b.innerHTML = this.icon(); }); },
 };
 
+// Android (and iPadOS) drop fullscreen whenever the game leaves the screen —
+// another app, the screen locking — and only a tap may ask for it again. So
+// on the way back, the first tap restores it, unless it was turned off.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || !Fullscreen.supported() || Fullscreen.installed()) return;
+  if (!Fullscreen.wanted() || Fullscreen.active() || !$('#gate').hidden) return;
+  document.addEventListener('pointerdown', () => {
+    if (Fullscreen.wanted() && !Fullscreen.active()) Fullscreen.enter();
+  }, { once: true, capture: true });
+});
 document.addEventListener('fullscreenchange', () => Fullscreen.paint());
 document.addEventListener('webkitfullscreenchange', () => Fullscreen.paint());
 document.addEventListener('keydown', (e) => {
