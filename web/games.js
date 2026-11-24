@@ -70,7 +70,7 @@ Object.assign(Arcade, {
           if (n === w.syllables.length) {
             drums.classList.add('done');
             b.classList.add('good');
-            if (first) { score++; scoreChip.textContent = `🥁 ${score}`; }
+            if (first) { score += this.gain(b); scoreChip.textContent = `🥁 ${score}`; }
             Sfx.correct();
             burst('🥁');
             // The answer, performed: each syllable on its own beat.
@@ -89,7 +89,7 @@ Object.assign(Arcade, {
             first = false;
             b.disabled = true;
             b.classList.add('bad');
-            Sfx.wrong();
+            Sfx.wrong(); this.miss();
             Voice.play(w.audio, w.text);
           }
         });
@@ -162,7 +162,7 @@ Object.assign(Arcade, {
             t.classList.add('good');
             gap.textContent = chunks[hole].text;
             gap.classList.add('filled');
-            if (first) { score++; scoreChip.textContent = `🧩 ${score}`; }
+            if (first) { score += this.gain(t); scoreChip.textContent = `🧩 ${score}`; }
             Sfx.correct();
             burst('🧩');
             await Voice.play(w.audio, w.text);
@@ -171,7 +171,7 @@ Object.assign(Arcade, {
             first = false;
             t.disabled = true;
             t.classList.add('bad');
-            Sfx.wrong();
+            Sfx.wrong(); this.miss();
           }
         });
         grid.append(t);

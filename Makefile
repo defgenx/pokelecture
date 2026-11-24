@@ -1,4 +1,4 @@
-.PHONY: run check content audio sprites prune reset build audit voice-elevenlabs
+.PHONY: run check content audio sprites prune reset build audit voice-plan
 
 # Everything you need after editing data/: validate, fill the gaps, drop the
 # audio that no longer matches the content.
@@ -10,10 +10,10 @@ prune:
 check:
 	go run ./cmd/pokecontent check
 
-# With .env.local (ElevenLabs key + voice), new lines get the ElevenLabs voice
-# (Jeanne) — never Edge, which would mix two voices in the track.
+# The voice track is ElevenLabs only (key + voice in .env.local): new lines
+# are generated with the same voice, and nothing already made is paid again.
 audio:
-	@if [ -f .env.local ]; then scripts/voice-elevenlabs.sh --go; else go run ./cmd/pokecontent audio; fi
+	scripts/voice-elevenlabs.sh --go
 
 sprites:
 	go run ./cmd/pokecontent sprites
@@ -34,6 +34,6 @@ reset:
 audit:
 	go run ./cmd/pokecontent audit
 
-# Whole voice track with ElevenLabs (key + voice in .env.local, see the script).
-voice-elevenlabs:
+# The plan only: what is left to generate and what it costs. Sends nothing.
+voice-plan:
 	scripts/voice-elevenlabs.sh

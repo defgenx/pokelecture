@@ -1482,12 +1482,26 @@ img.shiny { filter: hue-rotate(300deg) saturate(1.3) brightness(1.06) drop-shado
 @keyframes absorb { 0% { filter: brightness(1); } 40% { filter: brightness(0) invert(1); transform: scale(1); } 100% { filter: brightness(0) invert(1); transform: scale(0); opacity: 0; } }
 .wild-name { font-size: clamp(40px, 8vw, 68px); }
 .throw-zone { display: flex; flex-direction: column; align-items: center; gap: 12px; min-height: 0; }
-.throw-ball { background: none; border: none; cursor: pointer; animation: bob 1.4s ease-in-out infinite; padding: 6px; }
-.throw-ball .pokeball { --size: 96px; }
+/* The ball to throw. The CSS ball is a <span>: inside a plain button it stays
+   inline and its size is ignored — it must be a flex item to be drawn. */
+.throw-ball {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: none; border: none; cursor: pointer; padding: 6px; font-family: inherit;
+  animation: bob 1.4s ease-in-out infinite;
+}
+.throw-ball .throw-ball-icon { --size: 120px; }
+.throw-ball b { font-size: 26px; font-weight: 900; color: var(--red); letter-spacing: 1px; }
+.throw-ball:active .throw-ball-icon { transform: scale(.92); }
 .platform .flying-ball { --size: 62px; position: absolute; z-index: 2; bottom: 40px; animation: fly .6s cubic-bezier(.3, .1, .5, 1) forwards; }
 .platform .flying-ball.landed { animation: none; bottom: 18px; }
 .platform .flying-ball.wobble { animation: ball-wobble .7s ease; }
 .platform .flying-ball.caught { filter: drop-shadow(0 0 16px rgba(255, 203, 5, .9)); }
+.platform .flying-ball.burst-open { animation: burst-open .5s ease forwards; }
+.wild-sprite.escaped { animation: escape .5s cubic-bezier(.2, .9, .3, 1.4); }
+.wild-sprite.fled { animation: flee .9s ease forwards; }
+@keyframes burst-open { 0% { transform: scale(1); } 40% { transform: scale(1.35); filter: brightness(1.6); } 100% { transform: scale(0); opacity: 0; } }
+@keyframes escape { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes flee { to { transform: translateX(140%) scale(.6); opacity: 0; } }
 @keyframes fly { 0% { transform: translate(0, 280px) scale(1.5) rotate(0); } 60% { transform: translate(0, -60px) scale(1.1) rotate(540deg); } 100% { transform: translate(0, 0) scale(1) rotate(720deg); } }
 @keyframes ball-wobble { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-24deg); } 75% { transform: rotate(24deg); } }
 
@@ -1632,3 +1646,96 @@ img.shiny { filter: hue-rotate(300deg) saturate(1.3) brightness(1.06) drop-shado
   .ow-pad { display: none; }
   .ow-dialog .btn-huge { min-height: 56px; font-size: 20px; padding: 10px 18px; }
 }
+
+/* Mini-game juice: rising points, the combo chip heating up, the jolt of a
+   miss, the end-of-game medal, the chase's golden Pokémon and Voltorbe. */
+.score-pop {
+  position: fixed; z-index: 70; pointer-events: none; transform: translate(-50%, 0);
+  font-size: 34px; font-weight: 900; color: #2a9a3b; text-shadow: 0 2px 0 #fff, 0 4px 12px rgba(0, 0, 0, .25);
+  animation: score-rise .9s ease-out forwards;
+}
+.score-pop.hot { color: #ff7a00; font-size: 42px; }
+.score-pop.time { color: var(--blue); font-size: 26px; }
+.score-pop.miss { color: var(--red); }
+@keyframes score-rise { 0% { opacity: 0; transform: translate(-50%, 10px) scale(.6); } 20% { opacity: 1; transform: translate(-50%, 0) scale(1.15); } 100% { opacity: 0; transform: translate(-50%, -70px) scale(1); } }
+.arcade-combo.m2 { background: linear-gradient(180deg, #ffd36b, #ff9d2e); color: #5a2a00; }
+.arcade-combo.m3 { background: linear-gradient(180deg, #ff8a5b, #ee1515); color: #fff; animation: pulse-glow 1s ease-in-out infinite; }
+.page.jolt { animation: shake .35s ease; }
+.medal { font-size: clamp(80px, 18vw, 130px); line-height: 1; animation: reveal .6s cubic-bezier(.2, .9, .3, 1.4); filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .25)); }
+.chase-hole.gold.show { box-shadow: 0 0 0 4px var(--yellow), 0 0 30px rgba(255, 203, 5, .9); }
+.chase-hole.bomb.show { box-shadow: 0 0 0 4px var(--red); }
+@media (max-height: 860px) {
+  .chase-grid { max-width: min(100%, calc(100dvh - 330px)); margin: 0 auto; }
+}
+
+/* Map trainers, hidden objects, the hungry partner, the missions log. */
+.ow-trainer { position: relative; }
+.ow-trainer span { filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .25)); }
+.ow-trainer.beaten span { filter: grayscale(.6) opacity(.7); }
+.ow-bang { position: absolute; top: -18%; right: 4%; font-style: normal; font-weight: 900; font-size: 55%; color: #fff; background: var(--red); border-radius: 50%; width: 1.3em; height: 1.3em; display: grid; place-items: center; animation: pop 1.2s ease-in-out infinite; }
+.ow-sparkle { position: absolute; font-style: normal; font-size: 70%; animation: sparkle 1.4s ease-in-out infinite; pointer-events: none; }
+@keyframes sparkle { 0%, 100% { transform: scale(.7) rotate(0); opacity: .6; } 50% { transform: scale(1.15) rotate(20deg); opacity: 1; } }
+.ow-hunger { position: absolute; top: -60%; right: -20%; font-size: 70%; display: none; animation: bob 1.6s ease-in-out infinite; }
+.ow-walker.hungry .ow-hunger { display: block; }
+.partner-card.hungry { box-shadow: 0 0 0 3px #ff7aa2, var(--lift-2); }
+.hungry-note { color: #d1366a !important; }
+.quest-btn { font-weight: 800; }
+
+.quest-panel {
+  position: fixed; z-index: 40; left: 50%; top: 84px; transform: translateX(-50%);
+  width: min(94vw, 560px); background: #fff; border: 4px solid var(--ink); border-radius: var(--r-md);
+  box-shadow: var(--lift-3); padding: 12px; display: flex; flex-direction: column; gap: 8px; animation: reveal .25s ease;
+}
+.quest-head { display: flex; justify-content: space-between; align-items: center; font-size: 22px; }
+.quest-row {
+  display: grid; grid-template-columns: 40px 1fr auto; grid-template-rows: auto auto; gap: 2px 10px; align-items: center;
+  text-align: left; font-family: inherit; border: none; border-radius: var(--r-sm); background: #f3f6fb; padding: 10px; cursor: pointer;
+}
+.quest-row.done { background: #e3f8e6; }
+.quest-icon { grid-row: span 2; font-size: 28px; }
+.quest-text { font-weight: 800; font-size: 17px; color: var(--ink); }
+.quest-row small { grid-row: span 2; font-weight: 800; color: var(--ink-soft); }
+.quest-bar { height: 8px; border-radius: 999px; background: rgba(0, 0, 0, .08); overflow: hidden; }
+.quest-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffcb05, #ff9d2e); }
+.quest-toast .quest-big { font-size: 40px; }
+
+/* The Super Ball: blue top with red marks, drawn over the same CSS ball. */
+.pokeball.superball {
+  background:
+    radial-gradient(circle at 30% 26%, #ee1515 0 9%, transparent 10%),
+    radial-gradient(circle at 70% 26%, #ee1515 0 9%, transparent 10%),
+    linear-gradient(180deg, #4a7bff 0 42%, #2a4fd1 42% 46.5%, #23262e 46.5% 53.5%, #f3f5f8 53.5% 58%, #fff 58% 100%);
+}
+.throw-row { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; }
+.throw-ball.super b { color: var(--blue); }
+
+/* Trainer level chip, the team screen, the Pokédex hint. */
+.trainer-chip { display: inline-flex; align-items: center; gap: 4px; }
+.trainer-bar { width: 42px; height: 6px; border-radius: 999px; background: rgba(0, 0, 0, .1); overflow: hidden; }
+.trainer-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffcb05, #ee1515); }
+.team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; width: 100%; }
+.team-cell {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 8px;
+  background: var(--glass-solid); border: 3px solid transparent; border-radius: var(--r-md); box-shadow: var(--lift-1);
+  font-family: inherit; cursor: pointer; color: var(--ink);
+}
+.team-cell img { width: 90px; height: 90px; object-fit: contain; }
+.team-cell b { font-size: 16px; }
+.team-cell small { color: var(--ink-soft); font-weight: 700; font-size: 12px; }
+.team-cell.active { border-color: var(--yellow); box-shadow: var(--lift-2); }
+.team-active { position: absolute; top: 6px; right: 6px; background: var(--yellow); border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 900; }
+.dex-where { display: block; font-size: 10px; font-weight: 700; color: var(--ink-soft); line-height: 1.15; margin-top: 2px; }
+.evo-new { font-size: .6em; margin-top: 10px; color: var(--yellow); }
+
+/* Battle: the attack's flight, the lunge, the K.O. */
+.arena { position: relative; overflow: hidden; }
+.projectile { position: absolute; left: 14%; bottom: 18%; font-size: 44px; z-index: 5; pointer-events: none; animation: projectile .55s cubic-bezier(.3, .1, .6, 1) forwards; }
+.projectile.big { font-size: 64px; filter: drop-shadow(0 0 12px rgba(255, 203, 5, .9)); }
+@keyframes projectile { 0% { transform: translate(0, 0) scale(.5); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(min(52vw, 300px), max(-30vh, -170px)) scale(1.3) rotate(25deg); opacity: .9; } }
+.arena img.lunge-fwd { animation: lunge-fwd .4s ease; }
+@keyframes lunge-fwd { 40% { transform: translate(22px, -12px) scale(1.08); } }
+.arena img.ko { animation: ko 1s ease-in forwards; }
+@keyframes ko { 0% { transform: rotate(0) scale(1); } 60% { transform: rotate(540deg) scale(.6); opacity: 1; } 100% { transform: rotate(720deg) scale(0); opacity: 0; } }
+.arena.ko-flash::after { content: ''; position: absolute; inset: 0; background: #fff; animation: flash .6s ease forwards; pointer-events: none; }
+.shout.ko-text { font-size: clamp(64px, 14vw, 120px); color: var(--red); text-shadow: 0 4px 0 #fff, 0 8px 18px rgba(0, 0, 0, .3); animation: reveal .4s cubic-bezier(.2, .9, .3, 1.5); }
+.shout-sub { font-weight: 900; color: #ff7a00; font-size: clamp(18px, 3vw, 26px); animation: pop .4s ease; }

@@ -9,7 +9,7 @@ depuis une tablette.
 ## Démarrage
 
 ```bash
-make content            # valide le contenu, génère la voix, télécharge les sprites
+make content            # valide le contenu, génère la voix (ElevenLabs), télécharge les sprites
 make run NAME=Prénom    # affiche les URLs du réseau local
 ```
 
@@ -97,7 +97,7 @@ internal/progress    sauvegarde JSON + répétition espacée (5 boîtes)
 internal/speech      texte → clé de fichier audio stable
 data/                le contenu (c'est ici que tu passeras ton temps)
 web/                 frontend : HTML/CSS/JS, aucun build
-web/audio/           .m4a générés — **versionnés** (voir Déploiement)
+web/audio/           .mp3 générés (ElevenLabs, Jeanne) — **versionnés** (voir Déploiement)
 web/sprites/         sprites téléchargés (régénérables, non versionnés)
 ```
 
@@ -237,59 +237,59 @@ peut jamais remplir est exactement le genre d'impasse que ce jeu s'interdit.
 
 ## La voix
 
-`make audio` génère toute la piste avec une **voix neuronale Microsoft Edge**
-(`fr-FR-DeniseNeural`) via [`edge-tts`](https://github.com/rany2/edge-tts) :
-gratuit, sans compte ni clé, et bien plus naturel que `say`. Le réseau n'est
-nécessaire qu'à la génération — la tablette lit des `.m4a` déjà prêts.
+**Une seule voix, pré-enregistrée : Jeanne (ElevenLabs), en MP3.** Chaque
+ligne — sons, syllabes, mots, phrases, consignes — est générée une fois,
+enregistrée dans `web/audio/<clé>.mp3` et versionnée. Le jeu ne synthétise
+jamais rien en direct : un clip manquant reste muet (avec un avertissement
+`[voix]` dans la console), la voix du navigateur n'est jamais utilisée — elle
+lisait les syllabes françaises dans une autre voix, souvent anglaise.
+
+La clé et la voix sont dans `.env.local` (ignoré par git, posé par
+`npx -y @elevenlabs/cli@latest onboard init`) :
 
 ```bash
-uv tool install edge-tts            # une fois (ou pipx install edge-tts)
-make audio                          # ce qui manque
-go run ./cmd/pokecontent audio -force                         # tout regénérer
-go run ./cmd/pokecontent audio -force -voice fr-FR-HenriNeural   # autre voix
-go run ./cmd/pokecontent audio -force -engine say -voice Thomas  # l'ancienne voix macOS
+ELEVENLABS_API_KEY=…
+ELEVENLABS_VOICE_ID=txtf1EDouKke753vN8SL   # Jeanne, choisie à l'oreille
 ```
 
-Voix françaises : `edge-tts --list-voices | grep fr-`. Si `make audio` échoue
-avec une erreur **403** : Microsoft a fait tourner son jeton client, mets
-l'outil à jour (`uv tool upgrade edge-tts`). Chaque clip est rogné de
-son silence (Edge ajoute ~1 s de blanc à la fin, entendu comme un temps mort
-entre deux syllabes). La conversion `.m4a` passe par `afconvert` : macOS
-reste nécessaire. Changer de voix ne change pas les URLs (la clé dépend du
-texte, pas de la voix) : après un `-force`, incrémente `CACHE` dans `web/sw.js`
-pour que la tablette oublie l'ancienne.
-
-### ElevenLabs (optionnel)
-
-La clé est dans `.env.local` (ignoré par git), posée par
-`npx -y @elevenlabs/cli@latest onboard init`. Ajoute la voix :
-`ELEVENLABS_VOICE_ID=…` (`scripts/voice-elevenlabs.sh --voices` les liste).
-
 ```bash
-scripts/voice-elevenlabs.sh                   # le plan : ce qui reste, ce que ça coûte — n'envoie rien
-scripts/voice-elevenlabs.sh --go              # dépense les crédits du mois sur les lignes les plus utiles
+make voice-plan                               # ce qui reste à faire et son coût — n'envoie rien
+make audio                                    # génère ce qui manque (dans la limite des crédits)
+scripts/voice-elevenlabs.sh --voices          # les voix du compte
 scripts/voice-elevenlabs.sh --try "Pikachu"   # écouter une ligne (coûte ses caractères)
 ```
 
-**Chaque ligne n'est payée qu'une fois.** `web/audio/voices.json` (versionné
-avec l'audio) note quelle voix a fait chaque clip ; une relance saute tout ce
-que la même voix et le même modèle ont déjà fait, sur n'importe quelle machine.
-La piste complète fait ~33 000 caractères ; l'offre gratuite donne 10 000
-crédits par mois, alors le script s'arrête au budget restant, en commençant par
-ce qui enseigne (sons, syllabes, mots ≈ 6 800 caractères), les phrases ensuite.
-Relance `--go` le mois suivant : il reprend où les crédits se sont arrêtés.
-Sur un quota épuisé en cours de route, il s'arrête proprement et garde ce qui
-est fait. `make content` (Edge) ne touche pas aux clips ElevenLabs : il ne
-fait que les manquants.
+**Chaque ligne n'est payée qu'une fois.** `web/audio/voices.json` note quelle
+voix, quel modèle et quelle révision de réglages ont fait chaque clip ; une
+relance saute tout ce qui est déjà fait, sur n'importe quelle machine. Le
+script s'arrête au budget du mois (sons, syllabes, mots d'abord, phrases
+ensuite) et, sur un quota épuisé, s'arrête proprement en gardant ce qui est
+fait ; relancer reprend là où il s'est arrêté.
 
-Réglages (`cmd/pokecontent/elevenlabs.go`) : modèle `eleven_v4` par défaut
-(`ELEVENLABS_MODEL` pour changer), `language_code: fr` pour qu'une syllabe nue
-ne soit pas lue en anglais, et **normalisation désactivée** sur les sons et
-syllabes — c'est elle qui transforme « dre » en *Docteure*. v4 n'a pas de
-réglage de vitesse : les syllabes sortent au débit normal. Changer un réglage ?
-Incrémente `elevenRev` : la prochaine relance refait (et repaie) les clips. Les
-réécritures de `pronunciation.json` ont été réglées sur Edge : après
-ElevenLabs, relance le contrôle ci-dessous.
+Le MP3 est gardé tel que le service le rend — seul le silence de fin (~0,35 s,
+entendu comme un temps mort entre deux syllabes) est coupé, **sans
+réencodage** : on retire les trames MP3 muettes (`cmd/pokecontent/mp3trim.go`).
+`afconvert` (macOS) sert à décoder pour trouver où la voix s'arrête.
+
+### Le français sur une syllabe nue
+
+Seule, une syllabe ne dit pas au modèle dans quelle langue elle est : « o »
+sortait en « oh » anglais, même avec `language_code: fr`. Réglage choisi à
+l'oreille parmi cinq variantes (`cmd/pokecontent/elevenlabs.go`), pour les
+sons et les syllabes :
+
+- un **contexte français non prononcé** (`previous_text` : « Écoute bien ce
+  son, en français : ») ;
+- un **accent circonflexe** sur la voyelle seule d'une syllabe ouverte, pour la
+  voix seulement : « do » → « dô », « pi » → « pî », « lu » → « lû » (même son,
+  graphie uniquement française) ; les digraphes (« ou », « eau ») et les
+  nasales ne sont pas touchés ;
+- la **normalisation coupée** : c'est elle qui transformait « dre » en
+  *Docteure* et « min » en *minute*.
+
+Le modèle `eleven_multilingual_v2` a été écarté (rendu cassé à l'écoute).
+Changer un réglage ? Incrémente `elevenRev` : la prochaine génération refait
+(et repaie) les clips concernés.
 
 ### Contrôler la prononciation : `pokecontent audit`
 
@@ -397,7 +397,7 @@ française standard de faire sonner une consonne isolée en une seule fois.
 |---|---|
 | Audio pré-généré, pas de TTS temps réel | latence nulle, voix constante, marche hors-ligne |
 | Un enregistrement écrase la synthèse à la même URL | le jeu ignore l'existence du studio voix : rien à câbler côté client |
-| Fallback `speechSynthesis` si le fichier manque | un ajout de contenu ne casse jamais le jeu |
+| Jamais de voix de synthèse en direct | la voix du navigateur lisait les syllabes françaises dans une autre voix (souvent anglaise) ; un clip manquant reste muet et `go test` le signale |
 | Sprite pour les mots Pokémon, emoji pour le reste | l'image doit donner le sens sans lire |
 | Écran « COMMENCER » | Chrome refuse de jouer du son avant un geste utilisateur |
 | Pas de micro / reconnaissance vocale | ~40–60 % d'erreur sur une voix d'enfant : se faire dire « non » à tort est le plus sûr moyen de le dégoûter. Il lit à voix haute, puis touche « 🔊 Vérifier » pour s'auto-corriger. |
@@ -628,6 +628,47 @@ Les noms qui se liraient faux ne reçoivent pas de syllabes : finale muette
 `pokecontent check` refuse en plus, pour tout Pokémon sauvage, une nasale
 suivie d'une voyelle, un `er` au milieu du mot, un `s` entre voyelles, un
 `c`/`g` devant e/i et un `y` après voyelle.
+
+## Les raisons de revenir demain
+
+- **Niveau de Dresseur.** Tout ce qu'il fait rapporte de l'expérience au
+  Dresseur lui-même (lire, attraper, finir une mission, battre un Dresseur) :
+  des niveaux (`🎖 N.7` sur la carte), des titres (Dresseur débutant →
+  apprenti → confirmé → expert → Champion d'arène → Maître Pokémon), et à
+  chaque niveau 2 Poké Balls — tous les 5 niveaux, une Super Ball et une baie
+  en plus.
+- **L'équipe (👥).** N'importe quel Pokémon attrapé peut devenir le partenaire ;
+  **chacun garde son niveau** et évolue à l'écran en l'atteignant
+  (`data/evolutions.json` : 47 lignées tirées du roster existant, ex. Roucool →
+  Roucoups → Roucarnage). La forme évoluée **entre dans sa collection** (le
+  Pokédex, ou le Pokédex sauvage) : un autre chemin pour les compléter.
+- **Le Pokédex dit où trouver chacun.** Toucher une silhouette : « Il t'attend
+  sur la route 7 ! », « … à l'étage 12 de la Tour de Combat ! », « Fais
+  évoluer un de tes Pokémon pour l'avoir ! » (`curriculum.Where`). Les 97 sont
+  attrapables : routes, arènes, Tour (étages 2 à 40) — `pokecontent check`
+  refuse un Pokémon qui ne l'est nulle part. **Tous les 10 Pokémon**, une
+  récompense (Super Ball + 2 Poké Balls).
+- **Missions du jour (📜).** Trois par jour, tirées de sept (attraper, lire dix
+  mots sans faute, finir une route, battre un Dresseur, trouver un objet,
+  nourrir le partenaire, jouer à un mini-jeu), lues par la voix, avec leur
+  récompense.
+- **Dresseurs sur la carte.** Deux par région ; passer à côté déclenche le défi
+  — un combat éclair de trois mots, un adversaire différent chaque jour, une
+  revanche le lendemain.
+- **Objets cachés.** Deux ✨ par région et par jour : Poké Balls, **Super Ball**
+  (+20 % de chances de capture, proposée au lancer), Super Bonbon (+30 XP),
+  baie.
+- **Un partenaire vivant.** Le toucher : il saute et dit son nom. Une fois par
+  jour, il a faim (🍓 au-dessus de sa tête) : une baie le rend heureux et un
+  peu plus fort.
+- **Le combat de fin de leçon** : le partenaire lance une vraie attaque de son
+  type (« Salamèche utilise Flammèche ! », le projectile traverse l'arène),
+  bonus *Super rapide !* pour un mot bâti vite et sans faute, K.O. final mis en
+  scène, et un rythme de combat (original) qui accélère quand l'adversaire
+  faiblit.
+
+Tout ce qui est quotidien vit dans `progress.State.Today` et se renouvelle au
+premier événement d'un nouveau jour.
 
 ## Mini-jeux — chronos, scores et records
 

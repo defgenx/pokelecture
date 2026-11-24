@@ -245,8 +245,11 @@ type Curriculum struct {
 	// never in the Pokédex, so they carry just a name for the voice and a sprite.
 	Arcade []Pokemon
 
-	// Partners are the starter evolution chains (data/partners.json).
-	Partners []PartnerLine
+	// Partners are the starter evolution chains (data/partners.json);
+	// Evolutions every other chain a team member can grow along
+	// (data/evolutions.json).
+	Partners   []PartnerLine
+	Evolutions []PartnerLine
 }
 
 // Roster is every Pokémon the mini-games may show — the course's and the
@@ -333,6 +336,9 @@ func Load(dir string) (*Curriculum, error) {
 	}
 
 	if err := readJSON(filepath.Join(dir, "partners.json"), &c.Partners); err != nil && !os.IsNotExist(errors.Unwrap(err)) {
+		return nil, err
+	}
+	if err := readJSON(filepath.Join(dir, "evolutions.json"), &c.Evolutions); err != nil && !os.IsNotExist(errors.Unwrap(err)) {
 		return nil, err
 	}
 

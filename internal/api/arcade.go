@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/adelvecchio/pokelecture/internal/curriculum"
@@ -151,6 +152,14 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request) {
 		xp = arcadeTimedXP
 	}
 	ev := s.award(xp)
+	words := 0
+	for _, it := range req.Items {
+		if it.Correct && strings.HasPrefix(it.ID, "mot:") {
+			words++
+		}
+	}
+	done := append(s.progress("arcade", 1), s.progress("words", words)...)
+	tev, m := s.settle()
 	if err := s.store.Save(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -159,6 +168,9 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request) {
 		"beaten":        beaten,
 		"balls_won":     balls,
 		"partner_event": ev,
+		"quests_done":   done,
+		"trainer_event": tev,
+		"milestone":     milestoneLine(s, m),
 		"state":         s.state(),
 	})
 }

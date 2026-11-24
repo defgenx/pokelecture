@@ -33,9 +33,8 @@ async function api(path, body) {
 }
 
 /* ------------------------------------------------------------------ voice ---
-   Pre-generated .m4a files are the good path (one consistent French voice,
-   recorded at a speed chosen per style). If a file is missing we fall back to
-   the browser's own French voice so a content change never breaks the game. */
+   Every line is a pre-generated MP3 in one voice (ElevenLabs, Jeanne). A
+   missing file plays nothing — never the browser's own voice. */
 
 // A 40 ms silent WAV. Played inside the COMMENCER tap it grants the one audio
 // element permission to play for the rest of the session — Android only trusts
@@ -44,10 +43,8 @@ const SILENCE = 'data:audio/wav;base64,UklGRjAAAABXQVZFZm10IBAAAAABAAEARKwAAIhYA
 
 const Voice = {
   el: null,
-  voices: [],
   missing: new Set(), // URLs the server does not have; never wait on them twice
   primed: new Set(),  // URLs already pushed into the HTTP cache
-  cancelled: 0,
   leading: null, // the instruction being read out; other lines queue behind it
   gen: 0,        // bumped on every screen change, so a queued line never plays late
 
@@ -74,17 +71,6 @@ const Voice = {
     this.el.src = SILENCE;
     const p = this.el.play();
     if (p && p.catch) p.catch(() => {});
-    this.loadVoices();
-  },
-
-  // Android fills the voice list asynchronously: getVoices() is empty on the
-  // first call, so an utterance built from it goes out with no French voice
-  // attached and the device reads it in its own language — or stays silent.
-  loadVoices() {
-    if (!('speechSynthesis' in window)) return;
-    const grab = () => { this.voices = window.speechSynthesis.getVoices() || []; };
-    grab();
-    window.speechSynthesis.onvoiceschanged = grab;
   },
 
   // stop() silences everything and drops queued lines: the screen changed.
@@ -108,13 +94,6 @@ const Voice = {
   halt() {
     if (this.el) {
       try { this.el.pause(); } catch (_) {}
-    }
-    if ('speechSynthesis' in window) {
-      const s = window.speechSynthesis;
-      if (s.speaking || s.pending) {
-        s.cancel();
-        this.cancelled = Date.now();
-      }
     }
   },
 
@@ -142,13 +121,16 @@ const Voice = {
         } else resolve();
       };
       const onEnd = () => finish(false);
-      const onErr = () => finish(true);
+      // Only a load error means the clip is missing. A rejected play() is
+      // usually the next line interrupting this one (AbortError): taking it
+      // for a missing file used to silence a good clip for the whole session.
+      const onErr = () => { if (a.src.endsWith(url)) finish(true); };
 
       a.addEventListener('ended', onEnd);
       a.addEventListener('error', onErr);
       a.src = url;
       const p = a.play();
-      if (p && p.catch) p.catch(() => finish(true));
+      if (p && p.catch) p.catch(() => finish(false));
       // Safety net: a stalled element must not freeze the game. Scaled to the
       // text (every line here is a few seconds at most) — the old flat 12 s
       // was itself the freeze it was guarding against.
@@ -156,36 +138,13 @@ const Voice = {
     });
   },
 
+  // speak() is what a line without a clip gets: silence, and a warning. The
+  // whole voice is pre-generated MP3 (one voice, Jeanne); the browser's own
+  // synthesis is never used — it reads French syllables in another voice,
+  // often an English one. The tests make sure no clip is missing.
   speak(text) {
-    if (!text || !('speechSynthesis' in window)) return Promise.resolve();
-    const synth = window.speechSynthesis;
-    return new Promise((resolve) => {
-      let settled = false;
-      const done = () => { if (!settled) { settled = true; resolve(); } };
-      const go = () => {
-        const list = this.voices.length ? this.voices : synth.getVoices() || [];
-        // Android reports fr_FR, desktop fr-FR.
-        const fr = list.find((v) => v.lang && v.lang.replace('_', '-').startsWith('fr'));
-        // No voices at all (an Android tablet without a French TTS): an
-        // utterance would never fire onend and the flat watchdog used to hold
-        // the game hostage for 9 seconds per line. Give up fast instead.
-        if (!list.length) return setTimeout(done, 300);
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'fr-FR';
-        u.rate = 0.85;
-        if (fr) u.voice = fr;
-        u.onend = done;
-        u.onerror = done;
-        synth.speak(u);
-        // Watchdog scaled to the line length, not one-size-fits-all.
-        setTimeout(done, Math.min(1500 + text.length * 90, 7000));
-      };
-      // Android drops an utterance queued in the same task as a cancel(), which
-      // is every line of the game: play() stops the previous one first.
-      const wait = Date.now() - this.cancelled < 250 ? 150 : 0;
-      if (wait) setTimeout(go, wait);
-      else go();
-    });
+    if (text) console.warn(`[voix] pas de clip pour « ${text} »`);
+    return Promise.resolve();
   },
 };
 
@@ -309,8 +268,11 @@ const WakeLock = {
   },
 };
 // The lock dies whenever the tablet sleeps or switches app: re-take it.
+// Back on the map from another tab (the admin page), reread the save.
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && Session.data) WakeLock.on();
+  if (document.hidden) return;
+  if (Session.data) WakeLock.on();
+  else if (App.state && $('.ow-map')) App.home();
 });
 
 /* ------------------------------------------------------------------ shell --- */
@@ -345,7 +307,14 @@ const App = {
 
   // home is the overworld (overworld.js): the map he walks on. The list of
   // routes, badges and buttons below is the menu (☰ on the map).
-  home() {
+  //
+  // The save is reread every time: the admin page (another tab, another
+  // device) can reset or repair it, and a stale state here used to undo
+  // nothing — the old partner and Poké Balls stayed on screen.
+  async home() {
+    Session.data = null; // no session running: the map is the resting state
+    try { this.state = await api('api/state'); } catch (_) {}
+    if (!this.state.partner) return Partner.choose();
     Overworld.open();
   },
 
@@ -521,11 +490,13 @@ const App = {
         el('div', { class: 'dexgrid' },
           this.state.pokedex.map((p) => el('button', {
             class: `dexcell ${p.caught ? '' : 'locked'}`,
-            onclick: () => (p.caught ? this.pokemonDetail(p) : say('Celui-là, tu ne l\'as pas encore attrapé !')),
+            onclick: () => (p.caught ? this.pokemonDetail(p)
+              : p.where ? Voice.play(p.where.audio, p.where.text) : say('Celui-là, tu ne l\'as pas encore attrapé !')),
           },
             el('img', { class: p.shiny ? 'shiny' : '', src: p.sprite, alt: '', loading: 'lazy' }),
             p.shiny ? el('span', { class: 'shinymark' }, '✨') : null,
             el('b', {}, p.name),
+            !p.caught && p.where ? el('small', { class: 'dex-where' }, p.where.text.replace(/^Il t'attend /, '').replace(/ !$/, '')) : null,
           )),
         ),
       ),
@@ -539,7 +510,7 @@ const App = {
         el('div', { class: 'act reveal' },
           el('img', { class: `art ${p.shiny ? 'shiny' : ''}`, src: p.art, alt: '' }),
           p.shiny ? el('span', { class: 'shinymark' }, '✨ chromatique') : null,
-          syllableWord(p.syllables, p.name),
+          syllableWord(p.syllables, p.name, p.syllable_audio),
           el('div', { class: 'types' }, (p.types || []).map((t) => el('span', { 'data-type': t }, t))),
           el('div', { class: 'dex' }, p.dex),
           el('button', { class: 'btn btn-ghost', onclick: () => Voice.play(p.dex_audio, p.dex) }, '🔊 Réécouter'),
@@ -737,6 +708,24 @@ const Session = {
     });
     App.state = res.state;
 
+    if (this.data.trainer) {
+      const won = res.trainer_won;
+      App.screen(
+        App.topbar(),
+        el('div', { class: 'page' },
+          el('div', { class: 'act' },
+            el('h2', {}, won ? '🏆 Tu as battu le Dresseur !' : '⚔️ Combat de Dresseur'),
+            ballsWon(res.balls_won),
+            Partner.gainRow(res.partner_event),
+            el('button', { class: 'btn btn-huge btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
+          ),
+        ),
+      );
+      if (won) { burst('🏆'); Sfx.fanfare(); confetti(80); await say('Tu as battu le Dresseur ! Voici ta récompense.'); }
+      await celebrateAll(res);
+      return;
+    }
+
     if (towerInfo) {
       const passed = res.tower_passed;
       const catches = res.new_catches || [];
@@ -754,6 +743,10 @@ const Session = {
               el('div', { class: 'catchrow' },
                 catches.map((id) => el('img', { src: `sprites/art/${id}.png`, alt: '' }))),
             ) : null,
+            res.new_shiny ? el('div', { class: 'newcatch' },
+              el('span', { class: 'score' }, '✨ Ton légendaire devient chromatique !'),
+              el('div', { class: 'catchrow' }, el('img', { class: 'shiny', src: `sprites/art/${res.new_shiny}.png`, alt: '' })),
+            ) : null,
             ballsWon(res.balls_won),
             Partner.gainRow(res.partner_event),
             el('button', { class: 'btn btn-huge', onclick: () => Session.start('tour') },
@@ -766,8 +759,9 @@ const Session = {
       if (passed) { Sfx.fanfare(); confetti(); } else { Sfx.wrong(); }
       await say(passed ? 'Super !' : 'Essaie encore, tu y es presque.');
       if (catches.length) await say('Un Pokémon rare de la Tour rejoint ton Pokédex !');
+      if (res.new_shiny) { confetti(120); await say('Incroyable ! Ton Pokémon légendaire devient chromatique !'); }
       if (res.balls_won) await say('Tu gagnes des Poké Balls !');
-      await Partner.celebrate(res.partner_event);
+      await celebrateAll(res);
       return;
     }
 
@@ -798,7 +792,7 @@ const Session = {
     await say(stars === 3 ? 'Super !' : 'Bravo !');
     if (catches.length) await say('Tu as attrapé un nouveau Pokémon !');
     if (res.balls_won) await say('Tu gagnes des Poké Balls !');
-    await Partner.celebrate(res.partner_event);
+    await celebrateAll(res);
     await say('À demain !');
   },
 };
@@ -1116,6 +1110,12 @@ function renderCombat(a, body, done) {
 
   const foeImg = el('img', { src: `sprites/art/${f.pokemon}.png`, alt: '' });
   const allyImg = companion('ally');
+  // The partner's attack follows its first type: a name on screen, a
+  // projectile across the arena.
+  const partner = App.state && App.state.partner;
+  const move = MOVES[((partner && partner.types) || [])[0]] || MOVES.Normal;
+  let fastSaid = false;
+  let t0 = performance.now();
   const hpFill = el('i');
   const hpBar = el('div', { class: 'hpbar' }, hpFill);
 
@@ -1194,6 +1194,7 @@ function renderCombat(a, body, done) {
     const item = f.rounds[round];
     let pos = 0;
     let missed = false;
+    t0 = performance.now();
     stage.innerHTML = '';
 
     const slots = el('div', { class: 'slot-row' });
@@ -1247,20 +1248,32 @@ function renderCombat(a, body, done) {
   const attack = async (item, missed) => {
     if (over) return;
     Session.record(item.id, !missed);
+    const fast = !missed && performance.now() - t0 < 1400 * item.syllables.length + 800;
     stage.innerHTML = '';
+    const who = partner ? `${partner.name} utilise ${move.name} !` : `Attaque ${move.name} !`;
     if (missed) {
       Sfx.attack();
-      stage.append(el('div', { class: 'shout' }, 'ATTAQUE !'));
+      stage.append(el('div', { class: 'shout' }, who));
     } else {
       // A word built without a single wrong tap lands as a critical hit.
       perfect++;
       Sfx.crit();
-      stage.append(el('div', { class: 'shout crit' }, 'COUP CRITIQUE !'));
-      burst('⚡');
+      stage.append(el('div', { class: 'shout crit' }, who), el('div', { class: 'shout-sub' }, fast ? '⚡ SUPER RAPIDE ! COUP CRITIQUE !' : 'COUP CRITIQUE !'));
     }
-    await Voice.play(item.audio, item.prompt);
+    // The partner lunges, the attack flies across the arena.
+    allyImg.classList.remove('lunge-fwd');
+    void allyImg.offsetWidth;
+    allyImg.classList.add('lunge-fwd');
+    const shot = el('span', { class: `projectile ${missed ? '' : 'big'}` }, move.fx);
+    arena.append(shot);
+    setTimeout(() => shot.remove(), 700);
+    const spoken = Voice.play(item.audio, item.prompt);
+    await sleep(520);
     foeImg.classList.add('hit');
-    burst('💥');
+    burst(move.fx);
+    Arcade.popup(foeImg, missed ? '-1' : 'CRITIQUE ×2', missed ? '' : 'hot');
+    if (fast && !fastSaid) { fastSaid = true; await spoken; await say('Super rapide !'); }
+    await spoken;
     cheerCompanion();
     hp--;
     paintHP();
@@ -1285,6 +1298,7 @@ function renderCombat(a, body, done) {
   // then the whole episode restarts — losing exists, and it costs the run.
   const defeat = async () => {
     WakeLock.off();
+    music.stop();
     allyImg.classList.add('faint');
     foeImg.classList.remove('lunge');
     stage.innerHTML = '';
@@ -1316,8 +1330,15 @@ function renderCombat(a, body, done) {
   const victory = async () => {
     // finish() needs the fight's tally to score a tower floor.
     Session.fightStats = { perfect, rounds: round };
-    Sfx.faint();
-    foeImg.classList.add('faint');
+    music.stop();
+    // K.O.: the foe spins away, the arena flashes, a giant K.O.
+    arena.classList.add('ko-flash');
+    foeImg.classList.add('ko');
+    stage.innerHTML = '';
+    stage.append(el('div', { class: 'shout ko-text' }, 'K.O. !'));
+    Sfx.ko();
+    confetti(50);
+    await say('K.O. ! Bravo !');
     stage.innerHTML = '';
     stage.append(el('div', { class: 'shout' }, 'GAGNÉ !'));
     burst('🏅');
@@ -1334,8 +1355,22 @@ function renderCombat(a, body, done) {
     done();
   };
 
+  // The battle beat: soft, original, and faster as the foe weakens.
+  const music = Sfx.battle(() => document.body.contains(arena), () => hp / f.hp);
   intro();
 }
+
+// One attack per type: its French name and what flies across the arena.
+const MOVES = {
+  Feu: { name: 'Flammèche', fx: '🔥' }, Eau: { name: 'Pistolet à O', fx: '💧' },
+  Plante: { name: 'Tranch\'Herbe', fx: '🍃' }, 'Électrik': { name: 'Éclair', fx: '⚡' },
+  Glace: { name: 'Vent Glace', fx: '❄️' }, Psy: { name: 'Choc Mental', fx: '🌀' },
+  Vol: { name: 'Tornade', fx: '🌪️' }, Poison: { name: 'Dard-Venin', fx: '💜' },
+  Sol: { name: 'Coud\'Boue', fx: '🟤' }, Roche: { name: 'Jet-Pierres', fx: '🌑' },
+  Combat: { name: 'Poing-Karaté', fx: '👊' }, Insecte: { name: 'Dard-Nuée', fx: '🐝' },
+  Spectre: { name: 'Léchouille', fx: '👻' }, Dragon: { name: 'Draco-Rage', fx: '🐉' },
+  'Fée': { name: 'Vent Féérique', fx: '✨' }, Normal: { name: 'Charge', fx: '⭐' },
+};
 
 /* The badge ceremony: the medal rises out of a glow, the room applauds. Earned
    only after an arena victory, so it should feel like the games' badge screen. */
@@ -1372,7 +1407,7 @@ function renderReward(a, body, done) {
     stage.append(
       el('img', { class: `art ${r.shiny ? 'shiny' : ''}`, src: `sprites/art/${r.pokemon}.png`, alt: '' }),
       r.shiny ? el('span', { class: 'shinymark' }, '✨ chromatique ✨') : null,
-      syllableWord(r.syllables, r.name),
+      syllableWord(r.syllables, r.name, r.syllable_audio),
       el('div', { class: 'types' }, (r.types || []).map((t) => el('span', { 'data-type': t }, t))),
       el('div', { class: 'dex' }, r.dex),
       el('button', { class: 'btn btn-huge btn-go', onclick: done }, 'TERMINER ✓'),
@@ -1409,6 +1444,63 @@ const Arcade = {
 
   stop() {
     if (this.timer) { clearInterval(this.timer); clearTimeout(this.timer); this.timer = null; }
+    this.addTime = null;
+  },
+
+  /* The juice every game shares: a combo multiplier (x2 from 3 in a row, x3
+     from 6), the points popping out of what was tapped, +2 s on the clock
+     while the combo burns, the partner jumping, and a cheer every fifth. */
+  streak: 0,
+  comboEl: null,
+  addTime: null,
+  CHEERS: ['Trop fort !', 'Incroyable !', 'Tu es une fusée !', 'Continue comme ça !'],
+
+  gain(node, base = 1) {
+    this.streak++;
+    const mult = this.streak >= 6 ? 3 : this.streak >= 3 ? 2 : 1;
+    const pts = base * mult;
+    this.popup(node, `+${pts}`, mult > 1 ? 'hot' : '');
+    if (mult > 1 && this.addTime) {
+      this.addTime(2);
+      setTimeout(() => this.popup(node, '+2s', 'time'), 180);
+    }
+    this.paintCombo();
+    cheerCompanion();
+    if (this.streak % 5 === 0) {
+      confetti(30);
+      burst('🔥');
+      say(this.CHEERS[(this.streak / 5 - 1) % this.CHEERS.length]);
+    }
+    return pts;
+  },
+
+  miss(node) {
+    this.streak = 0;
+    this.paintCombo();
+    if (node) this.popup(node, '✗', 'miss');
+    const page = $('.page');
+    if (page) { page.classList.remove('jolt'); void page.offsetWidth; page.classList.add('jolt'); }
+  },
+
+  paintCombo() {
+    const c = this.comboEl;
+    if (!c) return;
+    const mult = this.streak >= 6 ? 3 : this.streak >= 3 ? 2 : 1;
+    c.hidden = this.streak < 2;
+    c.textContent = mult > 1 ? `🔥 ${this.streak} · x${mult}` : `🔥 ${this.streak}`;
+    c.className = `chip combo arcade-combo m${mult}`;
+    c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop');
+  },
+
+  // A floating "+2" rising out of the tapped element.
+  popup(node, text, cls) {
+    if (!node || !node.getBoundingClientRect) return;
+    const r = node.getBoundingClientRect();
+    const pop = el('div', { class: `score-pop ${cls || ''}` }, text);
+    pop.style.left = `${r.left + r.width / 2}px`;
+    pop.style.top = `${r.top + r.height / 3}px`;
+    document.body.append(pop);
+    setTimeout(() => pop.remove(), 900);
   },
 
   /* Every Pokémon the games may show; the caught ones if the roster is missing. */
@@ -1452,8 +1544,10 @@ const Arcade = {
 
   screen(title, hintText, ...rest) {
     this.stop();
+    this.streak = 0;
+    this.comboEl = el('span', { class: 'chip combo arcade-combo', hidden: true });
     App.screen(
-      App.topbar(el('button', { class: 'btn-icon', onclick: () => { this.stop(); this.hub(); } }, '✕')),
+      App.topbar(this.comboEl, el('button', { class: 'btn-icon', onclick: () => { this.stop(); this.hub(); } }, '✕')),
       el('div', { class: 'page' },
         el('div', { class: 'act' },
           el('h2', {}, title),
@@ -1462,6 +1556,7 @@ const Arcade = {
         ),
       ),
     );
+    $('#app').append(companion());
   },
 
   /* A visible countdown bar; onDone fires when time is up. */
@@ -1470,6 +1565,7 @@ const Arcade = {
     const bar = el('div', { class: 'timebar' }, fill);
     let left = seconds;
     fill.style.width = '100%';
+    this.addTime = (s) => { left = Math.min(seconds, left + s); };
     this.timer = setInterval(() => {
       left -= 0.1;
       const pct = Math.max(0, left / seconds) * 100;
@@ -1487,6 +1583,10 @@ const Arcade = {
   async gameOver(game, score, lower, title) {
     this.stop();
     Voice.stop();
+    const prev = this.record(game);
+    // Gold for a record, silver within a quarter of it, bronze otherwise.
+    const ratio = prev === null || prev === 0 ? 1 : lower ? prev / Math.max(1, score) : score / prev;
+    const medal = prev === null || (lower ? score < prev : score > prev) ? '🥇' : ratio >= 0.75 ? '🥈' : '🥉';
     let beaten = false;
     let res = {};
     try {
@@ -1501,6 +1601,7 @@ const Arcade = {
       el('div', { class: 'page' },
         el('div', { class: 'act' },
           el('h2', {}, title),
+          el('div', { class: 'medal' }, medal),
           el('div', { class: 'bigscore' }, `${score}${g.unit}`),
           beaten ? el('div', { class: 'score newrecord' }, '🏆 NOUVEAU RECORD !') : el('div', { class: 'score' }, `Record : ${this.record(game)}${g.unit}`),
           ballsWon(res.balls_won),
@@ -1514,7 +1615,7 @@ const Arcade = {
     if (beaten) { confetti(90); burst('🏆'); Sfx.fanfare(); await say('Nouveau record !'); }
     else { burst('🎉'); Sfx.correct(); await say('Bravo !'); }
     if (res.balls_won) await say('Tu gagnes des Poké Balls !');
-    await Partner.celebrate(res.partner_event);
+    await celebrateAll(res);
   },
 
   /* Memory: six pairs of Pokémon, the record is the time. */
@@ -1551,12 +1652,13 @@ const Arcade = {
           matched++;
           Sfx.correct();
           burst('✨');
+          this.gain(card);
           if (matched === picks.length) this.gameOver('memory', seconds, true, '🃏 Memory Pokémon');
         } else {
           lock = true;
           const other = open;
           open = null;
-          Sfx.wrong();
+          Sfx.wrong(); this.miss();
           setTimeout(() => {
             other.classList.remove('up');
             card.classList.remove('up');
@@ -1588,10 +1690,21 @@ const Arcade = {
         if (hole !== active) return;
         active = null;
         hole.classList.remove('show');
-        score++;
+        const kind = hole.dataset.kind;
+        if (kind === 'bomb') {
+          // Voltorbe: it explodes, the combo goes with it.
+          score = Math.max(0, score - 2);
+          Sfx.thud();
+          burst('💥');
+          this.popup(hole, '-2', 'miss');
+          this.miss();
+        } else {
+          score += this.gain(hole, kind === 'gold' ? 5 : 1);
+          Sfx.pop();
+          burst(kind === 'gold' ? '🌟' : '✨');
+          if (kind === 'gold') { Sfx.catch_(); confetti(40); }
+        }
         scoreChip.textContent = `Attrapés : ${score}`;
-        Sfx.pop();
-        burst('✨');
       });
       holes.push(hole);
       grid.append(hole);
@@ -1601,8 +1714,16 @@ const Arcade = {
     const pop = () => {
       if (active) { active.classList.remove('show'); active = null; }
       const hole = holes[Math.floor(Math.random() * holes.length)];
-      const id = ids[Math.floor(Math.random() * ids.length)] || 25;
-      $('img', hole).src = `sprites/art/${id}.png`;
+      // 1 in 8: a golden shiny worth 5; 1 in 7: Voltorbe, which explodes.
+      const roll = Math.random();
+      const kind = roll < 0.125 ? 'gold' : roll < 0.27 ? 'bomb' : 'normal';
+      const id = kind === 'bomb' ? 100 : ids[Math.floor(Math.random() * ids.length)] || 25;
+      const img = $('img', hole);
+      img.src = `sprites/art/${id}.png`;
+      img.classList.toggle('shiny', kind === 'gold');
+      hole.dataset.kind = kind;
+      hole.classList.toggle('gold', kind === 'gold');
+      hole.classList.toggle('bomb', kind === 'bomb');
       hole.classList.add('show');
       active = hole;
       // From a friendly 1.1 s down to a frantic 0.55 s by the end.
@@ -1619,7 +1740,7 @@ const Arcade = {
     const stopAll = this.stop.bind(this);
     this.stop = () => { clearTimeout(popTimer); clearInterval(tick); stopAll(); this.stop = stopAll; };
 
-    this.screen('🌿 La chasse', 'Touche le Pokémon avant qu\'il se cache !', scoreChip, bar, grid);
+    this.screen('🌿 La chasse', 'Touche les Pokémon, mais pas Voltorbe : il explose !', scoreChip, bar, grid);
     pop();
   },
 
@@ -1655,7 +1776,7 @@ const Arcade = {
         tile.addEventListener('click', () => {
           if (tile.disabled) return;
           if (w === target) {
-            if (!answered) { this.items.push({ id: `mot:${target.text}`, correct: true }); score++; }
+            if (!answered) { this.items.push({ id: `mot:${target.text}`, correct: true }); score += this.gain(tile); }
             answered = true;
             scoreChip.textContent = `Points : ${score}`;
             tile.classList.add('good');
@@ -1668,7 +1789,7 @@ const Arcade = {
             answered = true;
             tile.classList.add('bad');
             tile.disabled = true;
-            Sfx.wrong();
+            Sfx.wrong(); this.miss();
           }
         });
         grid.append(tile);
@@ -1723,7 +1844,7 @@ const Arcade = {
             pos++;
             if (pos === target.syllables.length) {
               this.items.push({ id: `mot:${target.text}`, correct: !missed });
-              score++;
+              score += this.gain(slots, missed ? 1 : 2);
               scoreChip.textContent = `Mots : ${score}`;
               Sfx.crit();
               burst('⚒️');
@@ -1734,7 +1855,7 @@ const Arcade = {
             missed = true;
             b.classList.add('bad');
             setTimeout(() => b.classList.remove('bad'), 450);
-            Sfx.wrong();
+            Sfx.wrong(); this.miss();
           }
         });
         trayEl.append(b);
@@ -1773,7 +1894,7 @@ const Arcade = {
         tile.addEventListener('click', () => {
           if (tile.disabled) return;
           if (p === target) {
-            if (!answered) score++;
+            if (!answered) score += this.gain(tile);
             answered = true;
             scoreChip.textContent = `Points : ${score}`;
             tile.classList.add('good');
@@ -1786,7 +1907,7 @@ const Arcade = {
             answered = true;
             tile.classList.add('bad');
             tile.disabled = true;
-            Sfx.wrong();
+            Sfx.wrong(); this.miss();
           }
         });
         grid.append(tile);
@@ -1852,6 +1973,7 @@ const Arcade = {
           this.items.push({ id: `mot:${c.key}`, correct: true });
           Sfx.correct();
           burst('✨');
+          this.gain(card);
           const w = picks.find((x) => x.text === c.key);
           if (w) Voice.play(w.audio, w.text);
           if (matched === picks.length) this.gameOver('paires', seconds, true, '🔤 Les paires mot-image');
@@ -1859,7 +1981,7 @@ const Arcade = {
           lock = true;
           const other = open;
           open = null;
-          Sfx.wrong();
+          Sfx.wrong(); this.miss();
           setTimeout(() => {
             other.classList.remove('up');
             card.classList.remove('up');
@@ -1898,7 +2020,7 @@ const Arcade = {
         tile.addEventListener('click', () => {
           if (tile.disabled) return;
           if (s === target) {
-            if (!answered) { this.items.push({ id: `syl:${target.text}`, correct: true }); score++; }
+            if (!answered) { this.items.push({ id: `syl:${target.text}`, correct: true }); score += this.gain(tile); }
             answered = true;
             scoreChip.textContent = `Points : ${score}`;
             tile.classList.add('good');
@@ -1910,7 +2032,7 @@ const Arcade = {
             answered = true;
             tile.classList.add('bad');
             tile.disabled = true;
-            Sfx.wrong();
+            Sfx.wrong(); this.miss();
             Voice.play(target.audio, target.text);
           }
         });

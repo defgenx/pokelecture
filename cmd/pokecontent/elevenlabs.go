@@ -14,14 +14,13 @@ import (
 	"github.com/adelvecchio/pokelecture/internal/speech"
 )
 
-// ElevenLabs: paid, needs ELEVENLABS_API_KEY and a voice ID (-voice). The
-// audio keys depend on the text only, so switching engine means `audio -force`
-// then bumping CACHE in web/sw.js. See README, « La voix ».
+// ElevenLabs, the only voice of the track: needs ELEVENLABS_API_KEY and a
+// voice ID (-voice / ELEVENLABS_VOICE_ID). README, « La voix ».
 var elevenModel = "eleven_v4"
 
 // elevenRev is part of each clip's signature in voices.json: bump it after
 // changing the settings below and the next run remakes (and pays for) them.
-const elevenRev = 1
+const elevenRev = 2
 
 // errQuota stops the whole run: once the credits are gone, every further
 // request would fail too.
@@ -54,9 +53,14 @@ func elevenSpeak(text, voice string, style speech.Style, out string) error {
 	}
 	body := map[string]any{"text": text, "model_id": elevenModel, "voice_settings": settings}
 	// A bare chunk must be said as written: normalization is what turns "dre"
-	// into "Docteure" and "min" into "minute".
+	// into "Docteure" and "min" into "minute". And a bare chunk gives the model
+	// no language to go on — "o" came out as the English "oh" even with
+	// language_code. Chosen by ear (README, « La voix »): an unspoken French
+	// context before it, and a circumflex on an open syllable's lone vowel.
 	if style == speech.StyleSound || style == speech.StyleSyllable {
 		body["apply_text_normalization"] = "off"
+		body["previous_text"] = frenchContext
+		body["text"] = circumflex(text)
 	}
 	// Forcing French matters for bare syllables ("ta", "pi"), which a model
 	// left to detect the language may read in English. Only the v2.5+ models
@@ -93,4 +97,32 @@ func elevenSpeak(text, voice string, style speech.Style, out string) error {
 		time.Sleep(time.Duration(attempt) * 3 * time.Second)
 	}
 	return lastErr
+}
+
+// frenchContext is sent as previous_text: it is not spoken, it tells the
+// model the next sound is French.
+const frenchContext = "Écoute bien ce son, en français :"
+
+var circumflexed = map[rune]rune{'a': 'â', 'i': 'î', 'o': 'ô', 'u': 'û', 'A': 'Â', 'I': 'Î', 'O': 'Ô', 'U': 'Û'}
+
+// circumflex writes an open syllable's final lone vowel with a circumflex
+// ("do" → "dô", "pi" → "pî"): French-only spelling, same sound, so the model
+// cannot read it as English. A vowel after another vowel is part of a
+// digraph ("ou", "eau", "oi") and is left alone; so is anything that does
+// not end in a plain vowel ("on", "tac", "beu").
+func circumflex(text string) string {
+	r := []rune(text)
+	n := len(r)
+	if n == 0 {
+		return text
+	}
+	c, ok := circumflexed[r[n-1]]
+	if !ok {
+		return text
+	}
+	if n >= 2 && strings.ContainsRune("aeiouyéèêàâîôûAEIOUY", r[n-2]) {
+		return text
+	}
+	r[n-1] = c
+	return string(r)
 }

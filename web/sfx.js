@@ -156,6 +156,12 @@ const Sfx = {
     this.tone(1760, 0.03, 0.08, { type: 'square', gain: 0.3 });
   },
 
+  // The ball bursts open and the Pokémon jumps out: a pop and a falling blip.
+  escape() {
+    this.noise(0, 0.12, { freq: 1800, q: 1.2, gain: 0.8 });
+    this.tone(700, 0.05, 0.3, { type: 'square', gain: 0.3, slideTo: 220 });
+  },
+
   // Level up: a bright climbing run.
   levelUp() {
     [523, 587, 659, 784, 1047].forEach((f, i) => this.tone(f, i * 0.07, 0.18, { gain: 0.7 }));
@@ -174,6 +180,36 @@ const Sfx = {
   drum() {
     this.tone(110, 0, 0.18, { type: 'sine', gain: 1, slideTo: 55 });
     this.noise(0, 0.06, { freq: 900, q: 0.8, gain: 0.5 });
+  },
+
+  // The knock-out: a falling boom and a bright sting.
+  ko() {
+    this.noise(0, 0.5, { freq: 300, q: 0.7, gain: 1, slideTo: 60 });
+    this.tone(880, 0.1, 0.25, { type: 'square', gain: 0.35, slideTo: 220 });
+    [659, 880, 1319].forEach((f, i) => this.tone(f, 0.45 + i * 0.09, 0.25, { gain: 0.6 }));
+  },
+
+  /* A battle beat, original: kick, hat and a bass walk, looping while
+     alive() holds, faster when danger() (foe HP left, 1 → 0) drops. Returns
+     a handle with stop(). */
+  battle(alive, danger) {
+    if (!this.ctx) return { stop() {} };
+    const bass = [110, 110, 131, 147, 110, 110, 165, 147];
+    let step = 0;
+    let timer = null;
+    let stopped = false;
+    const tick = () => {
+      if (stopped || !alive()) return;
+      const fast = danger() <= 0.34;
+      const beat = fast ? 0.2 : 0.27;
+      if (step % 2 === 0) this.tone(60, 0, 0.12, { type: 'sine', gain: 0.5, slideTo: 40 });
+      else this.noise(0, 0.04, { freq: 6000, q: 1, gain: 0.18 });
+      this.tone(bass[step % bass.length], 0, beat * 0.9, { type: 'triangle', gain: 0.16 });
+      step++;
+      timer = setTimeout(tick, beat * 1000);
+    };
+    timer = setTimeout(tick, 600);
+    return { stop() { stopped = true; clearTimeout(timer); } };
   },
 
   // Rumble under a legendary's entrance.

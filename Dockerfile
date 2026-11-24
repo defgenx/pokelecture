@@ -1,11 +1,10 @@
 # Pokélecture — single static binary + content, ~30 MB image.
 #
-# One thing to know about the voice: the .m4a track is generated on a Mac
-# (edge-tts + afconvert, see README "La voix"). So the build COPIES web/audio from the build
-# context rather than generating it — and because the deployed host builds from a
-# clone of the repo, that directory is committed. Build a context without it and
-# the game falls back to the browser's own French voice, which on an Android
-# tablet means silence: no fr voice is guaranteed to be installed.
+# One thing to know about the voice: the .mp3 track is generated once with
+# ElevenLabs (paid, see README "La voix"). So the build COPIES web/audio from the
+# build context rather than generating it — and because the deployed host builds
+# from a clone of the repo, that directory is committed. Build a context without
+# it and the game is silent: it never falls back to a synthesized voice.
 #
 # Sprites are different — they are plain HTTP downloads, so the build fetches
 # them itself and they never need to be committed.

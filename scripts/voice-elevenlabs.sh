@@ -51,7 +51,7 @@ go run ./cmd/pokecontent check >/dev/null || die "contenu invalide : corrige dat
 left=$(api https://api.elevenlabs.io/v1/user/subscription | python3 -c '
 import json, sys; s = json.load(sys.stdin); print(max(0, s["character_limit"] - s["character_count"]))')
 echo "  Crédits ElevenLabs restants ce mois-ci : $left"
-args=(-force -engine elevenlabs -voice "$ELEVENLABS_VOICE_ID" -model "$ELEVENLABS_MODEL" -budget "$left")
+args=(-force -voice "$ELEVENLABS_VOICE_ID" -model "$ELEVENLABS_MODEL" -budget "$left")
 
 if [[ $go -eq 0 ]]; then
 	go run ./cmd/pokecontent audio -dry-run "${args[@]}"

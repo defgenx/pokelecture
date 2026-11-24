@@ -10,15 +10,15 @@
 // One template for every region (landscape). Legend:
 //   T obstacle (the region's tree)  W water  . ground  = path  F flowers
 //   g tall grass  1–5 route stops  O Tour  A mini-jeux  P Pokédex
-//   < previous region  > next region
+//   < previous region  > next region  D E the region's two trainers
 const OW_MAP = [
   'TTTTTTTTTTTTT',
   'T..F...WWW.FT',
   '<==1===2=..AT',
-  'T..=...=....T',
+  'T..=.D.=....T',
   'Tgg=gT.=.TT.T',
   'Tgggg..3==4=>',
-  'Tggg...=..T.T',
+  'Tggg...=.ET.T',
   'T.P..O.5...FT',
   'TTTTTTTTTTTTT',
 ];
@@ -35,7 +35,8 @@ const OW_TREE = {
 // it and checks it is in UIPhrases.
 const spoken = (t) => t;
 
-const OW_BLOCKED = new Set(['T', 'W']);
+const OW_BLOCKED = new Set(['T', 'W', 'D', 'E']);
+const OW_TRAINER = ['👦', '👧', '👨', '👩'];
 const OW_STEP_MS = 170;
 const OW_ENCOUNTER = 1 / 7; // chance per step in the tall grass
 
@@ -73,6 +74,29 @@ const Overworld = {
     return t.map((row) => row.map((c) => ({ '<': '^', '>': 'v' }[c] || c)));
   },
 
+  // Today's hidden objects in this region: two ground tiles, the same all
+  // day, in landscape coordinates (what the server records).
+  sparkles(region) {
+    let h = 2166136261;
+    for (const c of `${new Date().toDateString()}:${region}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+    const rnd = () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h ^= h >>> 13; return (h >>> 0) / 4294967296; };
+    const ground = [];
+    OW_MAP.forEach((row, y) => row.split('').forEach((c, x) => { if (c === '.' || c === 'F') ground.push(`${x},${y}`); }));
+    const spots = [];
+    while (spots.length < 2 && ground.length) spots.push(ground.splice(Math.floor(rnd() * ground.length), 1)[0]);
+    const found = new Set(App.state.found || []);
+    return spots.filter((sp) => !found.has(`${region}:${sp}`));
+  },
+
+  // Landscape "x,y" ↔ the grid on screen (turned in portrait).
+  toScreen(spot) {
+    const [x, y] = spot.split(',').map(Number);
+    return this.grid.length > this.grid[0].length ? { x: y, y: x } : { x, y };
+  },
+  toSpot(p) {
+    return this.grid.length > this.grid[0].length ? `${p.y},${p.x}` : `${p.x},${p.y}`;
+  },
+
   find(ch) {
     for (let y = 0; y < this.grid.length; y++) {
       const x = this.grid[y].indexOf(ch);
@@ -104,6 +128,7 @@ const Overworld = {
     if (regionIdx === 0) this.block('<', '^');
     if (regionIdx === regs.length - 1) this.block('>', 'v');
 
+    this.spots = new Set(this.sparkles(regionIdx).map((sp) => { const p = this.toScreen(sp); return `${p.x},${p.y}`; }));
     const nextIdx = reg.eps.findIndex((e) => e.id === s.next_episode);
     this.pos = spawn || this.find(String(nextIdx >= 0 ? nextIdx + 1 : 1)) || { x: 1, y: 2 };
     if (!Wild.pool && s.tower) Wild.load();
@@ -122,6 +147,7 @@ const Overworld = {
     const tree = OW_TREE[reg.name] || '🌳';
 
     const map = el('div', { class: `ow-map theme-${this.region % 6}` });
+    this.map = map;
     map.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
     map.style.aspectRatio = `${cols} / ${rows}`;
     map.style.setProperty('--ow-cols', cols);
@@ -130,9 +156,10 @@ const Overworld = {
       map.append(this.tile(ch, x, y, reg, tree));
     }));
 
-    const walker = el('div', { class: 'ow-walker' },
+    const walker = el('div', { class: `ow-walker ${s.hungry ? 'hungry' : ''}` },
       el('img', { src: `sprites/art/${companionId()}.png`, alt: '' }),
-      el('span', { class: 'ow-alert' }, '!'));
+      el('span', { class: 'ow-alert' }, '!'),
+      el('span', { class: 'ow-hunger' }, '🍓'));
     map.append(walker);
     this.walker = walker;
     this.place(false);
@@ -166,6 +193,12 @@ const Overworld = {
         el('span', { class: 'chip' }, `⭐ ${s.stars}`),
         el('span', { class: 'chip' }, pokeball('pokeball-xs'), ` ${s.balls || 0}`),
         s.streak > 1 ? el('span', { class: 'chip' }, `🔥 ${s.streak}`) : null,
+        (s.bag && s.bag.superball) ? el('span', { class: 'chip' }, pokeball('pokeball-xs superball'), ` ${s.bag.superball}`) : null,
+        (s.bag && s.bag.berry) ? el('span', { class: 'chip' }, `🍓 ${s.bag.berry}`) : null,
+        Trainer.chip(),
+        el('button', { class: 'btn-icon', title: 'Mon équipe', onclick: () => Team.open() }, '👥'),
+        el('button', { class: 'btn-icon quest-btn', title: 'Missions', onclick: () => Quests.panel() },
+          `📜 ${(s.quests || []).filter((q) => q.done).length}/${(s.quests || []).length}`),
         el('button', { class: 'btn-icon', title: 'Pokédex', onclick: () => App.pokedex() }, '📘'),
         el('button', { class: 'btn-icon', title: 'Menu', onclick: () => App.menu() }, '☰'),
       ),
@@ -222,6 +255,15 @@ const Overworld = {
       case 'O': t.classList.add('ow-place'); t.textContent = '🗼'; break;
       case 'A': t.classList.add('ow-place'); t.textContent = '🎮'; break;
       case 'P': t.classList.add('ow-place'); t.textContent = '📘'; break;
+      case 'D': case 'E': {
+        const n = ch === 'D' ? 0 : 1;
+        const beaten = (App.state.beaten || []).includes(`${this.region}:${n}`);
+        t.classList.add('ow-trainer');
+        if (beaten) t.classList.add('beaten');
+        t.append(el('span', {}, OW_TRAINER[(this.region * 2 + n) % OW_TRAINER.length]),
+          beaten ? null : el('i', { class: 'ow-bang' }, '!'));
+        break;
+      }
       case '<': case '^': t.classList.add('ow-exit'); t.textContent = ch === '<' ? '⬅️' : '⬆️'; break;
       case '>': case 'v': t.classList.add('ow-exit'); t.textContent = ch === '>' ? '➡️' : '⬇️'; break;
       default:
@@ -236,6 +278,7 @@ const Overworld = {
             el('small', {}, ep.legendary ? '★' : String(ep.route)));
         }
     }
+    if (this.spots && this.spots.has(`${x},${y}`)) t.append(el('i', { class: 'ow-sparkle' }, '✨'));
     t.addEventListener('click', () => this.walkTo(x, y));
     return t;
   },
@@ -331,6 +374,10 @@ const Overworld = {
       if (ch === 'g') this.grassRoll();
       return;
     }
+    const here = `${this.pos.x},${this.pos.y}`;
+    if (this.spots && this.spots.has(here) && !first) return this.pickUp(here);
+    const trainer = this.trainerNear();
+    if (trainer !== null && !/[1-5OAP]/.test(ch)) return this.trainerDialog(trainer);
     if (/[1-5]/.test(ch)) return this.stopDialog(reg.eps[Number(ch) - 1], first);
     switch (ch) {
       case 'O': return s.tower
@@ -350,6 +397,51 @@ const Overworld = {
     }
   },
 
+  // A trainer standing on a tile next to him (n = 0 or 1), or null.
+  trainerNear() {
+    for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+      const c = (this.grid[this.pos.y + dy] || [])[this.pos.x + dx];
+      if (c === 'D') return 0;
+      if (c === 'E') return 1;
+    }
+    return null;
+  },
+
+  trainerDialog(n) {
+    const s = App.state;
+    const key = `${this.region}:${n}`;
+    const face = OW_TRAINER[(this.region * 2 + n) % OW_TRAINER.length];
+    if (!s.tower) return this.show(`${face} Un Dresseur`, '🔒', null, null, spoken('Termine la première route pour ouvrir ça !'));
+    if ((s.beaten || []).includes(key)) {
+      return this.show(`${face} Dresseur battu`, '⭐', null, null, spoken('Bravo, tu m\'as battu ! Reviens demain pour une revanche.'));
+    }
+    Sfx.encounter();
+    this.show(`${face} Un Dresseur te défie !`, '⚔️ 3 mots à lire', 'COMBAT ▶',
+      () => Session.start(`dresseur-${this.region}-${n}`), spoken('Un Dresseur veut se battre ! Lis vite pour gagner !'));
+  },
+
+  // A sparkle under his feet: the server rolls what it was.
+  async pickUp(here) {
+    this.stopWalking();
+    this.spots.delete(here);
+    const tile = this.map && this.map.children[this.pos.y * this.grid[0].length + this.pos.x];
+    const sp = tile && $('.ow-sparkle', tile);
+    if (sp) sp.remove();
+    let res;
+    try {
+      res = await api('api/find', { region: this.region, spot: this.toSpot(this.pos) });
+      App.state = res.state;
+    } catch (_) { return; }
+    const r = res.reward;
+    const icon = { balls: '🔴', superball: '🔵', candy: '🍬', berry: '🍓' }[r.kind] || '🎁';
+    Sfx.catch_();
+    burst(icon);
+    confetti(30);
+    this.show(`${icon} Objet trouvé !`, r.kind === 'balls' ? `+${r.count} Poké Ball${r.count > 1 ? 's' : ''}` : '', null, null, null);
+    await Voice.play(r.line.audio, r.line.text);
+    await celebrateAll(res);
+  },
+
   stopDialog(ep, first) {
     const stars = '★'.repeat(ep.stars) + '☆'.repeat(3 - ep.stars);
     const sounds = el('span', { class: 'sounds' }, (ep.sounds || []).map((g) => el('i', {}, g)));
@@ -364,10 +456,11 @@ const Overworld = {
   show(title, body, label, action, phrase) {
     const d = this.dialog;
     d.innerHTML = '';
-    d.append(
+    // append() would print a null as the text "null": only real nodes go in.
+    d.append(...[
       el('div', { class: 'ow-dialog-text' }, el('b', {}, title), body ? el('div', { class: 'ow-dialog-body' }, body) : null),
       label ? el('button', { class: 'btn btn-huge btn-go', onclick: () => { this.stopWalking(); action(); } }, label) : null,
-    );
+    ].filter(Boolean));
     d.hidden = false;
     if (phrase) say(phrase);
   },

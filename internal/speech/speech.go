@@ -1,7 +1,7 @@
 // Package speech maps a piece of French text to a stable audio asset key.
 //
 // The key is used both by the generator (cmd/pokecontent audio) that writes
-// web/audio/<key>.m4a and by the server that hands URLs to the tablet. When a
+// web/audio/<key>.mp3 and by the server that hands URLs to the tablet. When a
 // file is missing the frontend falls back to the browser's own French voice, so
 // a missing key is a quality regression, never a crash.
 package speech
@@ -85,5 +85,8 @@ func URL(text string, style Style) string {
 	if strings.TrimSpace(text) == "" {
 		return ""
 	}
-	return "audio/" + Key(text, style) + ".m4a"
+	return "audio/" + Key(text, style) + Ext
 }
+
+// Ext is the voice track's file format: the MP3 the voice service returns.
+const Ext = ".mp3"

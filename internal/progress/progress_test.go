@@ -148,7 +148,7 @@ func TestPartnerBallsAndGift(t *testing.T) {
 	if st.Partner.Line != 4 || st.Partner.XP != 40 || st.Balls != StarterBalls {
 		t.Fatalf("after choosing: %+v balls=%d", st.Partner, st.Balls)
 	}
-	if b, a := s.GainXP(12); a-b != 12 {
+	if _, b, a := s.GainXP(12); a-b != 12 {
 		t.Fatalf("GainXP: %d → %d", b, a)
 	}
 

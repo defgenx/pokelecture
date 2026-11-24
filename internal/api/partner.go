@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand/v2"
 	"net/http"
 	"time"
 
@@ -22,6 +23,7 @@ const (
 	giftBalls       = 3
 	episodeBalls    = 2 // + one per star
 	towerBalls      = 2
+	trainerBalls    = 2
 	recordBalls     = 1
 	wildXP          = 6
 	wildPerfectXP   = 4
@@ -33,6 +35,7 @@ const (
 	headStartPerEp  = 8
 	headStartCap    = 300 // just short of the first evolution
 	wildShinyChance = 16
+	superBallBonus  = 0.20
 )
 
 type voiceLine struct {
@@ -56,6 +59,7 @@ type partnerView struct {
 	NextName  string    `json:"next_name,omitempty"`
 	NextLevel int       `json:"next_level,omitempty"`
 	LevelUp   voiceLine `json:"level_up"`
+	Types     []string  `json:"types"` // its first type picks its battle attack
 }
 
 type starterView struct {
@@ -78,6 +82,7 @@ type partnerEvent struct {
 	Evolving  *voiceLine `json:"evolving,omitempty"`
 	Evolved   *voiceLine `json:"evolved,omitempty"`
 	LevelUp   *voiceLine `json:"level_up,omitempty"`
+	NewCatch  bool       `json:"new_catch,omitempty"` // the evolved form is new to a collection
 }
 
 func (s *Server) pokemonName(id int) (name, spoken string) {
@@ -85,28 +90,45 @@ func (s *Server) pokemonName(id int) (name, spoken string) {
 	return p.Name, p.Spoken()
 }
 
-func (s *Server) partnerView(pt *progress.Partner) *partnerView {
-	if pt == nil {
-		return nil
+// activeXP is the active partner's line base and XP.
+func activeXP(st progress.State) (base, xp int) {
+	if st.Partner == nil {
+		return 0, 0
 	}
-	l, ok := s.cur.LineOf(pt.Line)
-	if !ok {
-		return nil
+	if st.Active == 0 || st.Active == st.Partner.Line {
+		return st.Partner.Line, st.Partner.XP
 	}
-	level, into, need := curriculum.PartnerLevel(pt.XP)
-	species, _ := l.PartnerForm(level)
+	return st.Active, st.Team[st.Active]
+}
+
+func (s *Server) memberView(base, xp int) *partnerView {
+	level, into, need := curriculum.PartnerLevel(xp)
+	species := s.cur.FormAt(base, level)
 	name, spoken := s.pokemonName(species)
 	v := &partnerView{
-		Line: pt.Line, Species: species, Name: name,
+		Line: base, Species: species, Name: name,
 		NameAudio: speech.URL(spoken, speech.StyleWord),
 		Level:     level, XP: into, Need: need,
 		LevelUp: s.line(curriculum.PartnerLevelPhrase(name), curriculum.PartnerLevelPhrase(spoken)),
 	}
-	if next, at := l.NextEvolution(level); next != 0 {
-		v.NextID, v.NextLevel = next, at
-		v.NextName, _ = s.pokemonName(next)
+	if p, ok := s.cur.AnyPokemon(species); ok {
+		v.Types = p.Types
+	}
+	if l, ok := s.cur.LineOf(base); ok {
+		if next, at := l.NextEvolution(level); next != 0 {
+			v.NextID, v.NextLevel = next, at
+			v.NextName, _ = s.pokemonName(next)
+		}
 	}
 	return v
+}
+
+func (s *Server) partnerView(st progress.State) *partnerView {
+	if st.Partner == nil {
+		return nil
+	}
+	base, xp := activeXP(st)
+	return s.memberView(base, xp)
 }
 
 func (s *Server) starters() []starterView {
@@ -123,22 +145,19 @@ func (s *Server) starters() []starterView {
 	return out
 }
 
-// award gives the partner experience and describes what happened.
+// award gives the active partner (and the trainer) experience and
+// describes what happened. An evolution also brings the new form into the
+// collection it belongs to — the Pokédex, or the tall-grass one.
 func (s *Server) award(xp int) *partnerEvent {
-	before, after := s.store.GainXP(xp)
+	base, before, after := s.store.GainXP(xp)
 	if before == after {
-		return nil
-	}
-	pt := s.store.Snapshot().Partner
-	l, ok := s.cur.LineOf(pt.Line)
-	if !ok {
 		return nil
 	}
 	fromLvl, _, _ := curriculum.PartnerLevel(before)
 	toLvl, _, _ := curriculum.PartnerLevel(after)
 	ev := &partnerEvent{XP: after - before, FromLevel: fromLvl, ToLevel: toLvl}
-	fromSp, _ := l.PartnerForm(fromLvl)
-	toSp, _ := l.PartnerForm(toLvl)
+	fromSp := s.cur.FormAt(base, fromLvl)
+	toSp := s.cur.FormAt(base, toLvl)
 	if toLvl > fromLvl {
 		name, spoken := s.pokemonName(toSp)
 		lu := s.line(curriculum.PartnerLevelPhrase(name), curriculum.PartnerLevelPhrase(spoken))
@@ -151,6 +170,11 @@ func (s *Server) award(xp int) *partnerEvent {
 		evolved := s.line(curriculum.PartnerEvolvedPhrase(fn, tn), curriculum.PartnerEvolvedPhrase(fs, ts))
 		ev.From, ev.To, ev.ToName = fromSp, toSp, tn
 		ev.Evolving, ev.Evolved = &evolving, &evolved
+		if _, inDex := s.cur.Pokemon[toSp]; inDex {
+			ev.NewCatch = s.store.Catch(toSp)
+		} else {
+			ev.NewCatch = s.store.AddWild(toSp)
+		}
 	}
 	return ev
 }
@@ -268,11 +292,33 @@ func (s *Server) handleWild(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+// catchChance is the odds one Poké Ball holds: reading the name well is what
+// makes the catch likely, a shiny fights harder, and each new throw at the
+// same Pokémon gets a little easier — a miss stings, it never locks him out.
+func catchChance(slips, attempt int, shiny bool) float64 {
+	p := 0.85
+	switch {
+	case slips == 1:
+		p = 0.65
+	case slips >= 2:
+		p = 0.45
+	}
+	if shiny {
+		p -= 0.15
+	}
+	p += 0.10 * float64(max(0, attempt-1))
+	return min(p, 0.95)
+}
+
+// handleWildCatch throws one Poké Ball. It is spent either way; the roll
+// lives here, so the odds are the server's.
 func (s *Server) handleWildCatch(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ID      int  `json:"id"`
 		Shiny   bool `json:"shiny"`
-		Perfect bool `json:"perfect"`
+		Slips   int  `json:"slips"`
+		Attempt int  `json:"attempt"` // 1 for the first throw at this Pokémon
+		Super   bool `json:"super"`   // a Super Ball from the bag: better odds
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "corps invalide", http.StatusBadRequest)
@@ -289,18 +335,36 @@ func (s *Server) handleWildCatch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ce Pokémon ne vit pas encore dans les hautes herbes", http.StatusBadRequest)
 		return
 	}
-	spent, isNew := s.store.CatchWild(req.ID, req.Shiny)
-	if !spent {
+	chance := catchChance(req.Slips, max(1, req.Attempt), req.Shiny)
+	if req.Super {
+		if !s.store.AddItem("superball", -1) {
+			http.Error(w, "plus de Super Balls", http.StatusConflict)
+			return
+		}
+		chance = min(chance+superBallBonus, 0.98)
+		s.store.AddBalls(1) // CatchWild below spends a ball: the Super Ball replaces it
+	} else if st.Balls <= 0 {
 		http.Error(w, "plus de Poké Balls", http.StatusConflict)
 		return
 	}
+	if rand.Float64() >= chance {
+		s.store.AddBalls(-1)
+		s.save()
+		writeJSON(w, http.StatusOK, map[string]any{"caught": false, "chance": chance, "state": s.state()})
+		return
+	}
+	_, isNew := s.store.CatchWild(req.ID, req.Shiny)
 	xp := wildXP
-	if req.Perfect {
+	if req.Slips == 0 {
 		xp += wildPerfectXP
 	}
 	ev := s.award(xp)
+	s.store.TrainerGain(catchTrainerXP)
+	done := s.progress("catch", 1)
+	tev, m := s.settle()
 	s.save()
-	writeJSON(w, http.StatusOK, map[string]any{"new": isNew, "partner_event": ev, "state": s.state()})
+	writeJSON(w, http.StatusOK, map[string]any{"caught": true, "new": isNew, "chance": chance, "partner_event": ev,
+		"quests_done": done, "trainer_event": tev, "milestone": milestoneLine(s, m), "state": s.state()})
 }
 
 func (s *Server) save() {

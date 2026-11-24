@@ -79,6 +79,10 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /api/gift", s.handleGift)
 	mux.HandleFunc("GET /api/wild", s.handleWild)
 	mux.HandleFunc("POST /api/wild/catch", s.handleWildCatch)
+	mux.HandleFunc("POST /api/find", s.handleFind)
+	mux.HandleFunc("GET /api/team", s.handleTeam)
+	mux.HandleFunc("POST /api/team", s.handleTeamChoose)
+	mux.HandleFunc("POST /api/feed", s.handleFeed)
 
 	// Parent-side voice recording.
 	mux.HandleFunc("GET /api/texts", s.handleTexts)
@@ -132,17 +136,19 @@ type badgeView struct {
 }
 
 type pokemonView struct {
-	ID        int      `json:"id"`
-	Name      string   `json:"name"`
-	Syllables []string `json:"syllables"`
-	Types     []string `json:"types"`
-	Dex       string   `json:"dex"`
-	DexAudio  string   `json:"dex_audio"`
-	NameAudio string   `json:"name_audio"`
-	Sprite    string   `json:"sprite"`
-	Art       string   `json:"art"`
-	Caught    bool     `json:"caught"`
-	Shiny     bool     `json:"shiny,omitempty"`
+	ID        int        `json:"id"`
+	Name      string     `json:"name"`
+	Syllables []string   `json:"syllables"`
+	SylAudio  []string   `json:"syllable_audio"`
+	Types     []string   `json:"types"`
+	Dex       string     `json:"dex"`
+	DexAudio  string     `json:"dex_audio"`
+	NameAudio string     `json:"name_audio"`
+	Sprite    string     `json:"sprite"`
+	Art       string     `json:"art"`
+	Caught    bool       `json:"caught"`
+	Shiny     bool       `json:"shiny,omitempty"`
+	Where     *voiceLine `json:"where,omitempty"` // where an uncaught one waits
 }
 
 type stateView struct {
@@ -165,6 +171,14 @@ type stateView struct {
 	Balls    int           `json:"balls"`
 	Gift     bool          `json:"gift"` // today's gift is waiting
 	Wild     wildCount     `json:"wild"`
+
+	Trainer trainerView    `json:"trainer"`
+	TeamN   int            `json:"team_size"`
+	Bag     map[string]int `json:"bag"`
+	Found   []string       `json:"found"`  // hidden objects picked today
+	Beaten  []string       `json:"beaten"` // trainers beaten today
+	Hungry  bool           `json:"hungry"` // the partner wants its berry
+	Quests  []questView    `json:"quests"`
 }
 
 type wildCount struct {
@@ -180,13 +194,22 @@ func (s *Server) state() stateView {
 	out := stateView{
 		Name: st.Name, Stars: st.Stars, Streak: st.Streak,
 		TowerFloor: st.TowerFloor, Records: st.Records, UI: curriculum.UIAudio(),
-		Partner: s.partnerView(st.Partner), Balls: st.Balls,
+		Partner: s.partnerView(st), Balls: st.Balls,
 		Prompt: s.line(curriculum.StarterPrompt, curriculum.StarterPrompt),
 		Gift:   st.Partner != nil && st.GiftDay != time.Now().Format("2006-01-02"),
 	}
 	if st.Partner == nil {
 		out.Starters = s.starters()
 	}
+	out.Quests = s.questViews()
+	today := s.store.Snapshot().Today
+	out.Bag, out.Found, out.Beaten = st.Bag, today.Found, today.Beaten
+	if out.Bag == nil {
+		out.Bag = map[string]int{}
+	}
+	out.Hungry = st.Partner != nil && !today.Fed
+	out.Trainer = trainerOf(st)
+	out.TeamN = len(s.team(st))
 	for _, v := range s.wildViews(st) {
 		out.Wild.Total++
 		if v.Available {
@@ -268,6 +291,7 @@ func (s *Server) state() stateView {
 			ID:        p.ID,
 			Name:      p.Name,
 			Syllables: p.Syllables,
+			SylAudio:  curriculum.SyllableAudio(p.Syllables),
 			Types:     p.Types,
 			Dex:       p.Dex,
 			DexAudio:  speech.URL(p.Dex, speech.StyleNormal),
@@ -279,6 +303,10 @@ func (s *Server) state() stateView {
 			Caught:    caught[p.ID],
 			Shiny:     shiny[p.ID],
 		})
+		if !caught[p.ID] {
+			w := s.whereLine(p.ID)
+			out.Pokedex[len(out.Pokedex)-1].Where = &w
+		}
 	}
 	return out
 }
@@ -291,6 +319,15 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "next" {
 		id = s.state().NextID
+	}
+	if region, n, ok := curriculum.ParseTrainer(id); ok {
+		sess, built := s.cur.BuildTrainer(s.store.Snapshot(), region, n, time.Now())
+		if !built {
+			http.Error(w, "les Dresseurs attendent ta première route terminée", http.StatusConflict)
+			return
+		}
+		writeJSON(w, http.StatusOK, sess)
+		return
 	}
 	if id == curriculum.TowerID {
 		st := s.store.Snapshot()
@@ -337,9 +374,14 @@ type resultResponse struct {
 	// Tower verdict: whether the floor was cleared, and the recomputed target.
 	TowerPassed bool `json:"tower_passed"`
 	TowerNeed   int  `json:"tower_need"`
+	NewShiny    int  `json:"new_shiny,omitempty"` // a guardian floor's shiny legendary
 	// What the session paid: Poké Balls, and the partner's experience.
 	Balls        int           `json:"balls_won"`
 	PartnerEvent *partnerEvent `json:"partner_event"`
+	TrainerWon   bool          `json:"trainer_won,omitempty"`
+	QuestsDone   []questView   `json:"quests_done"`
+	TrainerEvent *trainerEvent `json:"trainer_event,omitempty"`
+	Milestone    *voiceLine    `json:"milestone,omitempty"`
 	State        stateView     `json:"state"`
 }
 
@@ -349,8 +391,9 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 	// The tower is practice, not progression: answers feed the spaced review
 	// boxes and nothing else — no completion, no stars, no catch.
 	isTower := id == curriculum.TowerID
+	tRegion, tN, isTrainer := curriculum.ParseTrainer(id)
 	var ep *curriculum.Episode
-	if !isTower {
+	if !isTower && !isTrainer {
 		var ok bool
 		ep, ok = s.cur.Episode(id)
 		if !ok {
@@ -379,16 +422,39 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	words := 0
+	for _, it := range req.Items {
+		if it.Correct && strings.HasPrefix(it.ID, "mot:") {
+			words++
+		}
+	}
+
 	res := resultResponse{NewCatches: []int{}}
-	if isTower {
+	if isTrainer {
+		// A won battle comes back completed; a lost one does not.
+		if req.Completed && s.store.Beat(fmt.Sprintf("%d:%d", tRegion, tN), now, questsFor) {
+			res.TrainerWon = true
+			res.Balls = trainerBalls
+			res.PartnerEvent = s.award(trainerXP + right)
+			res.QuestsDone = append(res.QuestsDone, s.progress("trainer", 1)...)
+		}
+	} else if isTower {
 		// Clearing a floor means at least half the words were built without a
 		// single wrong tap; only the very next floor can be cleared.
 		res.TowerNeed = curriculum.TowerNeed(req.Rounds)
+		st0 := s.store.Snapshot()
 		if req.Rounds > 0 && req.Points >= res.TowerNeed && req.Floor == s.store.Snapshot().TowerFloor+1 {
 			res.TowerPassed = true
 			s.store.ClearFloor(req.Floor)
 			if id := s.cur.TowerRewardFor(req.Floor); id != 0 && s.store.Catch(id) {
 				res.NewCatches = append(res.NewCatches, id)
+			}
+			// A beaten guardian he already has joins in its shiny form.
+			if guard, ok := s.cur.TowerOpponent(req.Floor, st0); ok && req.Floor%curriculum.GuardianEvery == 0 {
+				if contains(st0.Pokedex, guard.ID) && !contains(st0.Shiny, guard.ID) {
+					s.store.MarkShiny(guard.ID)
+					res.NewShiny = guard.ID
+				}
 			}
 			res.Balls = towerBalls
 		}
@@ -410,6 +476,12 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 	if res.Balls > 0 {
 		s.store.AddBalls(res.Balls)
 	}
+	res.QuestsDone = append(res.QuestsDone, s.progress("words", words)...)
+	if req.Completed && !isTower && !isTrainer {
+		res.QuestsDone = append(res.QuestsDone, s.progress("route", 1)...)
+	}
+	tev, m := s.settle()
+	res.TrainerEvent, res.Milestone = tev, milestoneLine(s, m)
 	if err := s.store.Save(); err != nil {
 		log.Printf("sauvegarde: %v", err)
 	}
@@ -452,4 +524,13 @@ func logging(next http.Handler) http.Handler {
 			log.Printf("%s %s (%s)", r.Method, r.URL.Path, time.Since(start).Round(time.Millisecond))
 		}
 	})
+}
+
+func contains(xs []int, x int) bool {
+	for _, v := range xs {
+		if v == x {
+			return true
+		}
+	}
+	return false
 }

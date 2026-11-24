@@ -28,7 +28,7 @@ func audit(cur *curriculum.Curriculum, root string, tsv bool) error {
 		if it.Style != speech.StyleSound && it.Style != speech.StyleSyllable {
 			continue
 		}
-		path := filepath.Join(root, "web", "audio", speech.Key(it.Text, it.Style)+".m4a")
+		path := filepath.Join(root, "web", "audio", speech.Key(it.Text, it.Style)+speech.Ext)
 		if tsv {
 			fmt.Printf("%s\t%s\t%s\n", it.Style, it.Text, path)
 			continue

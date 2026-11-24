@@ -103,10 +103,40 @@ type State struct {
 	// BallsGranted marks the one-time starter bag of Poké Balls as handed out.
 	BallsGranted bool `json:"balls_granted,omitempty"`
 
+	// Team holds the XP of every other Pokémon that has been the partner,
+	// keyed by the first stage of its line; Active is the one walking with
+	// him now (0: the starter, whose XP stays in Partner.XP).
+	Team   map[int]int `json:"team,omitempty"`
+	Active int         `json:"active,omitempty"`
+	// TrainerXP is the child's own experience: everything he does pays it.
+	TrainerXP int `json:"trainer_xp,omitempty"`
+	// Milestone is the last Pokédex size (a multiple of 10) already rewarded.
+	Milestone int `json:"milestone,omitempty"`
+	// TrainerPaid is the last trainer level whose reward was handed out.
+	TrainerPaid int `json:"trainer_paid,omitempty"`
+
+	// Bag holds the items found on the map: "superball", "berry".
+	Bag map[string]int `json:"bag,omitempty"`
+	// Today is the day-scoped part of the save: hidden objects picked up,
+	// trainers beaten, the partner fed, and the daily missions. It resets
+	// itself on the first event of a new day.
+	Today Today `json:"today"`
+
 	Settings  Settings  `json:"settings"`
 	Streak    int       `json:"streak"`
 	LastDay   string    `json:"last_day"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// Today is what the map and the missions remember for one day only.
+type Today struct {
+	Day      string         `json:"day"`
+	Found    []string       `json:"found,omitempty"`    // hidden objects picked: "region:x,y"
+	Beaten   []string       `json:"beaten,omitempty"`   // trainers beaten: "region:n"
+	Fed      bool           `json:"fed,omitempty"`      // partner fed a berry
+	Quests   []string       `json:"quests,omitempty"`   // today's mission ids
+	Progress map[string]int `json:"progress,omitempty"` // per mission kind
+	Claimed  []string       `json:"claimed,omitempty"`  // missions already rewarded
 }
 
 // Partner is the child's own Pokémon. Its level and form derive from XP.
@@ -209,10 +239,26 @@ func (s *Store) copyLocked() State {
 	out.Pokedex = append([]int(nil), s.state.Pokedex...)
 	out.Shiny = append([]int(nil), s.state.Shiny...)
 	out.Wild = append([]int(nil), s.state.Wild...)
+	out.Bag = make(map[string]int, len(s.state.Bag))
+	for k, v := range s.state.Bag {
+		out.Bag[k] = v
+	}
+	out.Today.Found = append([]string(nil), s.state.Today.Found...)
+	out.Today.Beaten = append([]string(nil), s.state.Today.Beaten...)
+	out.Today.Quests = append([]string(nil), s.state.Today.Quests...)
+	out.Today.Claimed = append([]string(nil), s.state.Today.Claimed...)
+	out.Today.Progress = make(map[string]int, len(s.state.Today.Progress))
+	for k, v := range s.state.Today.Progress {
+		out.Today.Progress[k] = v
+	}
 	out.WildShiny = append([]int(nil), s.state.WildShiny...)
 	if s.state.Partner != nil {
 		pt := *s.state.Partner
 		out.Partner = &pt
+	}
+	out.Team = make(map[int]int, len(s.state.Team))
+	for k, v := range s.state.Team {
+		out.Team[k] = v
 	}
 	out.Records = make(map[string]int, len(s.state.Records))
 	for k, v := range s.state.Records {
@@ -373,20 +419,98 @@ func (s *Store) ChoosePartner(line, headStart int) bool {
 	return true
 }
 
-// GainXP adds experience to the partner and returns the XP before and after
-// (equal when there is no partner yet).
-func (s *Store) GainXP(xp int) (before, after int) {
+// GainXP adds experience to the active partner — and the same to the
+// trainer — and returns the partner's base and XP before and after (equal
+// when there is no partner yet).
+func (s *Store) GainXP(xp int) (base, before, after int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.state.Partner == nil || xp <= 0 {
-		if s.state.Partner != nil {
-			return s.state.Partner.XP, s.state.Partner.XP
-		}
-		return 0, 0
+	if s.state.Partner == nil {
+		return 0, 0, 0
 	}
-	before = s.state.Partner.XP
-	s.state.Partner.XP += xp
-	return before, s.state.Partner.XP
+	if xp > 0 {
+		s.state.TrainerXP += xp
+	}
+	if s.state.Active == 0 || s.state.Active == s.state.Partner.Line {
+		before = s.state.Partner.XP
+		s.state.Partner.XP += max(0, xp)
+		return s.state.Partner.Line, before, s.state.Partner.XP
+	}
+	if s.state.Team == nil {
+		s.state.Team = map[int]int{}
+	}
+	before = s.state.Team[s.state.Active]
+	s.state.Team[s.state.Active] += max(0, xp)
+	return s.state.Active, before, s.state.Team[s.state.Active]
+}
+
+// TrainerGain adds experience to the trainer only (catches, missions).
+func (s *Store) TrainerGain(xp int) (before, after int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	before = s.state.TrainerXP
+	s.state.TrainerXP += max(0, xp)
+	return before, s.state.TrainerXP
+}
+
+// SetActive makes another Pokémon (the base of its line) the partner. A
+// first-time member starts with startXP (its stage's level).
+func (s *Store) SetActive(base, startXP int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state.Partner != nil && base == s.state.Partner.Line {
+		s.state.Active = 0
+		return
+	}
+	if s.state.Team == nil {
+		s.state.Team = map[int]int{}
+	}
+	if _, ok := s.state.Team[base]; !ok || s.state.Team[base] < startXP {
+		s.state.Team[base] = startXP
+	}
+	s.state.Active = base
+}
+
+// PayTrainerLevel records the trainer levels paid up to level; it returns
+// the levels newly reached (none if already paid).
+func (s *Store) PayTrainerLevel(level int) []int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state.TrainerPaid == 0 {
+		s.state.TrainerPaid = 1 // level 1 is where everyone starts: nothing to pay
+	}
+	var out []int
+	for l := s.state.TrainerPaid + 1; l <= level; l++ {
+		out = append(out, l)
+	}
+	if level > s.state.TrainerPaid {
+		s.state.TrainerPaid = level
+	}
+	return out
+}
+
+// ReachMilestone records a Pokédex milestone; false if it was already paid.
+func (s *Store) ReachMilestone(m int) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if m <= s.state.Milestone {
+		return false
+	}
+	s.state.Milestone = m
+	return true
+}
+
+// AddWild puts a Pokémon in the tall-grass collection without spending a
+// ball (an evolution reached it). False if it was already there.
+func (s *Store) AddWild(id int) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if contains(s.state.Wild, id) {
+		return false
+	}
+	s.state.Wild = append(s.state.Wild, id)
+	sort.Ints(s.state.Wild)
+	return true
 }
 
 // AddBalls gives (or, negative, takes) Poké Balls; never below zero.
@@ -429,6 +553,105 @@ func (s *Store) OpenGift(now time.Time, balls int) bool {
 	}
 	s.state.GiftDay = day
 	s.state.Balls += balls
+	return true
+}
+
+// day rolls Today over when the date changed; quests picks the new day's
+// missions. Callers hold the lock.
+func (s *Store) dayLocked(now time.Time, quests func(day string) []string) {
+	day := now.Format("2006-01-02")
+	if s.state.Today.Day == day {
+		return
+	}
+	s.state.Today = Today{Day: day, Progress: map[string]int{}}
+	if quests != nil {
+		s.state.Today.Quests = quests(day)
+	}
+}
+
+// Roll makes sure Today is today's, with its missions.
+func (s *Store) Roll(now time.Time, quests func(day string) []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.dayLocked(now, quests)
+}
+
+// Count adds n to a mission kind's progress for today.
+func (s *Store) Count(kind string, n int, now time.Time, quests func(day string) []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.dayLocked(now, quests)
+	if s.state.Today.Progress == nil {
+		s.state.Today.Progress = map[string]int{}
+	}
+	s.state.Today.Progress[kind] += n
+}
+
+// Claim marks a mission rewarded; false if it already was.
+func (s *Store) Claim(id string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, c := range s.state.Today.Claimed {
+		if c == id {
+			return false
+		}
+	}
+	s.state.Today.Claimed = append(s.state.Today.Claimed, id)
+	return true
+}
+
+// Pick records a hidden object picked up today; false if it already was.
+func (s *Store) Pick(spot string, now time.Time, quests func(day string) []string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.dayLocked(now, quests)
+	for _, f := range s.state.Today.Found {
+		if f == spot {
+			return false
+		}
+	}
+	s.state.Today.Found = append(s.state.Today.Found, spot)
+	return true
+}
+
+// Beat records a trainer beaten today; false if already beaten.
+func (s *Store) Beat(trainer string, now time.Time, quests func(day string) []string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.dayLocked(now, quests)
+	for _, b := range s.state.Today.Beaten {
+		if b == trainer {
+			return false
+		}
+	}
+	s.state.Today.Beaten = append(s.state.Today.Beaten, trainer)
+	return true
+}
+
+// AddItem gives (or, negative, takes) a bag item; false if there was none to take.
+func (s *Store) AddItem(item string, n int) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state.Bag == nil {
+		s.state.Bag = map[string]int{}
+	}
+	if s.state.Bag[item]+n < 0 {
+		return false
+	}
+	s.state.Bag[item] += n
+	return true
+}
+
+// Feed spends a berry on the partner, once a day.
+func (s *Store) Feed(now time.Time, quests func(day string) []string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.dayLocked(now, quests)
+	if s.state.Today.Fed || s.state.Bag["berry"] <= 0 || s.state.Partner == nil {
+		return false
+	}
+	s.state.Bag["berry"]--
+	s.state.Today.Fed = true
 	return true
 }
 

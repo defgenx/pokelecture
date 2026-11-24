@@ -34,9 +34,10 @@ func PartnerLevel(xp int) (level, into, need int) {
 	return level, xp, XPToNext(level)
 }
 
-// LineOf returns the evolution chain a species belongs to.
+// LineOf returns the evolution chain a species belongs to: a starter's
+// (partners.json) or any other (evolutions.json).
 func (c *Curriculum) LineOf(species int) (PartnerLine, bool) {
-	for _, l := range c.Partners {
+	for _, l := range append(append([]PartnerLine(nil), c.Partners...), c.Evolutions...) {
 		for _, s := range l.Stages {
 			if s == species {
 				return l, true
@@ -101,13 +102,66 @@ func PartnerEvolvedPhrase(from, to string) string {
 // StarterPrompt opens the choice of the first partner.
 const StarterPrompt = "Choisis ton premier Pokémon ! Il t'accompagnera partout et grandira à chaque mot que tu lis."
 
+// Base is the first stage of a species' line (itself when it has none):
+// the key a team member is stored under.
+func (c *Curriculum) Base(species int) int {
+	if l, ok := c.LineOf(species); ok {
+		return l.Stages[0]
+	}
+	return species
+}
+
+// StageLevel is the lowest level at which a line shows this species: a
+// Pokémon joined already evolved starts at its stage's level.
+func (c *Curriculum) StageLevel(species int) int {
+	l, ok := c.LineOf(species)
+	if !ok {
+		return PartnerStartLevel
+	}
+	for k, s := range l.Stages {
+		if s == species && k > 0 {
+			return l.Levels[k-1]
+		}
+	}
+	return PartnerStartLevel
+}
+
+// XPForLevel is the total XP a fresh partner needs to reach a level.
+func XPForLevel(level int) int {
+	xp := 0
+	for l := PartnerStartLevel; l < level; l++ {
+		xp += XPToNext(l)
+	}
+	return xp
+}
+
+// FormAt is the species a member of base `base` shows at a level.
+func (c *Curriculum) FormAt(base, level int) int {
+	if l, ok := c.LineOf(base); ok {
+		sp, _ := l.PartnerForm(level)
+		return sp
+	}
+	return base
+}
+
 func (c *Curriculum) validatePartners() []error {
 	var errs []error
 	if len(c.Partners) == 0 {
 		return []error{fmt.Errorf("partners.json: aucun starter")}
 	}
-	for i, l := range c.Partners {
+	all := append(append([]PartnerLine(nil), c.Partners...), c.Evolutions...)
+	seen := map[int]string{}
+	for i, l := range all {
 		where := "partners.json[" + strconv.Itoa(i) + "]"
+		if i >= len(c.Partners) {
+			where = "evolutions.json[" + strconv.Itoa(i-len(c.Partners)) + "]"
+		}
+		for _, s := range l.Stages {
+			if prev, dup := seen[s]; dup {
+				errs = append(errs, fmt.Errorf("%s: #%d est déjà dans %s", where, s, prev))
+			}
+			seen[s] = where
+		}
 		if len(l.Stages) == 0 || len(l.Levels) != len(l.Stages)-1 {
 			errs = append(errs, fmt.Errorf("%s: il faut un niveau d'évolution par stade après le premier", where))
 			continue
@@ -131,14 +185,144 @@ func (c *Curriculum) partnerSpeech() []string {
 	var out []string
 	name := func(id int) string { p, _ := c.AnyPokemon(id); return p.Spoken() }
 	out = append(out, StarterPrompt)
-	for _, l := range c.Partners {
-		out = append(out, PartnerChosenPhrase(name(l.Stages[0])))
+	for i, l := range append(append([]PartnerLine(nil), c.Partners...), c.Evolutions...) {
+		if i < len(c.Partners) {
+			out = append(out, PartnerChosenPhrase(name(l.Stages[0])))
+		}
 		for k, s := range l.Stages {
 			out = append(out, PartnerLevelPhrase(name(s)))
 			if k+1 < len(l.Stages) {
 				out = append(out, PartnerEvolvingPhrase(name(s)), PartnerEvolvedPhrase(name(s), name(l.Stages[k+1])))
 			}
 		}
+	}
+	return out
+}
+
+// Voice lines of the map's hidden objects (internal/api/quests.go).
+const (
+	FoundBalls     = "Super ! Tu as trouvé des Poké Balls !"
+	FoundSuperBall = "Ouah ! Une Super Ball ! Elle attrape mieux les Pokémon."
+	FoundCandy     = "Un Super Bonbon ! Ton partenaire devient plus fort !"
+	FoundBerry     = "Une baie ! Ton partenaire va se régaler."
+)
+
+// QuestPhrases are the daily missions' texts, read out to the child; they
+// must stay in sync with questDefs in internal/api/quests.go.
+var QuestPhrases = []string{
+	"Attrape deux Pokémon dans les hautes herbes.",
+	"Lis dix mots sans te tromper.",
+	"Termine une route.",
+	"Bats un Dresseur sur la carte.",
+	"Trouve un objet caché sur la carte.",
+	"Donne une baie à ton partenaire.",
+	"Joue à un mini-jeu.",
+}
+
+// Trainer levels: the child's own, fed by everything he does.
+
+// TrainerLevel converts trainer XP to a level (from 1) and the progress in it.
+func TrainerLevel(xp int) (level, into, need int) {
+	level = 1
+	for xp >= trainerNeed(level) {
+		xp -= trainerNeed(level)
+		level++
+	}
+	return level, xp, trainerNeed(level)
+}
+
+func trainerNeed(level int) int { return 60 + 15*level }
+
+// TrainerTitles: the title earned at each threshold level.
+var TrainerTitles = []struct {
+	Level int
+	Title string
+}{
+	{1, "Dresseur débutant"}, {5, "Dresseur apprenti"}, {10, "Dresseur confirmé"},
+	{15, "Dresseur expert"}, {20, "Champion d'arène"}, {30, "Maître Pokémon"},
+}
+
+// TrainerTitle is the title of a level.
+func TrainerTitle(level int) string {
+	t := TrainerTitles[0].Title
+	for _, tt := range TrainerTitles {
+		if level >= tt.Level {
+			t = tt.Title
+		}
+	}
+	return t
+}
+
+// TrainerTitlePhrase announces a new title.
+func TrainerTitlePhrase(title string) string { return "Tu deviens " + title + " !" }
+
+// Voice lines of the trainer level, the team and the Pokédex milestones.
+const (
+	TrainerLevelUp = "Bravo ! Tu montes de niveau de Dresseur !"
+	TeamPrompt     = "Choisis ton partenaire ! Chaque Pokémon gagne des niveaux avec toi."
+	TeamChosen     = "Il devient ton partenaire !"
+	EvolveToGet    = "Fais évoluer un de tes Pokémon pour l'avoir !"
+)
+
+var milestoneWords = map[int]string{
+	10: "Dix", 20: "Vingt", 30: "Trente", 40: "Quarante", 50: "Cinquante",
+	60: "Soixante", 70: "Soixante-dix", 80: "Quatre-vingts", 90: "Quatre-vingt-dix",
+}
+
+// MilestonePhrase celebrates n Pokémon in the Pokédex (n a multiple of 10).
+func MilestonePhrase(n int) string {
+	if w, ok := milestoneWords[n]; ok {
+		return "Bravo ! " + w + " Pokémon dans ton Pokédex !"
+	}
+	return "Bravo ! Ton Pokédex grandit !"
+}
+
+// WherePhrase tells where a Pokémon still to catch is waiting.
+func WherePhrase(ep Episode) string {
+	switch {
+	case !ep.Legendary && ep.Route > 0:
+		return fmt.Sprintf("Il t'attend sur la route %d !", ep.Route)
+	case ep.Badge != nil:
+		return "Il t'attend dans une arène légendaire !"
+	default:
+		return "Il t'attend dans la région " + ep.Region + " !"
+	}
+}
+
+// TowerWherePhrase: a tower-exclusive's floor.
+func TowerWherePhrase(floor int) string {
+	return fmt.Sprintf("Il t'attend à l'étage %d de la Tour de Combat !", floor)
+}
+
+// Where is the line that says where to find a Pokémon: the first episode
+// that catches it, else its tower floor, else an evolution of another one.
+func (c *Curriculum) Where(id int) string {
+	for _, ep := range c.Episodes {
+		for _, got := range ep.CatchablePokemon() {
+			if got == id {
+				return WherePhrase(ep)
+			}
+		}
+	}
+	for i, t := range c.TowerLadder {
+		if t == id {
+			return TowerWherePhrase(2 * (i + 1))
+		}
+	}
+	return EvolveToGet
+}
+
+// progressionSpeech lists the trainer, team, milestone and "where" lines.
+func (c *Curriculum) progressionSpeech() []string {
+	out := []string{TrainerLevelUp, TeamPrompt, TeamChosen, EvolveToGet}
+	for _, t := range TrainerTitles[1:] {
+		out = append(out, TrainerTitlePhrase(t.Title))
+	}
+	for n := 10; n <= 90; n += 10 {
+		out = append(out, MilestonePhrase(n))
+	}
+	for _, id := range c.PokemonOrder {
+		out = append(out, c.Where(id))
 	}
 	return out
 }

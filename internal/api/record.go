@@ -17,7 +17,7 @@ import (
 // pronounces invented Pokémon names correctly.
 //
 // Recordings land in web/audio/recorded/<key>.<ext> and are served under the
-// existing /audio/<key>.m4a URL, so nothing else in the app needs to know they
+// existing /audio/<key>.mp3 URL, so nothing else in the app needs to know they
 // exist. The extension follows what MediaRecorder produced: .m4a for AAC
 // (recent Chrome, Safari — plays everywhere including iPads), .webm for Opus
 // (older Chrome — iPads refuse it and the game falls back to the synthetic
@@ -172,7 +172,7 @@ func (s *Server) handleRecordDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleAudio serves a recording in place of the generated file when one exists.
-// The game always asks for /audio/<key>.m4a and never has to care which it gets.
+// The game always asks for /audio/<key>.mp3 and never has to care which it gets.
 func (s *Server) handleAudio(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("file")
 	stem := strings.TrimSuffix(name, filepath.Ext(name))
@@ -192,9 +192,8 @@ func (s *Server) handleAudio(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	// Explicit, because the runtime image carries no /etc/mime.types: Go knows
-	// nothing about .m4a there and would sniff the container down to video/mp4.
-	w.Header().Set("Content-Type", "audio/mp4")
+	// Explicit, because the runtime image carries no /etc/mime.types.
+	w.Header().Set("Content-Type", "audio/mpeg")
 	w.Header().Set("Cache-Control", "public, max-age=604800")
 	http.ServeFile(w, r, generated)
 }

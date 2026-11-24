@@ -22,8 +22,8 @@ Le même binaire tourne donc sans changement à la racine en local et sous
 
 ## 1. Générer la voix (sur le Mac), puis **la committer**
 
-Le `.m4a` est produit par `say`, qui n'existe que sur macOS : il doit voyager
-dans le contexte de build. Or le serveur build depuis un clone du dépôt — donc
+La voix (MP3, ElevenLabs, payante) est générée une fois sur le Mac : elle doit
+voyager dans le contexte de build. Or le serveur build depuis un clone du dépôt — donc
 `web/audio/` est versionné, et une génération non committée n'atteint jamais la
 tablette.
 
@@ -34,15 +34,14 @@ git add web/audio && git commit -m "chore: régénère la voix" && git push
 ```
 
 Sans cette étape l'image se construit quand même, mais le jeu part **muet** :
-il retombe sur la voix du navigateur, ce que Chrome sur Android ne fournit que
-si une voix française est installée sur l'appareil. Sur une tablette Android,
-« pas de `.m4a` » veut donc dire « pas de son du tout ».
+il n'utilise jamais de voix de synthèse — « pas de `.mp3` » veut dire « pas de
+son du tout ».
 
 Vérifier, après déploiement, qu'un fichier répond bien :
 
 ```bash
-curl -sI https://delvecch.io/pokelecture/audio/bulbizarre-8a23d0.m4a | head -3
-# HTTP/2 200 · content-type: audio/mp4
+curl -sI https://delvecch.io/pokelecture/audio/bulbizarre-8a23d0.mp3 | head -3
+# HTTP/2 200 · content-type: audio/mpeg
 ```
 
 ## 2. Cloner le dépôt à côté du site

@@ -856,6 +856,21 @@
     "dex": "Ses pinces repoussent quand elles se cassent. Il creuse son trou sur la plage."
   },
   {
+    "id": 147,
+    "name": "Minidraco",
+    "tower": true,
+    "syllables": [
+      "Mi",
+      "ni",
+      "dra",
+      "co"
+    ],
+    "types": [
+      "Dragon"
+    ],
+    "dex": "Un bébé dragon très rare. Il change de peau plusieurs fois en grandissant."
+  },
+  {
     "id": 63,
     "name": "Abra",
     "tower": true,
@@ -912,6 +927,38 @@
     "dex": "Il flotte dans les airs grâce à ses aimants. Il adore l'électricité."
   },
   {
+    "id": 131,
+    "name": "Lokhlass",
+    "say_as": "Loklass",
+    "tower": true,
+    "syllables": [
+      "Lo",
+      "khlass"
+    ],
+    "types": [
+      "Eau",
+      "Glace"
+    ],
+    "dex": "Il transporte les voyageurs sur son dos, d'une île à l'autre. Très gentil."
+  },
+  {
+    "id": 92,
+    "name": "Fantominus",
+    "say_as": "Fantominusse",
+    "tower": true,
+    "syllables": [
+      "Fan",
+      "to",
+      "mi",
+      "nus"
+    ],
+    "types": [
+      "Spectre",
+      "Poison"
+    ],
+    "dex": "Un petit nuage de gaz avec des yeux. Il adore faire des farces la nuit."
+  },
+  {
     "id": 104,
     "name": "Osselait",
     "say_as": "Osselè",
@@ -942,23 +989,6 @@
     "dex": "Sa langue est deux fois plus longue que son corps. Elle attrape tout !"
   },
   {
-    "id": 92,
-    "name": "Fantominus",
-    "say_as": "Fantominusse",
-    "tower": true,
-    "syllables": [
-      "Fan",
-      "to",
-      "mi",
-      "nus"
-    ],
-    "types": [
-      "Spectre",
-      "Poison"
-    ],
-    "dex": "Un petit nuage de gaz avec des yeux. Il adore faire des farces la nuit."
-  },
-  {
     "id": 95,
     "name": "Onix",
     "say_as": "Onixe",
@@ -972,6 +1002,22 @@
       "Sol"
     ],
     "dex": "Un serpent géant fait de rochers. Il creuse des tunnels à toute vitesse."
+  },
+  {
+    "id": 94,
+    "name": "Ectoplasma",
+    "tower": true,
+    "syllables": [
+      "Ec",
+      "to",
+      "plas",
+      "ma"
+    ],
+    "types": [
+      "Spectre",
+      "Poison"
+    ],
+    "dex": "Il se cache dans les ombres. Son sourire fait frissonner... mais il est joueur."
   },
   {
     "id": 111,
@@ -1030,52 +1076,6 @@
       "Eau"
     ],
     "dex": "L'évolution finale de Carapuce. Des canons à eau sortent de sa carapace."
-  },
-  {
-    "id": 94,
-    "name": "Ectoplasma",
-    "tower": true,
-    "syllables": [
-      "Ec",
-      "to",
-      "plas",
-      "ma"
-    ],
-    "types": [
-      "Spectre",
-      "Poison"
-    ],
-    "dex": "Il se cache dans les ombres. Son sourire fait frissonner... mais il est joueur."
-  },
-  {
-    "id": 131,
-    "name": "Lokhlass",
-    "say_as": "Loklass",
-    "tower": true,
-    "syllables": [
-      "Lo",
-      "khlass"
-    ],
-    "types": [
-      "Eau",
-      "Glace"
-    ],
-    "dex": "Il transporte les voyageurs sur son dos, d'une île à l'autre. Très gentil."
-  },
-  {
-    "id": 147,
-    "name": "Minidraco",
-    "tower": true,
-    "syllables": [
-      "Mi",
-      "ni",
-      "dra",
-      "co"
-    ],
-    "types": [
-      "Dragon"
-    ],
-    "dex": "Un bébé dragon très rare. Il change de peau plusieurs fois en grandissant."
   },
   {
     "id": 149,

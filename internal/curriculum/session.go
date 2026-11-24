@@ -84,11 +84,14 @@ type Reward struct {
 	Pokemon   int      `json:"pokemon"`
 	Name      string   `json:"name"`
 	Syllables []string `json:"syllables"`
-	NameAudio string   `json:"name_audio"`
-	Types     []string `json:"types"`
-	Dex       string   `json:"dex"`
-	DexAudio  string   `json:"dex_audio"`
-	Shiny     bool     `json:"shiny,omitempty"`
+	// SyllableAudio makes each chunk of the name tappable in the voice of the
+	// track; without it a tap fell back to the browser's own voice.
+	SyllableAudio []string `json:"syllable_audio"`
+	NameAudio     string   `json:"name_audio"`
+	Types         []string `json:"types"`
+	Dex           string   `json:"dex"`
+	DexAudio      string   `json:"dex_audio"`
+	Shiny         bool     `json:"shiny,omitempty"`
 }
 
 // Activity is one screen of a session.
@@ -115,6 +118,8 @@ type Session struct {
 	RewardPokemon int        `json:"reward_pokemon"`
 	Legendary     bool       `json:"legendary,omitempty"`
 	Tower         *TowerInfo `json:"tower,omitempty"`
+	// Trainer is set on a map trainer's battle (see BuildTrainer).
+	Trainer *TrainerInfo `json:"trainer,omitempty"`
 	// Lives is the battle heart count from the parental settings: -1 means
 	// unlimited, otherwise each wrong tap in a fight costs one and running out
 	// loses the battle.
@@ -758,14 +763,24 @@ func (c *Curriculum) reward(id int) *Reward {
 		return nil
 	}
 	return &Reward{
-		Pokemon:   p.ID,
-		Name:      p.Name,
-		Syllables: p.Syllables,
-		NameAudio: speech.URL(p.Spoken(), speech.StyleWord),
-		Types:     p.Types,
-		Dex:       p.Dex,
-		DexAudio:  speech.URL(p.Dex, speech.StyleNormal),
+		Pokemon:       p.ID,
+		Name:          p.Name,
+		Syllables:     p.Syllables,
+		SyllableAudio: SyllableAudio(p.Syllables),
+		NameAudio:     speech.URL(p.Spoken(), speech.StyleWord),
+		Types:         p.Types,
+		Dex:           p.Dex,
+		DexAudio:      speech.URL(p.Dex, speech.StyleNormal),
 	}
+}
+
+// SyllableAudio is the clip URL of each syllable, as the voice says it.
+func SyllableAudio(syls []string) []string {
+	out := make([]string, 0, len(syls))
+	for _, s := range syls {
+		out = append(out, speech.URL(SpokenSyllable(s), speech.StyleSyllable))
+	}
+	return out
 }
 
 // LearnedPool returns every word and syllable from completed episodes — the
@@ -795,9 +810,61 @@ const TowerTaunt = "Bienvenue à la Tour de Combat ! Lis tous les mots pour mont
 // TowerInfo describes the floor being attempted: the client shows the target
 // and counts points; the server recomputes the threshold on the result.
 type TowerInfo struct {
-	Floor  int `json:"floor"`
-	Rounds int `json:"rounds"`
-	Need   int `json:"need"`
+	Floor    int  `json:"floor"`
+	Rounds   int  `json:"rounds"`
+	Need     int  `json:"need"`
+	Guardian bool `json:"guardian,omitempty"` // a legendary guards this floor
+}
+
+// GuardianEvery: every tenth floor is guarded by a legendary — a longer
+// fight, and a rare reward (the ladder puts its best Pokémon on these floors,
+// and a guardian already in the Pokédex joins in its shiny form).
+const GuardianEvery = 10
+
+// TowerGuardianTaunt is spoken when a guardian floor opens.
+const TowerGuardianTaunt = "Attention ! Un Pokémon légendaire garde cet étage. Lis tous les mots pour le battre !"
+
+func towerTitle(floor int, guardian bool) string {
+	if guardian {
+		return fmt.Sprintf("⚡ Étage %d — Gardien légendaire", floor)
+	}
+	return fmt.Sprintf("Étage %d", floor)
+}
+
+// TowerOpponent is the floor's opponent: a different one per floor, drawn
+// from the whole roster (seeded by the floor, so a retried floor is the same
+// fight), and a legendary on every guardian floor — one he has caught when
+// possible, so beating it can make it shiny.
+func (c *Curriculum) TowerOpponent(floor int, st progress.State) (Pokemon, bool) {
+	rng := rand.New(rand.NewPCG(uint64(floor), 0x70e7))
+	if floor%GuardianEvery == 0 {
+		caught := map[int]bool{}
+		for _, id := range st.Pokedex {
+			caught[id] = true
+		}
+		var legends, mine []Pokemon
+		for _, id := range c.PokemonOrder {
+			if p := c.Pokemon[id]; p.Legendary {
+				legends = append(legends, p)
+				if caught[id] {
+					mine = append(mine, p)
+				}
+			}
+		}
+		if len(mine) > 0 {
+			return mine[(floor/GuardianEvery-1)%len(mine)], true
+		}
+		if len(legends) > 0 {
+			return legends[(floor/GuardianEvery-1)%len(legends)], true
+		}
+	}
+	var pool []Pokemon
+	for _, p := range c.Roster() {
+		if !p.Legendary {
+			pool = append(pool, p)
+		}
+	}
+	return pool[rng.IntN(len(pool))], false
 }
 
 // towerRounds ramps the fight length with the floor: 4 words on floor 1 up to
@@ -862,27 +929,26 @@ func (c *Curriculum) BuildTower(st progress.State, floor int, now time.Time) (Se
 		return abs(len(a.Syllables)-target) < abs(len(b.Syllables)-target)
 	})
 	rounds := towerRounds(floor)
+	if floor%GuardianEvery == 0 {
+		rounds = min(rounds+2, 10) // the guardian fights longer
+	}
 	if len(words) > rounds {
 		words = words[:rounds]
 	}
 
-	// The opponent is one of his own catches — the tower is a friendly rematch,
-	// and seeing the Pokédex fight back is half the fun.
-	boss := c.Pokemon[25]
-	if len(st.Pokedex) > 0 {
-		if b, ok := c.Pokemon[st.Pokedex[rand.IntN(len(st.Pokedex))]]; ok {
-			boss = b
-		}
+	boss, guardian := c.TowerOpponent(floor, st)
+	taunt := TowerTaunt
+	if guardian {
+		taunt = TowerGuardianTaunt
 	}
-
 	f := &Fight{
 		Pokemon:    boss.ID,
 		Name:       boss.Name,
 		Syllables:  boss.Syllables,
 		HP:         len(words),
 		Legendary:  true, // the tower borrows the arena's event staging
-		Taunt:      TowerTaunt,
-		TauntAudio: speech.URL(TowerTaunt, speech.StyleNormal),
+		Taunt:      taunt,
+		TauntAudio: speech.URL(taunt, speech.StyleNormal),
 	}
 	for _, w := range words {
 		tray := append([]string(nil), w.Syllables...)
@@ -918,10 +984,10 @@ func (c *Curriculum) BuildTower(st progress.State, floor int, now time.Time) (Se
 		Legendary: true,
 		Lives:     st.Settings.BattleLives,
 		UI:        UIAudio(),
-		Tower:     &TowerInfo{Floor: floor, Rounds: len(f.Rounds), Need: TowerNeed(len(f.Rounds))},
+		Tower:     &TowerInfo{Floor: floor, Rounds: len(f.Rounds), Need: TowerNeed(len(f.Rounds)), Guardian: guardian},
 		Activities: []Activity{{
 			Kind:        "combat",
-			Title:       fmt.Sprintf("Étage %d", floor),
+			Title:       towerTitle(floor, guardian),
 			Instruction: "Remets les syllabes dans l'ordre pour lancer l'attaque.",
 			Fight:       f,
 		}},
@@ -1026,6 +1092,9 @@ func (c *Curriculum) SpeechTexts() []SpeechItem {
 		p := c.Pokemon[id]
 		add(p.Spoken(), speech.StyleWord)
 		add(p.Dex, speech.StyleNormal)
+		for _, s := range p.Syllables {
+			add(SpokenSyllable(s), speech.StyleSyllable)
+		}
 	}
 	for _, p := range c.Arcade {
 		add(p.Spoken(), speech.StyleWord)
@@ -1037,7 +1106,17 @@ func (c *Curriculum) SpeechTexts() []SpeechItem {
 		add(phrase, speech.StyleNormal)
 	}
 	add(TowerTaunt, speech.StyleNormal)
+	add(TowerGuardianTaunt, speech.StyleNormal)
+	add(TrainerTaunt, speech.StyleNormal)
+	add(TrainerBeaten, speech.StyleNormal)
+	add(TrainerWon, speech.StyleNormal)
 	for _, phrase := range c.partnerSpeech() {
+		add(phrase, speech.StyleNormal)
+	}
+	for _, phrase := range c.progressionSpeech() {
+		add(phrase, speech.StyleNormal)
+	}
+	for _, phrase := range append([]string{FoundBalls, FoundSuperBall, FoundCandy, FoundBerry}, QuestPhrases...) {
 		add(phrase, speech.StyleNormal)
 	}
 	return out
@@ -1057,6 +1136,8 @@ var UIPhrases = []string{
 	"Lis le mot tout seul.",
 	"Attaque !",
 	"Coup critique !",
+	"Super rapide !",
+	"K.O. ! Bravo !",
 	"Combat parfait !",
 	"Tu as gagné le combat !",
 	"Oh non, tu as perdu ! Entraîne-toi et reviens plus fort !",
@@ -1074,6 +1155,9 @@ var UIPhrases = []string{
 	"Un Pokémon sauvage apparaît !",
 	"Lis son nom pour l'attraper !",
 	"Lance la Poké Ball !",
+	"Relance vite une Poké Ball !",
+	"Oh non ! Il est sorti de la Poké Ball !",
+	"Oh non, il s'est enfui !",
 	"Et hop ! Attrapé !",
 	"Tu n'as plus de Poké Balls ! Lis une route pour en gagner.",
 	"Il n'y a personne ici. Apprends de nouveaux sons pour trouver des Pokémon !",
@@ -1097,6 +1181,16 @@ var UIPhrases = []string{
 	"Le combat est perdu : l'épisode recommence du début. Tu vas y arriver !",
 	"Touche JOUER pour continuer l'aventure !",
 
+	// Missions, the partner's hunger, the Super Ball, map trainers.
+	"Mission accomplie !",
+	"Tes missions du jour !",
+	"Miam ! Ton partenaire adore les baies !",
+	"Ton partenaire a faim ! Trouve une baie sur la carte ou dans les missions.",
+	"Choisis ta Poké Ball ! La Super Ball attrape mieux.",
+	TrainerTaunt,
+	TrainerBeaten,
+	TrainerWon,
+
 	// The overworld map (web/overworld.js).
 	"Touche une case pour te déplacer, ou utilise les flèches !",
 	"C'est la prochaine route ! Touche JOUER !",
@@ -1114,6 +1208,7 @@ var UIPhrases = []string{
 	"Tu gagnes des Poké Balls !",
 	"Un Pokémon rare de la Tour rejoint ton Pokédex !",
 	"Nouveau record !",
+	"Incroyable ! Ton Pokémon légendaire devient chromatique !",
 	"Il rejoint ton Pokédex sauvage !",
 
 	// Screens of world.js.
@@ -1124,7 +1219,11 @@ var UIPhrases = []string{
 	// Mini-games (the hint of each game's screen).
 	"Choisis un jeu, et bats tes records !",
 	"Retrouve les paires !",
-	"Touche le Pokémon avant qu'il se cache !",
+	"Touche les Pokémon, mais pas Voltorbe : il explose !",
+	"Trop fort !",
+	"Incroyable !",
+	"Tu es une fusée !",
+	"Continue comme ça !",
 	"Lis le mot, touche la bonne image !",
 	"Remets les syllabes dans l'ordre, encore et encore !",
 	"Qui est cette ombre ? Lis les noms !",
