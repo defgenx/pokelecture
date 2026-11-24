@@ -704,7 +704,7 @@ const Players = {
           this.enter();
         },
       },
-        el('img', { src: `sprites/art/${p.avatar}.png`, alt: '' }),
+        p.avatar ? el('img', { src: `sprites/art/${p.avatar}.png`, alt: '' }) : el('span', { class: 'player-unknown', 'aria-hidden': 'true' }, '?'), // no starter yet
         el('b', {}, p.locked ? `🔒 ${p.name}` : p.name),
         p.trainer_level ? el('small', {}, `🎖 N.${p.trainer_level} · ⭐ ${p.stars || 0}`) : null,
       )),

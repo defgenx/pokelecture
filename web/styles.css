@@ -1790,3 +1790,12 @@ img.shiny { filter: hue-rotate(300deg) saturate(1.3) brightness(1.06) drop-shado
 }
 .code-key img { width: 90%; height: 90%; object-fit: contain; }
 .code-key:active { transform: scale(.93); border-color: var(--yellow); }
+
+/* A player who has not chosen a starter yet: a big "?" in its place. */
+.player-unknown {
+  width: 120px; height: 120px; display: grid; place-items: center;
+  font-size: 96px; font-weight: 900; line-height: 1; color: #fff;
+  background: radial-gradient(circle at 35% 30%, #8fa3c7, #4a5d86); border-radius: 50%;
+  text-shadow: 0 4px 0 rgba(20, 24, 34, .25); box-shadow: inset 0 -6px 0 rgba(0, 0, 0, .15), var(--lift-2);
+  animation: bob 3.6s ease-in-out infinite;
+}

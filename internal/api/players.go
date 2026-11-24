@@ -117,7 +117,7 @@ type playerView struct {
 	ID     string `json:"id"`
 	Name   string `json:"name"`
 	Locked bool   `json:"locked"` // a picture code guards this save
-	Avatar int    `json:"avatar"` // the partner's species: what the child recognises
+	Avatar int    `json:"avatar"` // the partner's species: what the child recognises; 0 none yet ("?")
 	// Left out (nil) for a private player on the game's list: anyone can
 	// open "Qui joue ?", and a name and a Pokémon are all it needs.
 	*playerStats
@@ -141,7 +141,7 @@ func (s *Server) playerViews(full bool) []playerView {
 			continue
 		}
 		snap := st.Snapshot()
-		v := playerView{ID: p.ID, Name: snap.Name, Locked: snap.Lock != nil, Avatar: 25}
+		v := playerView{ID: p.ID, Name: snap.Name, Locked: snap.Lock != nil}
 		if full || snap.Lock == nil {
 			v.playerStats = &playerStats{Stars: snap.Stars, Caught: len(snap.Pokedex), Level: trainerOf(snap).Level, Updated: snap.UpdatedAt}
 		}

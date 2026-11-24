@@ -63,6 +63,7 @@
 .players { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 4px; }
 .player-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 6px; border-radius: 999px; border: 1px solid #c6ccd6; background: #fff; font: inherit; font-weight: 700; cursor: pointer; }
 .player-chip img { width: 28px; height: 28px; object-fit: contain; }
+.chip-unknown { width: 28px; height: 28px; display: inline-grid; place-items: center; border-radius: 50%; background: #6b7ea6; color: #fff; font-weight: 900; font-size: 18px; }
 .player-chip.on { background: #ffcb05; border-color: #c98f00; }
 .player-chip.add { padding: 6px 14px; color: #3b4cca; }
 
