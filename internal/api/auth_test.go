@@ -303,3 +303,37 @@ func TestGuardedPagesHaveNoBackDoor(t *testing.T) {
 		}
 	}
 }
+
+func TestEmailMatching(t *testing.T) {
+	for in, want := range map[string]string{
+		"Papa@Example.com":         "papa@example.com",
+		`"papa@example.com"`:       "papa@example.com",
+		" 'Prenom.Nom@Gmail.com' ": "prenomnom@gmail.com",
+		"prenom.nom+jeu@gmail.com": "prenomnom@gmail.com",
+		"prenomnom@googlemail.com": "prenomnom@gmail.com",
+		"prenom.nom@exemple.fr":    "prenom.nom@exemple.fr", // other domains: exact
+	} {
+		if got := normalizeEmail(in); got != want {
+			t.Errorf("normalizeEmail(%q) = %q, attendu %q", in, got, want)
+		}
+	}
+	// A quoted list from a .env still lets its owner in.
+	a, err := NewAuth("client-id", "secret", `"Prenom.Nom@gmail.com, maman@example.com"`, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !a.Allowed["prenomnom@gmail.com"] || !a.Allowed["maman@example.com"] {
+		t.Fatalf("liste entre guillemets mal lue : %v", a.Allowed)
+	}
+}
+
+func TestGmailVariantSignsIn(t *testing.T) {
+	// Google answers with the account's own spelling; the list has another.
+	g := &fakeGoogle{claims: goodClaims("papa@googlemail.com")}
+	app, c := newAuthApp(t, g)
+	// newAuthApp's list has "Papa@Example.com" and "maman@example.com":
+	// a gmail variant of an unlisted address must still be refused.
+	if resp := signIn(t, app, c, g); resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("adresse hors liste : %d, attendu 403", resp.StatusCode)
+	}
+}

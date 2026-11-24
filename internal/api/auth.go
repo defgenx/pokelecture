@@ -70,8 +70,8 @@ func NewAuth(clientID, clientSecret, admins, publicURL, sessionKey string) (*Aut
 		tokenURL: "https://oauth2.googleapis.com/token",
 		client:   &http.Client{Timeout: 15 * time.Second},
 	}
-	for _, e := range strings.Split(admins, ",") {
-		if e = strings.ToLower(strings.TrimSpace(e)); e != "" {
+	for _, e := range strings.Split(strings.Trim(strings.TrimSpace(admins), `"'`), ",") {
+		if e = normalizeEmail(e); e != "" {
 			a.Allowed[e] = true
 		}
 	}
@@ -96,6 +96,27 @@ func NewAuth(clientID, clientSecret, admins, publicURL, sessionKey string) (*Aut
 		}
 	}
 	return a, nil
+}
+
+// normalizeEmail is how both the allowlist and Google's answer are compared:
+// lowercased, stray quotes and spaces gone (a quoted value in a .env keeps its
+// quotes under some Compose versions) and, for Gmail only, the way Gmail
+// itself reads an address — dots and a +tag in the name do not count, and
+// googlemail.com is gmail.com. Every other domain is compared exactly.
+func normalizeEmail(e string) string {
+	e = strings.ToLower(strings.Trim(strings.TrimSpace(e), `"' `))
+	name, domain, ok := strings.Cut(e, "@")
+	if !ok || name == "" || domain == "" {
+		return e
+	}
+	if domain == "googlemail.com" {
+		domain = "gmail.com"
+	}
+	if domain == "gmail.com" {
+		name, _, _ = strings.Cut(name, "+")
+		name = strings.ReplaceAll(name, ".", "")
+	}
+	return name + "@" + domain
 }
 
 // WithAuth turns the Google sign-in on for the parent side.
@@ -350,10 +371,11 @@ func (s *Server) handleCallback(w http.ResponseWriter, r *http.Request) {
 		s.authPage(w, http.StatusForbidden, "Cette adresse Google n'est pas vérifiée.", claims.Email)
 		return
 	}
-	email := strings.ToLower(claims.Email)
+	email := normalizeEmail(claims.Email)
 	if !s.auth.Allowed[email] {
-		log.Printf("connexion refusée : %s n'est pas dans POKELECTURE_ADMINS", email)
-		s.authPage(w, http.StatusForbidden, "Ce compte Google n'est pas autorisé.", email)
+		log.Printf("connexion refusée : %s (lu %s) n'est pas dans POKELECTURE_ADMINS (%d adresse(s))", claims.Email, email, len(s.auth.Allowed))
+		s.authPage(w, http.StatusForbidden,
+			"Ce compte Google n'est pas autorisé : ajoute exactement cette adresse à POKELECTURE_ADMINS.", claims.Email)
 		return
 	}
 	http.SetCookie(w, s.cookie(r, sessionCookie, s.auth.issue("session", email, sessionTTL), sessionTTL))
