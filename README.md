@@ -634,8 +634,9 @@ ensuite**, et le Champion en toute fin de parcours.
 | ★ | *révision de tout* | **Arène du Savoir** · Diplôme de l'Académie | **Meloetta** |
 
 Sur la carte, les quatre portes du Conseil sont numérotées **1/4 à 4/4** et
-le Champion porte 🏆 : avec la même ★ partout, on n'en comptait que trois (le
-partenaire, posé sur la prochaine porte, cachait la sienne).
+le Champion porte 🏆. On n'en voyait que trois : le partenaire, posé sur la
+prochaine porte, était dessiné par-dessus et la cachait. Sur un arrêt, il se
+fait maintenant plus petit, perché dans le coin, et l'arrêt reste visible.
 
 Les routes 19–24 sont **les Îles Lointaines**, sur le thème de l'évolution :
 les Pokémon attrapés au début de l'aventure ont grandi avec le lecteur.

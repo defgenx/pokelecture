@@ -1601,6 +1601,10 @@ img.shiny { filter: hue-rotate(300deg) saturate(1.3) brightness(1.06) drop-shado
 }
 .ow-walker img { width: 118%; height: 118%; object-fit: contain; margin-top: -30%; filter: drop-shadow(0 5px 4px rgba(0, 0, 0, .35)); }
 .ow-walker.face-left img { transform: scaleX(-1); }
+/* Standing on a stop: small, perched at its top-right corner, so the stop's
+   Poké Ball, Pokémon and number stay in sight. */
+.ow-walker.on-stop { place-items: start end; }
+.ow-walker.on-stop img { width: 62%; height: 62%; margin: -28% -22% 0 0; }
 .ow-walker.hop img { animation: ow-hop .17s ease; }
 .ow-walker.face-left.hop img { animation: ow-hop-left .17s ease; }
 .ow-walker.bump img { animation: shake .3s ease; }

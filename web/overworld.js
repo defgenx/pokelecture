@@ -307,6 +307,9 @@ const Overworld = {
     this.walker.style.transition = animate ? `left ${OW_STEP_MS}ms linear, top ${OW_STEP_MS}ms linear` : 'none';
     this.walker.style.left = `${(this.pos.x / cols) * 100}%`;
     this.walker.style.top = `${(this.pos.y / rows) * 100}%`;
+    // On a route stop he steps aside, smaller: drawn over it, he hid the
+    // stop he stands on — one of the Conseil's four doors looked missing.
+    this.walker.classList.toggle('on-stop', /[1-5]/.test(this.grid[this.pos.y][this.pos.x]));
   },
 
   free(x, y) {
