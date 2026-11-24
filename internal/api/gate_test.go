@@ -124,3 +124,36 @@ func TestTicketsEarnedByReading(t *testing.T) {
 		t.Fatalf("a finished route pays one ticket: %d, bag %d", res.Tickets, store.Snapshot().Bag["ticket"])
 	}
 }
+
+func TestInsertedEpisodeLocksNothingBeyond(t *testing.T) {
+	cur, err := curriculum.Load(filepath.Join("../..", "data"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	store, err := progress.Open(filepath.Join(t.TempDir(), "p.json"), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	store.ChoosePartner(4, 0)
+	// A save that played every Faille but the new one (ep34b).
+	for _, ep := range cur.Episodes {
+		if ep.ID != "ep34b" {
+			store.CompleteEpisode(ep.ID, 5, time.Now())
+		}
+		if ep.ID == "ep35" {
+			break
+		}
+	}
+	srv := httptest.NewServer(New(cur, store, filepath.Join("../..", "web"), "/").Routes())
+	defer srv.Close()
+	var st stateView
+	getJSON(t, srv.URL+"/api/state", &st)
+	if st.NextID != "ep34b" {
+		t.Fatalf("the new Faille should be next, got %q", st.NextID)
+	}
+	for _, e := range st.Episodes {
+		if (e.ID == "ep35" || e.ID == "ep34b") && !e.Unlocked {
+			t.Fatalf("%s locked by the inserted episode", e.ID)
+		}
+	}
+}

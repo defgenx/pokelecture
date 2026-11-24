@@ -1349,6 +1349,33 @@
     "dex": "La chauve-souris de la lune. Ses ailes ressemblent à un croissant dans la nuit."
   },
   {
+    "id": 382,
+    "name": "Kyogre",
+    "say_as": "Kiogre",
+    "legendary": true,
+    "syllables": [
+      "Kyo",
+      "gre"
+    ],
+    "types": [
+      "Eau"
+    ],
+    "dex": "Le maître des océans. Quand il se réveille, la pluie tombe sans s'arrêter."
+  },
+  {
+    "id": 383,
+    "name": "Groudon",
+    "legendary": true,
+    "syllables": [
+      "Grou",
+      "don"
+    ],
+    "types": [
+      "Sol"
+    ],
+    "dex": "Le maître de la terre. Sa chaleur fait sécher l'eau et grandir les continents."
+  },
+  {
     "id": 800,
     "name": "Necrozma",
     "say_as": "Nécrozma",

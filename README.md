@@ -671,8 +671,13 @@ Du contenu de **consolidation** (aucun nouveau son : tout l'inventaire CP est
 déjà là) organisé **par jeu Pokémon** — les starters de Hoenn/Sinnoh,
 Unys/Alola et Galar/Paldea (Poussifeu, Gobou, Tiplouf, Moustillon, Brindibou,
 Flamiaou, Flambino, Poussacha, Chochodile…) — puis trois **Failles Ultra**,
-des combats légendaires doubles : Dialga **et** Palkia, Lunala **et**
-Solgaleo, Giratina **et** Necrozma entrent au Pokédex.
+des combats légendaires doubles — **quatre**, comme les portes du Conseil :
+Dialga **et** Palkia, Lunala **et** Solgaleo, Kyogre **et** Groudon (la
+Faille des Abysses), puis Giratina **et** Necrozma, la dernière.
+
+Ajouter un épisode au milieu du parcours ne ferme rien : un épisode déjà
+terminé, ou dépassé, reste ouvert ; le nouveau devient simplement la
+prochaine étape.
 
 ### L'Académie Pokémon : les sons de CE1
 

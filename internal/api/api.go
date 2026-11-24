@@ -353,12 +353,16 @@ func (s *Server) state() stateView {
 			unlocked = false
 			continue
 		}
+		// Reached: done, or a later one done. An episode inserted in the course
+		// (a new Faille) becomes the next stop without closing what he has
+		// already played beyond it.
+		reached := s.cur.ReachedEpisode(ep.ID, st)
 		v := episodeView{
 			ID:        ep.ID,
 			Route:     ep.Route,
 			Title:     ep.Title,
 			Region:    ep.Region,
-			Unlocked:  unlocked || st.Settings.FreePlay,
+			Unlocked:  unlocked || reached || st.Settings.FreePlay,
 			Stars:     stat.BestStars,
 			Done:      stat.Completions,
 			Reward:    ep.RewardPokemon,
@@ -383,7 +387,7 @@ func (s *Server) state() stateView {
 		// The parent decides what "done enough to move on" means: completed
 		// is the default, a star threshold (global, or set per episode) makes
 		// replays part of the course.
-		unlocked = unlocked && stat.Completions > 0 && stat.BestStars >= st.Settings.MinStarsFor(ep.ID)
+		unlocked = (unlocked || reached) && stat.Completions > 0 && stat.BestStars >= st.Settings.MinStarsFor(ep.ID)
 	}
 	if out.NextID == "" && len(s.cur.Episodes) > 0 {
 		// Everything done: replay the least recently played episode, so the

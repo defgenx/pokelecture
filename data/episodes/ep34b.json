@@ -1,0 +1,22 @@
+{
+  "id": "ep34b",
+  "route": 0,
+  "title": "Faille des Abysses — Kyogre et Groudon",
+  "region": "Failles Ultra",
+  "story": "Une troisième Faille Ultra s'ouvre au fond de la mer ! D'un côté, Kyogre fait monter les vagues ; de l'autre, Groudon fait bouillir la lave. La mer et la terre se disputent. Lis pour les calmer tous les deux !",
+  "new_graphemes": [],
+  "syllables": [],
+  "words": [],
+  "sentences": [],
+  "legendary": true,
+  "reward_pokemon": 382,
+  "boss": {
+    "pokemon": 383,
+    "hp": 6,
+    "taunt": "Groudon frappe le sol, la lave jaillit ! Kyogre répond avec une vague géante. Lis !"
+  },
+  "cameo": [
+    382,
+    383
+  ]
+}
