@@ -313,23 +313,47 @@ func TestGuardedPagesHaveNoBackDoor(t *testing.T) {
 func TestEmailMatching(t *testing.T) {
 	for in, want := range map[string]string{
 		"Papa@Example.com":         "papa@example.com",
-		`"papa@example.com"`:       "papa@example.com",
-		" 'Prenom.Nom@Gmail.com' ": "prenomnom@gmail.com",
+		"Prenom.Nom@Gmail.com":     "prenomnom@gmail.com",
 		"prenom.nom+jeu@gmail.com": "prenomnom@gmail.com",
 		"prenomnom@googlemail.com": "prenomnom@gmail.com",
 		"prenom.nom@exemple.fr":    "prenom.nom@exemple.fr", // other domains: exact
+		// Refused outright: no comparison is even attempted.
+		"owner@gma\u0130l.com":     "", // İ would fold onto i
+		"\u212Aevin@corp.com":      "", // Kelvin sign would fold onto k
+		`"owner@gmail.com"`:        "", // quotes are trimmed on the env var only
+		"'bob@corp.com":            "",
+		"+x@gmail.com":             "",
+		"...@gmail.com":            "",
+		"owner@gmail.com@evil.com": "",
+		"owner@gmail.com\nforged":  "",
+		"a b@gmail.com":            "",
+		"@gmail.com":               "",
 	} {
 		if got := normalizeEmail(in); got != want {
 			t.Errorf("normalizeEmail(%q) = %q, attendu %q", in, got, want)
 		}
 	}
-	// A quoted list from a .env still lets its owner in.
+	// A quoted list from a .env still lets its owner in…
 	a, err := NewAuth("client-id", "secret", `"Prenom.Nom@gmail.com, maman@example.com"`, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !a.Allowed["prenomnom@gmail.com"] || !a.Allowed["maman@example.com"] {
 		t.Fatalf("liste entre guillemets mal lue : %v", a.Allowed)
+	}
+	// …and a malformed one stops the server instead of failing silently.
+	for _, bad := range []string{"papa@example.com; maman@example.com", "papa example.com", "@gmail.com", "*@gmail.com"} {
+		if _, err := NewAuth("client-id", "secret", bad, "", ""); err == nil {
+			t.Errorf("liste %q acceptée : elle doit empêcher le démarrage", bad)
+		}
+	}
+}
+
+func TestLookAlikeClaimIsRefused(t *testing.T) {
+	g := &fakeGoogle{claims: goodClaims("papa@examp\u0130e.com")}
+	app, c := newAuthApp(t, g)
+	if resp := signIn(t, app, c, g); resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("adresse unicode sosie : %d, attendu 403", resp.StatusCode)
 	}
 }
 

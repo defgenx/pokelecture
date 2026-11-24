@@ -71,9 +71,17 @@ func NewAuth(clientID, clientSecret, admins, publicURL, sessionKey string) (*Aut
 		client:   &http.Client{Timeout: 15 * time.Second},
 	}
 	for _, e := range strings.Split(strings.Trim(strings.TrimSpace(admins), `"'`), ",") {
-		if e = normalizeEmail(e); e != "" {
-			a.Allowed[e] = true
+		// Quotes and spaces are trimmed here, on the env var only — never on
+		// what Google answers.
+		e = strings.Trim(strings.TrimSpace(e), `"' `)
+		if e == "" {
+			continue
 		}
+		n := normalizeEmail(e)
+		if n == "" || strings.Contains(e, "*") { // no wildcards: a list of real addresses
+			return nil, fmt.Errorf("POKELECTURE_ADMINS : adresse invalide %q (une adresse par élément, séparées par des virgules, sans *)", e)
+		}
+		a.Allowed[n] = true
 	}
 	if len(a.Allowed) == 0 {
 		return nil, fmt.Errorf("POKELECTURE_ADMINS est vide : personne ne pourrait se connecter")
@@ -98,23 +106,44 @@ func NewAuth(clientID, clientSecret, admins, publicURL, sessionKey string) (*Aut
 	return a, nil
 }
 
-// normalizeEmail is how both the allowlist and Google's answer are compared:
-// lowercased, stray quotes and spaces gone (a quoted value in a .env keeps its
-// quotes under some Compose versions) and, for Gmail only, the way Gmail
-// itself reads an address — dots and a +tag in the name do not count, and
+// validEmail is the only shape of address compared at all: printable ASCII
+// with no quote, space or control character, exactly one "@", a non-empty
+// name and domain. Anything else — unicode look-alikes that case-fold onto
+// an allowed address (İ → i, the Kelvin sign → k), quotes, line breaks — is
+// refused, from Google as from the allowlist.
+func validEmail(e string) bool {
+	if strings.Count(e, "@") != 1 {
+		return false
+	}
+	for i := 0; i < len(e); i++ {
+		c := e[i]
+		if c <= ' ' || c >= 0x7f || c == '"' || c == '\'' || c == '`' || c == '\\' {
+			return false
+		}
+	}
+	name, domain, _ := strings.Cut(e, "@")
+	return name != "" && domain != "" && !strings.HasPrefix(domain, ".") && !strings.HasSuffix(domain, ".")
+}
+
+// normalizeEmail is how both sides are compared, "" for an invalid address:
+// lowercased (plain ASCII only, see validEmail) and, for Gmail only, the way
+// Gmail itself reads an address — dots and a +tag in the name do not count,
 // googlemail.com is gmail.com. Every other domain is compared exactly.
 func normalizeEmail(e string) string {
-	e = strings.ToLower(strings.Trim(strings.TrimSpace(e), `"' `))
-	name, domain, ok := strings.Cut(e, "@")
-	if !ok || name == "" || domain == "" {
-		return e
+	if !validEmail(e) {
+		return ""
 	}
+	e = strings.ToLower(e)
+	name, domain, _ := strings.Cut(e, "@")
 	if domain == "googlemail.com" {
 		domain = "gmail.com"
 	}
 	if domain == "gmail.com" {
 		name, _, _ = strings.Cut(name, "+")
 		name = strings.ReplaceAll(name, ".", "")
+		if name == "" {
+			return ""
+		}
 	}
 	return name + "@" + domain
 }
@@ -373,8 +402,8 @@ func (s *Server) handleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	email := normalizeEmail(claims.Email)
-	if !s.auth.Allowed[email] {
-		log.Printf("connexion refusée : %s (lu %s) n'est pas dans POKELECTURE_ADMINS (%d adresse(s))", claims.Email, email, len(s.auth.Allowed))
+	if email == "" || !s.auth.Allowed[email] {
+		log.Printf("connexion refusée : %q (lu %q) n'est pas dans POKELECTURE_ADMINS (%d adresse(s))", claims.Email, email, len(s.auth.Allowed))
 		s.authPage(w, http.StatusForbidden,
 			"Ce compte Google n'est pas autorisé : ajoute exactement cette adresse à POKELECTURE_ADMINS.", claims.Email)
 		return

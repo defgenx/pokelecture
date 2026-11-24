@@ -570,6 +570,9 @@ func logging(next http.Handler) http.Handler {
 		// Never let a browser guess a type from the bytes (an HTML page
 		// uploaded as a "recording" would run as one).
 		w.Header().Set("X-Content-Type-Options", "nosniff")
+		// No page of this app is meant to be framed by another site.
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Content-Security-Policy", "frame-ancestors 'none'")
 		start := time.Now()
 		next.ServeHTTP(w, r)
 		if hasPrefix(r.URL.Path, "/api/") {
