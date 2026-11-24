@@ -205,7 +205,8 @@ function examsTab(list) {
   if (!exams.length) list.append(el('p', {}, 'Aucun examen dans data/events.json.'));
   exams.forEach((x) => {
     const r = x.record || {};
-    const sections = Object.entries(r.sections || {}).map(([k, [ok, of]]) => `${SECTION_NAMES[k] || k} ${ok}/${of}`).join(' · ');
+    const sections = Object.keys(SECTION_NAMES).filter((k) => (r.sections || {})[k])
+      .map((k) => `${SECTION_NAMES[k]} ${r.sections[k][0]}/${r.sections[k][1]}`).join(' · ');
     const status = r.passed ? `✅ réussi (meilleur ${r.best} %)`
       : r.attempts ? `❌ ${r.attempts} essai${r.attempts > 1 ? 's' : ''}, dernier ${r.last} % (il faut ${x.pass} %)`
       : x.eligible ? 'pas encore tenté' : `🔒 après l'épisode ${x.after}`;
@@ -217,9 +218,9 @@ function examsTab(list) {
       el('img', { src: `sprites/art/${x.pokemon}.png`, alt: '', style: 'width:40px;height:40px;object-fit:contain' }),
       el('div', { class: 'txt' },
         el('b', {}, `${x.today ? '🎓 ' : ''}${x.title}`),
-        el('small', {}, status),
-        sections ? el('small', {}, `Dernier essai, le ${fmtDate(r.last_at)} : ${sections}`) : null,
-        x.missed.length ? el('small', {}, `À revoir : ${x.missed.map((m) => m.label).join(', ')}`) : null,
+        el('small', { style: 'display:block' }, status),
+        sections ? el('small', { style: 'display:block' }, `Dernier essai, le ${fmtDate(r.last_at)} : ${sections}`) : null,
+        x.missed.length ? el('small', { style: 'display:block' }, `À revoir : ${x.missed.map((m) => m.label).join(', ')}`) : null,
       ),
       call,
     ));
@@ -250,7 +251,7 @@ function fluencyTab(list) {
     )));
   }
   const kinds = { syl: 'syllabe entendue', son: 'son entendu', mot: 'mot lu' };
-  const known = Object.entries(speed).filter(([k]) => kinds[k]);
+  const known = Object.entries(speed).filter(([k, v]) => kinds[k] && v.n > 0);
   if (known.length) {
     list.append(el('h2', {}, 'Son temps de réponse habituel (jeu)'));
     known.forEach(([k, v]) => list.append(el('div', { class: 'row' },

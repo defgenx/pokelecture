@@ -586,7 +586,9 @@ func (s *Store) AddTimes(times map[string][]int) {
 			}
 			st.N++
 		}
-		s.state.Speed[kind] = st
+		if st.N > 0 {
+			s.state.Speed[kind] = st
+		}
 	}
 }
 

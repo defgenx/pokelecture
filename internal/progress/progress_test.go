@@ -267,6 +267,10 @@ func TestAddTimesIgnoresAbsurdTimes(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.AddTimes(map[string][]int{"mot": {4000, 100, 120000, 2000}})
+	s.AddTimes(map[string][]int{"syl": {50}})
+	if _, kept := s.Snapshot().Speed["syl"]; kept {
+		t.Fatal("a kind with only absurd times was stored")
+	}
 	got := s.Snapshot().Speed["mot"]
 	if got.N != 2 || got.MS != 4000+(2000-4000)/8 {
 		t.Fatalf("got %+v", got)
