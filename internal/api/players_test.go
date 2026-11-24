@@ -96,16 +96,16 @@ func TestAdminActsOnTheNamedPlayer(t *testing.T) {
 		t.Fatalf("renommer Mia : %d", got)
 	}
 	// 🔒 Privé / 🌐 Public: only the palette's Pokémon, exactly three; [] clears.
-	for _, bad := range []string{`{"code":[25,4]}`, `{"code":[25,4,999]}`, `{"code":[25,4,7,1]}`} {
+	for _, bad := range []string{`{"code":[25,4,7]}`, `{"code":[25,4,7,999]}`, `{"code":[25,4,7,1,39]}`} {
 		if got := post("/api/admin/lock?player="+mia, bad); got != http.StatusBadRequest {
 			t.Errorf("code refusé attendu pour %s : %d", bad, got)
 		}
 	}
-	if got := post("/api/admin/lock?player="+mia, `{"code":[25,4,7]}`); got != http.StatusOK {
+	if got := post("/api/admin/lock?player="+mia, `{"code":[25,4,7,1]}`); got != http.StatusOK {
 		t.Fatalf("rendre Mia privée : %d", got)
 	}
-	if st, _ := reg.Get(mia); st.LockTag() == "" || func() bool { r, _ := st.TryLock([]int{25, 4, 7}); return r != progress.LockOpen }() {
-		t.Fatal("Mia doit être privée avec le code Pikachu, Salamèche, Carapuce")
+	if st, _ := reg.Get(mia); st.LockTag() == "" || func() bool { r, _ := st.TryLock([]int{25, 4, 7, 1}); return r != progress.LockOpen }() {
+		t.Fatal("Mia doit être privée avec le code Pikachu, Salamèche, Carapuce, Bulbizarre")
 	}
 	if st, _ := reg.Get(leo); st.LockTag() != "" {
 		t.Fatal("Léo doit rester public")
@@ -193,7 +193,7 @@ func TestPrivatePlayerNeedsItsCode(t *testing.T) {
 	nino := reg.List()[0].ID
 	mia, _ := reg.Create("Mia") // public
 	st, _ := reg.Get(nino)
-	st.SetLock([]int{25, 4, 7}) // private: Pikachu, Salamèche, Carapuce
+	st.SetLock([]int{25, 4, 7, 1}) // private: Pikachu, Salamèche, Carapuce, Bulbizarre
 	app := httptest.NewServer(NewPlayers(cur, reg, filepath.Join("..", "..", "web"), "/").Routes())
 	defer app.Close()
 	device := func() *http.Client { jar, _ := cookiejar.New(nil); return &http.Client{Jar: jar} }
@@ -219,13 +219,13 @@ func TestPrivatePlayerNeedsItsCode(t *testing.T) {
 	if got := pick(tablet, nino, ""); got != http.StatusForbidden {
 		t.Fatalf("privé sans code : %d, attendu 403", got)
 	}
-	if got := pick(tablet, nino, "[25,7,4]"); got != http.StatusForbidden {
+	if got := pick(tablet, nino, "[25,7,4,1]"); got != http.StatusForbidden {
 		t.Fatalf("mauvais ordre : %d, attendu 403", got)
 	}
 	if got := stateCode(tablet); got != http.StatusConflict {
 		t.Fatalf("sans le bon code, la sauvegarde ne s'ouvre pas : %d", got)
 	}
-	if got := pick(tablet, nino, "[25,4,7]"); got != http.StatusOK {
+	if got := pick(tablet, nino, "[25,4,7,1]"); got != http.StatusOK {
 		t.Fatalf("bon code : %d", got)
 	}
 	if got := stateCode(tablet); got != http.StatusOK {
@@ -249,7 +249,7 @@ func TestPrivatePlayerNeedsItsCode(t *testing.T) {
 	}
 
 	// A new code asks every device again.
-	st.SetLock([]int{1, 133, 39})
+	st.SetLock([]int{1, 133, 39, 52})
 	if got := stateCode(tablet); got != http.StatusConflict {
 		t.Fatalf("code changé : l'appareil doit redemander, %d", got)
 	}
@@ -257,19 +257,19 @@ func TestPrivatePlayerNeedsItsCode(t *testing.T) {
 	// Five wrong codes: wait — even the right code, even from another device.
 	guess := device()
 	for i := 0; i < 5; i++ {
-		pick(guess, nino, "[52,52,52]")
+		pick(guess, nino, "[52,52,52,52]")
 	}
-	if got := pick(device(), nino, "[1,133,39]"); got != http.StatusTooManyRequests {
+	if got := pick(device(), nino, "[1,133,39,52]"); got != http.StatusTooManyRequests {
 		t.Fatalf("après 5 essais ratés, même le bon code doit attendre : %d", got)
 	}
 	// A device already in keeps playing.
 	tablet2 := device()
 	st.ReopenLock()
-	if got := pick(tablet2, nino, "[1,133,39]"); got != http.StatusOK {
+	if got := pick(tablet2, nino, "[1,133,39,52]"); got != http.StatusOK {
 		t.Fatalf("rouvert : %d", got)
 	}
 	for i := 0; i < 5; i++ {
-		pick(guess, nino, "[52,52,52]")
+		pick(guess, nino, "[52,52,52,52]")
 	}
 	if got := stateCode(tablet2); got != http.StatusOK {
 		t.Fatalf("un appareil déjà entré ne doit pas être bloqué par les essais d'un autre : %d", got)

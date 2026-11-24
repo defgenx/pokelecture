@@ -71,7 +71,7 @@ gardé en `progress.json.before-players` ; `POKELECTURE_NAME` ne s'applique que
 tant qu'il n'y a qu'un joueur.
 
 **🔒 Privé / 🌐 Public** : dans l'administration (onglet Réglages), un joueur
-peut être rendu privé par un **code de trois Pokémon, dans l'ordre**, choisis
+peut être rendu privé par un **code de quatre Pokémon, dans l'ordre**, choisis
 parmi neuf (Pikachu, Salamèche, Carapuce, Bulbizarre, Évoli, Rondoudou,
 Miaouss, Ronflex, Psykokwak) — un enfant qui ne lit pas peut le taper. Sur
 « Qui joue ? », un joueur privé porte un 🔒 ; le toucher ouvre l'écran du code
@@ -89,7 +89,7 @@ s'ouvre d'un toucher, comme avant ; « Rendre public » retire le code.
   après 5, cinq minutes d'attente ; après 10, une heure ; à **15, le joueur
   est fermé** jusqu'à ce qu'un parent clique **🔓 Rouvrir** dans l'admin (le
   code et les appareils restent). Quelqu'un qui essaie depuis Internet a donc
-  au plus 15 chances sur 729 (2 %). Les appareils déjà entrés continuent de
+  au plus 15 chances sur 6561 (0,2 %). Les appareils déjà entrés continuent de
   jouer : les essais d'un autre ne bloquent jamais la tablette de l'enfant.
 - Chaque essai est vérifié et compté d'un seul coup : une rafale d'essais
   simultanés n'en teste pas plus.

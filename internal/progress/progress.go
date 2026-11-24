@@ -160,7 +160,7 @@ type Lock struct {
 
 // Wrong codes: every lockStep of them, a wait that grows; at LockClosedAt
 // the player stays closed until a parent reopens it (at most 15 tries of
-// 729: an attacker's odds stay under 2 %). Devices already in keep playing.
+// 6561: an attacker's odds stay under 0.3 %). Devices already in keep playing.
 const (
 	lockStep     = 5
 	LockClosedAt = 15
@@ -882,7 +882,7 @@ func (s *Store) flush() error {
 }
 
 // write saves without touching UpdatedAt ("last played"): a wrong code is
-// not a game. Owner-only: a save holds the hashed code, which 729 tries undo.
+// not a game. Owner-only: a save holds the hashed code, which 6561 tries undo.
 func (s *Store) write() error {
 	b, err := json.MarshalIndent(s.state, "", "  ")
 	if err != nil {

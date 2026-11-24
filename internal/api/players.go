@@ -78,7 +78,7 @@ func (s *Server) deviceMAC(id, lockTag string) string {
 // A code is three Pokémon taken from this palette (the game draws the same).
 var lockPalette = map[int]bool{25: true, 4: true, 7: true, 1: true, 133: true, 39: true, 52: true, 143: true, 54: true}
 
-const lockLength = 3
+const lockLength = 4
 
 func validCode(code []int) bool {
 	if len(code) != lockLength {
@@ -233,7 +233,7 @@ func (s *Server) handleAdminLock(w http.ResponseWriter, r *http.Request) {
 		Reopen bool  `json:"reopen"` // keep the code, forget the wrong tries
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || (len(req.Code) > 0 && !validCode(req.Code)) {
-		http.Error(w, "un code, c'est trois Pokémon de la liste", http.StatusBadRequest)
+		http.Error(w, "un code, c'est quatre Pokémon de la liste", http.StatusBadRequest)
 		return
 	}
 	if req.Reopen {

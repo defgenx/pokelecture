@@ -1183,7 +1183,7 @@ var UIPhrases = []string{
 
 	// Missions, the partner's hunger, the Super Ball, map trainers.
 	"Qui joue ? Touche ton Pokémon !",
-	"Touche ton code secret : tes trois Pokémon, dans l'ordre !",
+	"Touche ton code secret : tes quatre Pokémon, dans l'ordre !",
 	"Ce n'est pas le bon code. Essaie encore !",
 	"Trop d'essais. Attends un peu, puis réessaie.",
 	"Ta partie est fermée. Demande à un grand de la rouvrir.",

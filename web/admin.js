@@ -349,22 +349,22 @@ function lockSection(list, s) {
   } }, s.locked ? 'Changer le code' : 'Rendre privé avec ce code');
   const show = () => {
     slots.innerHTML = '';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       slots.append(el('span', { class: 'lock-slot' },
         code[i] ? el('img', { src: `sprites/art/${code[i]}.png`, alt: '' }) : `${i + 1}`));
     }
-    save.disabled = code.length !== 3;
+    save.disabled = code.length !== 4;
   };
   const pad = el('div', { class: 'lock-pad' }, LOCK_PALETTE.map(([n, name]) => el('button', {
     class: 'lock-key', title: name,
-    onclick: () => { if (code.length < 3) { code.push(n); show(); } },
+    onclick: () => { if (code.length < 4) { code.push(n); show(); } },
   }, el('img', { src: `sprites/art/${n}.png`, alt: name }))));
   show();
   list.append(el('div', { class: 'section' },
     el('h2', {}, s.locked ? '🔒 Privé' : '🌐 Public'),
     el('p', { style: 'color:#6a7180;font-size:13px;margin-bottom:10px' }, s.locked
-      ? `${s.name} est privé : le jeu demande son code (trois Pokémon, dans l'ordre) une fois par appareil. Changer le code le redemande sur tous les appareils.`
-      : `${s.name} est public : n'importe qui peut jouer sa partie. Choisissez trois Pokémon, dans l'ordre, pour le rendre privé.`),
+      ? `${s.name} est privé : le jeu demande son code (quatre Pokémon, dans l'ordre) une fois par appareil. Changer le code le redemande sur tous les appareils.`
+      : `${s.name} est public : n'importe qui peut jouer sa partie. Choisissez quatre Pokémon, dans l'ordre, pour le rendre privé.`),
     s.lock_closed ? el('div', { class: 'dangerzone' },
       el('p', {}, `Fermé : ${s.lock_fails} codes faux d'affilée. Le jeu ne demande plus le code tant que vous ne rouvrez pas (les appareils déjà entrés continuent de jouer).`),
       el('button', { onclick: () => act('api/admin/lock', { reopen: true }) }, '🔓 Rouvrir (même code)'),

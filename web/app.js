@@ -732,7 +732,7 @@ const Players = {
      admin. Asked once per device — the device then stays this player's. */
   askCode(p) {
     const code = [];
-    const slots = el('div', { class: 'code-slots' }, [0, 1, 2].map(() => el('span', { class: 'code-slot' })));
+    const slots = el('div', { class: 'code-slots' }, [0, 1, 2, 3].map(() => el('span', { class: 'code-slot' })));
     const show = () => {
       [...slots.children].forEach((s, i) => {
         s.innerHTML = '';
@@ -761,11 +761,11 @@ const Players = {
     const pad = el('div', { class: 'code-pad' }, this.PALETTE.map((n) => el('button', {
       class: 'code-key',
       onclick: () => {
-        if (code.length >= 3) return;
+        if (code.length >= 4) return;
         Sfx.pop();
         code.push(n);
         show();
-        if (code.length === 3) setTimeout(send, 250);
+        if (code.length === 4) setTimeout(send, 250);
       },
     }, el('img', { src: `sprites/art/${n}.png`, alt: '' }))));
     const back = el('button', { class: 'btn-icon', onclick: () => {
@@ -774,7 +774,7 @@ const Players = {
     App.screen(App.topbar(el('button', { class: 'btn-icon', onclick: () => this.pick() }, '✕')), el('div', { class: 'page' },
       el('div', { class: 'act' },
         el('h2', {}, `🔒 ${p.name}`),
-        hint('Touche ton code secret : tes trois Pokémon, dans l\'ordre !'),
+        hint('Touche ton code secret : tes quatre Pokémon, dans l\'ordre !'),
         el('div', { class: 'code-row' }, slots, back),
         pad,
       )));
