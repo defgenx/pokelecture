@@ -244,6 +244,9 @@ type Curriculum struct {
 	// Arcade lists extra Pokémon (data/arcade.json) seen only in the mini-games:
 	// never in the Pokédex, so they carry just a name for the voice and a sprite.
 	Arcade []Pokemon
+
+	// Partners are the starter evolution chains (data/partners.json).
+	Partners []PartnerLine
 }
 
 // Roster is every Pokémon the mini-games may show — the course's and the
@@ -326,6 +329,10 @@ func Load(dir string) (*Curriculum, error) {
 	}
 
 	if err := readJSON(filepath.Join(dir, "arcade.json"), &c.Arcade); err != nil && !os.IsNotExist(errors.Unwrap(err)) {
+		return nil, err
+	}
+
+	if err := readJSON(filepath.Join(dir, "partners.json"), &c.Partners); err != nil && !os.IsNotExist(errors.Unwrap(err)) {
 		return nil, err
 	}
 
@@ -525,6 +532,8 @@ func (c *Curriculum) Validate() []error {
 		}
 	}
 	errs = append(errs, c.checkPokedexCompletable()...)
+	errs = append(errs, c.validatePartners()...)
+	errs = append(errs, c.validateWild()...)
 	seen := map[int]bool{}
 	for _, p := range c.Arcade {
 		switch _, inCourse := c.Pokemon[p.ID]; {

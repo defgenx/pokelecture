@@ -135,3 +135,40 @@ func storedName(t *testing.T, path string) string {
 	}
 	return st.Name
 }
+
+func TestPartnerBallsAndGift(t *testing.T) {
+	s, err := Open(t.TempDir()+"/p.json", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !s.ChoosePartner(4, 40) || s.ChoosePartner(7, 0) {
+		t.Fatal("the partner is chosen exactly once")
+	}
+	st := s.Snapshot()
+	if st.Partner.Line != 4 || st.Partner.XP != 40 || st.Balls != StarterBalls {
+		t.Fatalf("after choosing: %+v balls=%d", st.Partner, st.Balls)
+	}
+	if b, a := s.GainXP(12); a-b != 12 {
+		t.Fatalf("GainXP: %d → %d", b, a)
+	}
+
+	for i := 0; i < StarterBalls; i++ {
+		if spent, _ := s.CatchWild(20, false); !spent {
+			t.Fatalf("ball %d should be available", i+1)
+		}
+	}
+	if spent, _ := s.CatchWild(21, false); spent {
+		t.Fatal("no ball left: the catch must be refused")
+	}
+	if got := s.Snapshot().Wild; len(got) != 1 || got[0] != 20 {
+		t.Fatalf("catching the same Pokémon twice keeps one entry, got %v", got)
+	}
+
+	now := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
+	if !s.OpenGift(now, 3) || s.OpenGift(now.Add(time.Hour), 3) || !s.OpenGift(now.AddDate(0, 0, 1), 3) {
+		t.Fatal("the gift opens once per day")
+	}
+	if s.Snapshot().Balls != 6 {
+		t.Fatalf("two gifts of 3 balls, got %d", s.Snapshot().Balls)
+	}
+}

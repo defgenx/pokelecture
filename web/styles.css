@@ -1357,3 +1357,278 @@ img.shiny { filter: hue-rotate(300deg) saturate(1.3) brightness(1.06) drop-shado
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* ======================================================= the Pokémon world ===
+   world.js and games.js: starter choice, partner card, evolution, daily gift,
+   tall grass, ball throw, and the two newer mini-games. */
+
+.pokeball-xs { --size: 20px; vertical-align: -4px; display: inline-block; }
+
+/* Starter choice: four balls on a table, the Pokémon peeking over each. */
+.starter-table { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; width: 100%; max-width: 760px; }
+.starter {
+  background: var(--glass-solid); border: 3px solid transparent; border-radius: var(--r-lg);
+  box-shadow: var(--lift-2); padding: 14px 8px 10px; display: flex; flex-direction: column;
+  align-items: center; gap: 6px; cursor: pointer; transition: transform .15s ease, border-color .15s ease;
+}
+.starter img { width: 100%; max-width: 150px; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 8px 8px rgba(20, 24, 34, .22)); }
+.starter .starter-ball { --size: 38px; }
+.starter.picked { border-color: var(--yellow); transform: translateY(-6px) scale(1.04); box-shadow: var(--lift-3); }
+.starter.picked img { animation: cheer .55s ease 2; }
+.starter-info { min-height: 120px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+@media (max-width: 620px) { .starter-table { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Partner card on the home screen: sprite, level, XP bar, the next evolution. */
+.partner-card {
+  display: flex; align-items: center; gap: 14px; padding: 10px 18px 10px 10px;
+  background: var(--glass-solid); border: 1px solid var(--hairline); border-radius: var(--r-lg);
+  box-shadow: var(--lift-2); cursor: pointer; font-family: inherit; color: var(--ink); min-width: 300px; flex: 0 0 auto;
+}
+.partner-img { width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 6px 6px rgba(20, 24, 34, .25)); animation: bob 3.6s ease-in-out infinite; }
+.partner-img.cheer { animation: cheer .55s ease 2; }
+.partner-meta { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; flex: 1; min-width: 150px; }
+.partner-name { display: flex; gap: 10px; align-items: baseline; font-size: 22px; }
+.lvl { font-weight: 900; color: var(--blue); font-size: .85em; }
+.xpbar { width: 100%; height: 14px; border-radius: 999px; background: rgba(26, 29, 36, .1); overflow: hidden; }
+.xpbar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4fc3ff, #3b4cca); transition: width 1.2s cubic-bezier(.2, .9, .3, 1); }
+.partner-meta small { color: var(--ink-soft); font-weight: 700; font-size: 15px; white-space: nowrap; }
+.ally-plate { margin-left: 10px; align-self: center; }
+.ally-plate .name { font-size: 16px; }
+
+.xp-gain { display: flex; align-items: center; gap: 12px; background: var(--glass-solid); border-radius: var(--r-md); padding: 8px 16px 8px 8px; box-shadow: var(--lift-1); min-width: 280px; }
+.xp-gain img { width: 64px; height: 64px; object-fit: contain; }
+
+/* Level-up toast. */
+.fx .levelup {
+  position: fixed; top: 84px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px; padding: 10px 22px 10px 10px;
+  background: linear-gradient(180deg, #fff8d6, #ffe58a); border-radius: var(--r-lg); box-shadow: var(--lift-3);
+  animation: reveal .45s cubic-bezier(.2, .9, .3, 1.3); transition: opacity .4s ease, transform .4s ease;
+}
+.fx .levelup img { width: 64px; height: 64px; object-fit: contain; }
+.fx .levelup b { display: block; font-size: 28px; font-weight: 900; color: var(--blue); }
+.fx .levelup small { font-weight: 700; font-size: 16px; }
+.fx .levelup.gone { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+
+/* Evolution: two white silhouettes trading places, faster and faster. */
+.fx .evo-scene {
+  position: fixed; inset: 0; pointer-events: auto; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 26px;
+  background: radial-gradient(circle at 50% 45%, #2b3a8f 0%, #0d1233 70%); z-index: 60;
+}
+.evo-stage { position: relative; width: min(64vw, 320px); aspect-ratio: 1; }
+.evo-stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.evo-stage .evo-to { opacity: 0; }
+.evo-stage.morph img { filter: brightness(0) invert(1) drop-shadow(0 0 24px #9fd8ff); }
+.evo-stage.morph .evo-from { animation: evo-a 4s ease-in forwards; }
+.evo-stage.morph .evo-to { animation: evo-b 4s ease-in forwards; }
+.evo-stage.done .evo-from { opacity: 0; }
+.evo-stage.done .evo-to { opacity: 1; filter: drop-shadow(0 0 30px rgba(255, 203, 5, .8)); animation: reveal .6s cubic-bezier(.2, .9, .3, 1.3); }
+.evo-caption { color: #fff; font-size: clamp(24px, 4.6vw, 38px); font-weight: 900; text-align: center; padding: 0 20px; text-shadow: 0 2px 12px rgba(0, 0, 0, .5); }
+.evo-scene.flash::after { content: ''; position: fixed; inset: 0; background: #fff; animation: flash .9s ease forwards; pointer-events: none; }
+@keyframes evo-a {
+  0%, 12% { opacity: 1; transform: scale(1); } 18% { opacity: 0; transform: scale(.8); } 30% { opacity: 1; transform: scale(1); }
+  36% { opacity: 0; } 46% { opacity: 1; } 51% { opacity: 0; } 59% { opacity: 1; } 63% { opacity: 0; } 69% { opacity: 1; }
+  72% { opacity: 0; } 77% { opacity: 1; } 79% { opacity: 0; } 83% { opacity: 1; } 85% { opacity: 0; } 88% { opacity: 1; }
+  90%, 100% { opacity: 0; }
+}
+@keyframes evo-b {
+  0%, 12% { opacity: 0; transform: scale(.8); } 18% { opacity: 1; transform: scale(1.05); } 30% { opacity: 0; }
+  36% { opacity: 1; } 46% { opacity: 0; } 51% { opacity: 1; } 59% { opacity: 0; } 63% { opacity: 1; } 69% { opacity: 0; }
+  72% { opacity: 1; } 77% { opacity: 0; } 79% { opacity: 1; } 83% { opacity: 0; } 85% { opacity: 1; } 88% { opacity: 0; }
+  90%, 100% { opacity: 1; transform: scale(1.1); }
+}
+@keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Daily gift. */
+.gift-box { font-size: clamp(110px, 30vw, 190px); background: none; border: none; cursor: pointer; animation: wiggle 1.6s ease infinite; line-height: 1; }
+.gift-box.open { animation: burst .6s ease forwards; }
+.ball-row { display: flex; gap: 12px; justify-content: center; }
+.ball-row .ball-pop { --size: 64px; animation: reveal .5s cubic-bezier(.2, .9, .3, 1.4) backwards; }
+.ball-row .ball-pop:nth-child(2) { animation-delay: .15s; }
+.ball-row .ball-pop:nth-child(3) { animation-delay: .3s; }
+.ball-row .ball-pop:nth-child(4) { animation-delay: .45s; }
+.ball-row .ball-pop:nth-child(5) { animation-delay: .6s; }
+.ball-row.small .ball-pop { --size: 34px; }
+.balls-won { display: flex; align-items: center; gap: 12px; font-size: 22px; }
+
+/* Tall grass. */
+.btn-grass { background: linear-gradient(180deg, #e8fbe3, #c9f0bf); }
+.wild-count { font-size: 20px; font-weight: 800; color: #2a7d33; }
+.grass-field {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: 100%; max-width: 560px;
+  padding: 18px; border-radius: var(--r-xl);
+  background: linear-gradient(180deg, #8fdc7a 0%, #4fae4a 100%); box-shadow: var(--lift-2), inset 0 -10px 24px rgba(0, 0, 0, .12);
+}
+.tuft {
+  font-size: clamp(54px, 13vw, 92px); background: rgba(255, 255, 255, .14); border: none; border-radius: var(--r-md);
+  min-height: 110px; cursor: pointer; line-height: 1; animation: sway 2.6s ease-in-out infinite; transform-origin: 50% 90%;
+}
+.tuft.rustle { animation: rustle .2s ease-in-out 4; }
+.grass-field.busy .tuft:not(.rustle) { opacity: .6; }
+@keyframes sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+@keyframes rustle { 0%, 100% { transform: rotate(-12deg) scale(1.05); } 50% { transform: rotate(12deg) scale(1.1); } }
+.empty-bag { font-size: 34px; font-weight: 900; display: flex; gap: 8px; align-items: center; }
+
+.wild-arena {
+  width: 100%; max-width: 560px; display: grid; place-items: center; padding: 14px 0 4px; border-radius: var(--r-xl);
+  background: linear-gradient(180deg, #d9f4ff 0%, #c4ebb8 62%, #8fd07c 100%); box-shadow: var(--lift-1);
+}
+.wild-arena .platform { min-height: 190px; }
+.wild-sprite { width: min(46vw, 210px); height: min(46vw, 210px); object-fit: contain; animation: slam .5s cubic-bezier(.2, .9, .3, 1.3); position: relative; z-index: 1; filter: drop-shadow(0 8px 8px rgba(20, 24, 34, .25)); }
+.wild-sprite.shiny { filter: hue-rotate(300deg) saturate(1.3) brightness(1.06) drop-shadow(0 0 14px rgba(255, 203, 5, .8)); }
+.wild-sprite.hit { animation: hit .45s ease; }
+.wild-sprite.absorbed { animation: absorb .5s ease forwards; }
+@keyframes absorb { 0% { filter: brightness(1); } 40% { filter: brightness(0) invert(1); transform: scale(1); } 100% { filter: brightness(0) invert(1); transform: scale(0); opacity: 0; } }
+.wild-name { font-size: clamp(40px, 8vw, 68px); }
+.throw-zone { display: flex; flex-direction: column; align-items: center; gap: 12px; min-height: 0; }
+.throw-ball { background: none; border: none; cursor: pointer; animation: bob 1.4s ease-in-out infinite; padding: 6px; }
+.throw-ball .pokeball { --size: 96px; }
+.platform .flying-ball { --size: 62px; position: absolute; z-index: 2; bottom: 40px; animation: fly .6s cubic-bezier(.3, .1, .5, 1) forwards; }
+.platform .flying-ball.landed { animation: none; bottom: 18px; }
+.platform .flying-ball.wobble { animation: ball-wobble .7s ease; }
+.platform .flying-ball.caught { filter: drop-shadow(0 0 16px rgba(255, 203, 5, .9)); }
+@keyframes fly { 0% { transform: translate(0, 280px) scale(1.5) rotate(0); } 60% { transform: translate(0, -60px) scale(1.1) rotate(540deg); } 100% { transform: translate(0, 0) scale(1) rotate(720deg); } }
+@keyframes ball-wobble { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-24deg); } 75% { transform: rotate(24deg); } }
+
+.dex-tabs { display: flex; gap: 10px; justify-content: center; margin: 4px 0 16px; flex-wrap: wrap; }
+.dex-tab { font-family: inherit; font-size: 19px; font-weight: 800; padding: 12px 20px; border-radius: 999px; border: 1px solid var(--hairline); background: var(--glass-solid); color: var(--ink-soft); box-shadow: var(--lift-1); cursor: pointer; }
+.dex-tab.on { background: var(--red); color: #fff; }
+.dexcell { position: relative; }
+.dexcell .lockmark { position: absolute; top: 6px; left: 8px; font-size: 15px; }
+
+/* Mini-games: drums and the missing sound. */
+.tile.big-pic { width: min(40vw, 200px); aspect-ratio: 1; }
+.drum-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 620px; }
+.drum-btn {
+  font-family: inherit; border: none; border-radius: 50% / 38%; min-height: 104px; cursor: pointer;
+  background: radial-gradient(ellipse at 50% 30%, #fff6da 0 45%, #ffcb05 46% 60%, #c98f00 61%); box-shadow: var(--lift-2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--ink);
+}
+.drum-btn b { font-size: 34px; font-weight: 900; }
+.drum-dots { font-size: 14px; letter-spacing: 2px; color: var(--red); }
+.drum-btn.good { box-shadow: 0 0 0 5px #4ccf62, var(--lift-2); }
+.drum-btn.bad { opacity: .35; animation: shake .4s ease; }
+.word .syl.beat { animation: pop .35s ease; display: inline-block; }
+.grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 620px; }
+.grapheme-tile { font-size: clamp(40px, 9vw, 64px); font-weight: 900; min-height: 110px; }
+.gap-word .gap { display: inline-block; min-width: 1.3em; border-bottom: 6px dashed var(--blue); color: var(--blue); text-align: center; }
+.gap-word .gap.filled { border-bottom-color: #4ccf62; color: #2a9a3b; animation: pop .4s ease; }
+
+/* A spoken instruction: tap it to hear it again (the child cannot read it). */
+.hint.hint-voice { font-family: inherit; border: none; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.hint.hint-voice:active { transform: scale(.97); }
+
+/* Lis la phrase: big word chips, lit one by one by the karaoke check. */
+.read-sentence { display: flex; flex-wrap: wrap; gap: 10px 14px; justify-content: center; max-width: 900px; }
+.read-word {
+  font-family: inherit; font-size: clamp(36px, 6.6vw, 64px); font-weight: 800; color: var(--ink);
+  background: var(--glass-solid); border: none; border-radius: var(--r-md); padding: 8px 18px;
+  box-shadow: var(--lift-1); cursor: pointer; transition: transform .15s ease, background .15s ease, color .15s ease;
+}
+.read-word.lit { background: var(--yellow); transform: translateY(-6px) scale(1.06); box-shadow: var(--lift-2); }
+.read-word.read { color: var(--blue); }
+.phrase-pics { max-width: 640px; }
+.grid.two { max-width: 460px; }
+@media (max-height: 860px) {
+  .tile.big-pic { width: min(30vw, 21vh); }
+  .drum-btn { min-height: 86px; }
+}
+
+/* ============================================================ overworld ===
+   overworld.js: the map he walks on. Tiles are a CSS grid sized to the
+   screen; the partner is one absolutely positioned sprite on top. */
+
+.ow-page { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 12px; max-width: 1200px; }
+.ow-head { display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; width: 100%; }
+.ow-region { display: flex; flex-direction: column; align-items: center; background: var(--glass-solid); border-radius: var(--r-md); padding: 8px 18px; box-shadow: var(--lift-1); }
+.ow-region b { font-size: 22px; }
+.ow-region small { color: var(--ink-soft); font-weight: 700; }
+.ow-head .partner-card { min-width: 0; padding: 6px 14px 6px 6px; }
+.ow-head .partner-img { width: 64px; height: 64px; }
+
+.ow-stage { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ow-map {
+  position: relative; display: grid; touch-action: none;
+  /* As large as fits: full width, but never taller than the screen allows. */
+  width: min(100%, calc((100dvh - var(--ow-chrome, 330px)) * var(--ow-cols) / var(--ow-rows)));
+  min-width: 280px;
+  border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--lift-3);
+  background: #9be07f;
+}
+.ow-map.theme-1 { background: #a8d8f0; }
+.ow-map.theme-2 { background: #c9b6e8; }
+.ow-map.theme-3 { background: #f2b88e; }
+.ow-map.theme-4 { background: #9fdcd6; }
+.ow-map.theme-5 { background: #f3d98a; }
+.ow-tile {
+  aspect-ratio: 1; display: grid; place-items: center; position: relative;
+  font-size: calc(min(100vw, 1200px) / var(--ow-cols) * .62); line-height: 1; cursor: pointer;
+}
+@media (orientation: landscape) { .ow-tile { font-size: calc((100dvh - var(--ow-chrome, 330px)) / var(--ow-rows) * .62); } }
+.ow-path { background: rgba(232, 205, 150, .9); }
+.ow-water { background: linear-gradient(180deg, #5fb8ef, #3c8fd6); }
+.ow-grass { background: rgba(60, 150, 60, .35); }
+.ow-tree { filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .2)); }
+.ow-place { background: rgba(255, 255, 255, .55); border-radius: 22%; box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .8); }
+.ow-exit { animation: pulse-glow 1.6s ease-in-out infinite; }
+.ow-stop .ow-ball { --size: 58%; position: absolute; }
+.ow-stop img { position: absolute; width: 92%; height: 92%; object-fit: contain; top: -30%; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .3)); }
+.ow-stop small { position: absolute; bottom: 2%; font-size: 30%; font-weight: 900; background: #fff; border-radius: 999px; padding: 0 5px; }
+.ow-stop.locked img { filter: brightness(0) opacity(.25); }
+.ow-stop.locked .ow-ball { filter: grayscale(1) opacity(.6); }
+.ow-stop.done .ow-ball { filter: saturate(1.2); }
+.ow-stop.next { animation: pulse-glow 1.4s ease-in-out infinite; border-radius: 50%; }
+
+.ow-walker {
+  position: absolute; z-index: 3; pointer-events: none;
+  width: calc(100% / var(--ow-cols)); height: calc(100% / var(--ow-rows));
+  display: grid; place-items: center;
+}
+.ow-walker img { width: 118%; height: 118%; object-fit: contain; margin-top: -30%; filter: drop-shadow(0 5px 4px rgba(0, 0, 0, .35)); }
+.ow-walker.face-left img { transform: scaleX(-1); }
+.ow-walker.hop img { animation: ow-hop .17s ease; }
+.ow-walker.face-left.hop img { animation: ow-hop-left .17s ease; }
+.ow-walker.bump img { animation: shake .3s ease; }
+.ow-alert { position: absolute; top: -70%; font-size: 120%; font-weight: 900; color: var(--red); background: #fff; border-radius: 50%; width: 1.4em; height: 1.4em; display: none; place-items: center; box-shadow: var(--lift-2); }
+.ow-walker.alert .ow-alert { display: grid; animation: pop .3s ease; }
+@keyframes ow-hop { 50% { transform: translateY(-14%); } }
+@keyframes ow-hop-left { 0%, 100% { transform: scaleX(-1); } 50% { transform: scaleX(-1) translateY(-14%); } }
+
+/* The dialog box: the games' text box, with the one big button. */
+/* Below the map, never over it: the places on the bottom row stay visible. */
+.ow-dialog {
+  position: relative; z-index: 5;
+  width: min(100%, 620px); display: flex; align-items: center; gap: 14px; justify-content: space-between;
+  background: #fff; border: 4px solid var(--ink); border-radius: var(--r-md); padding: 10px 14px; box-shadow: var(--lift-3);
+  animation: reveal .25s ease;
+}
+.ow-dialog-text { display: flex; flex-direction: column; gap: 4px; }
+.ow-dialog-text b { font-size: clamp(18px, 3vw, 24px); }
+.ow-dialog-body { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ow-dialog .btn-huge { min-height: 64px; font-size: 24px; padding: 12px 26px; white-space: nowrap; }
+
+/* The pad: thumbs on a tablet; the keyboard arrows do the same. */
+.ow-pad { display: grid; grid-template-columns: repeat(3, 64px); grid-template-rows: repeat(2, 56px); gap: 6px; grid-template-areas: ". up ." "left down right"; }
+.ow-dir { font-size: 26px; border: none; border-radius: var(--r-sm); background: var(--glass-solid); box-shadow: var(--lift-1); color: var(--ink); cursor: pointer; touch-action: none; }
+.ow-dir:active { transform: scale(.94); background: var(--yellow); }
+.ow-up { grid-area: up; } .ow-down { grid-area: down; } .ow-left { grid-area: left; } .ow-right { grid-area: right; }
+@media (orientation: landscape) and (min-width: 900px) {
+  .ow-page { position: relative; }
+  .ow-pad { position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 6; }
+}
+
+/* Phones: a compact header, and no pad — tapping a tile is how a finger moves. */
+@media (max-width: 600px) {
+  .ow-page { --ow-chrome: 300px; gap: 8px; padding-top: 8px; }
+  .ow-head { flex-wrap: nowrap; gap: 8px; }
+  .ow-head .partner-card { padding: 4px 10px 4px 4px; gap: 8px; }
+  .ow-head .partner-img { width: 44px; height: 44px; }
+  .ow-head .partner-meta { min-width: 90px; }
+  .ow-head .partner-meta small { display: none; }
+  .ow-head .partner-name { font-size: 17px; }
+  .ow-region { padding: 6px 10px; }
+  .ow-region b { font-size: 16px; }
+  .ow-pad { display: none; }
+  .ow-dialog .btn-huge { min-height: 56px; font-size: 20px; padding: 10px 18px; }
+}

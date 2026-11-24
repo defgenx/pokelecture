@@ -87,12 +87,36 @@ type State struct {
 	// TowerFloor is the highest Tour de Combat floor cleared.
 	TowerFloor int `json:"tower_floor,omitempty"`
 	// Records holds the best score per mini-game.
-	Records   map[string]int `json:"records,omitempty"`
-	Settings  Settings       `json:"settings"`
-	Streak    int            `json:"streak"`
-	LastDay   string         `json:"last_day"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	Records map[string]int `json:"records,omitempty"`
+
+	// Partner is the starter chosen on first launch: one species line, levelled
+	// by experience earned reading. Nil until the child has picked one.
+	Partner *Partner `json:"partner,omitempty"`
+	// Balls are the Poké Balls earned in the course and spent in the tall grass.
+	Balls int `json:"balls"`
+	// Wild lists the Pokémon caught in the tall grass — the arcade roster,
+	// a collection beside the course Pokédex. WildShiny the rare recolored ones.
+	Wild      []int `json:"wild,omitempty"`
+	WildShiny []int `json:"wild_shiny,omitempty"`
+	// GiftDay is the last day the daily gift was opened (YYYY-MM-DD).
+	GiftDay string `json:"gift_day,omitempty"`
+	// BallsGranted marks the one-time starter bag of Poké Balls as handed out.
+	BallsGranted bool `json:"balls_granted,omitempty"`
+
+	Settings  Settings  `json:"settings"`
+	Streak    int       `json:"streak"`
+	LastDay   string    `json:"last_day"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
+
+// Partner is the child's own Pokémon. Its level and form derive from XP.
+type Partner struct {
+	Line int `json:"line"` // the starter's dex number (first stage of its line)
+	XP   int `json:"xp"`
+}
+
+// StarterBalls is the bag handed out with the first partner.
+const StarterBalls = 5
 
 // Store is a mutex-guarded State persisted to a single file.
 type Store struct {
@@ -184,6 +208,12 @@ func (s *Store) copyLocked() State {
 	out := s.state
 	out.Pokedex = append([]int(nil), s.state.Pokedex...)
 	out.Shiny = append([]int(nil), s.state.Shiny...)
+	out.Wild = append([]int(nil), s.state.Wild...)
+	out.WildShiny = append([]int(nil), s.state.WildShiny...)
+	if s.state.Partner != nil {
+		pt := *s.state.Partner
+		out.Partner = &pt
+	}
 	out.Records = make(map[string]int, len(s.state.Records))
 	for k, v := range s.state.Records {
 		out.Records[k] = v
@@ -324,6 +354,91 @@ func (s *Store) Record(game string, score int, lowerBetter bool) bool {
 		s.state.Records[game] = score
 	}
 	return beaten
+}
+
+// ChoosePartner sets the first partner. Only once: a second call is a no-op
+// and returns false. The head start (XP) lets a child who played long before
+// partners existed see a first evolution soon rather than restart from zero.
+func (s *Store) ChoosePartner(line, headStart int) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state.Partner != nil {
+		return false
+	}
+	s.state.Partner = &Partner{Line: line, XP: max(0, headStart)}
+	if !s.state.BallsGranted {
+		s.state.Balls += StarterBalls
+		s.state.BallsGranted = true
+	}
+	return true
+}
+
+// GainXP adds experience to the partner and returns the XP before and after
+// (equal when there is no partner yet).
+func (s *Store) GainXP(xp int) (before, after int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state.Partner == nil || xp <= 0 {
+		if s.state.Partner != nil {
+			return s.state.Partner.XP, s.state.Partner.XP
+		}
+		return 0, 0
+	}
+	before = s.state.Partner.XP
+	s.state.Partner.XP += xp
+	return before, s.state.Partner.XP
+}
+
+// AddBalls gives (or, negative, takes) Poké Balls; never below zero.
+func (s *Store) AddBalls(n int) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.state.Balls = max(0, s.state.Balls+n)
+	return s.state.Balls
+}
+
+// CatchWild spends one Poké Ball on a tall-grass Pokémon. It reports whether
+// a ball was available and whether this Pokémon is new to the collection.
+func (s *Store) CatchWild(id int, shiny bool) (spent, isNew bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.state.Balls <= 0 {
+		return false, false
+	}
+	s.state.Balls--
+	isNew = !contains(s.state.Wild, id)
+	if isNew {
+		s.state.Wild = append(s.state.Wild, id)
+		sort.Ints(s.state.Wild)
+	}
+	if shiny && !contains(s.state.WildShiny, id) {
+		s.state.WildShiny = append(s.state.WildShiny, id)
+		sort.Ints(s.state.WildShiny)
+		isNew = true
+	}
+	return true, isNew
+}
+
+// OpenGift claims today's gift; false if it was already opened today.
+func (s *Store) OpenGift(now time.Time, balls int) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	day := now.Format("2006-01-02")
+	if s.state.GiftDay == day {
+		return false
+	}
+	s.state.GiftDay = day
+	s.state.Balls += balls
+	return true
+}
+
+func contains(xs []int, x int) bool {
+	for _, v := range xs {
+		if v == x {
+			return true
+		}
+	}
+	return false
 }
 
 // UpdateSettings replaces the global progression policy. The per-episode

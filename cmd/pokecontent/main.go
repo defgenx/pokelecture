@@ -2,11 +2,13 @@
 // the Pokémon sprites. Run it after every change to data/.
 //
 //	pokecontent check                        # validate the curriculum, report missing audio
-//	pokecontent audio [-engine edge|say] [-voice V] # generate the missing .m4a
+//	pokecontent audio [-engine edge|elevenlabs|say] [-voice V] # generate the missing .m4a
 //	pokecontent sprites                      # download sprites for every Pokémon used
+//	pokecontent audit                        # list sound/syllable clips by length, flag spelled-out ones
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"image"
@@ -20,8 +22,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
+	"unicode/utf8"
 
 	"github.com/adelvecchio/pokelecture/internal/curriculum"
 	"github.com/adelvecchio/pokelecture/internal/speech"
@@ -37,11 +42,16 @@ func main() {
 
 	fs := flag.NewFlagSet(os.Args[1], flag.ExitOnError)
 	root := fs.String("root", ".", "racine du projet")
-	eng := fs.String("engine", "edge", "moteur de voix : edge (neuronal, gratuit, réseau) ou say (macOS)")
+	eng := fs.String("engine", "edge", "moteur de voix : edge (neuronal, gratuit, réseau), elevenlabs (payant, ELEVENLABS_API_KEY) ou say (macOS)")
+	model := fs.String("model", elevenModel, "elevenlabs : modèle (eleven_v4, eleven_v3, eleven_flash_v2_5, eleven_multilingual_v2)")
 	voice := fs.String("voice", "", "voix (défaut : fr-FR-DeniseNeural pour edge, Thomas pour say)")
 	workers := fs.Int("workers", 6, "générations en parallèle")
 	force := fs.Bool("force", false, "régénérer même si le fichier existe")
+	budget := fs.Int("budget", 0, "audio : nombre maximum de caractères envoyés (0 = pas de limite)")
+	dryRun := fs.Bool("dry-run", false, "audio : affiche ce qui serait généré et son coût, sans rien envoyer")
+	tsv := fs.Bool("tsv", false, "audit : liste style/texte/fichier en TSV (pour un contrôle par reconnaissance vocale)")
 	_ = fs.Parse(os.Args[2:])
+	elevenModel = *model
 
 	cur, err := curriculum.Load(filepath.Join(*root, "data"))
 	if err != nil {
@@ -52,7 +62,7 @@ func main() {
 	case "check":
 		check(cur, *root)
 	case "audio":
-		if err := genAudio(cur, *root, *eng, *voice, *workers, *force); err != nil {
+		if err := genAudio(cur, *root, *eng, *voice, *workers, *force, *budget, *dryRun); err != nil {
 			log.Fatal(err)
 		}
 	case "sprites":
@@ -66,13 +76,17 @@ func main() {
 		if err := prune(cur, *root); err != nil {
 			log.Fatal(err)
 		}
+	case "audit":
+		if err := audit(cur, *root, *tsv); err != nil {
+			log.Fatal(err)
+		}
 	default:
 		usage()
 	}
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: pokecontent {check|audio|sprites|prune} [options]")
+	fmt.Fprintln(os.Stderr, "usage: pokecontent {check|audio|sprites|prune|audit} [options]")
 	os.Exit(2)
 }
 
@@ -106,9 +120,23 @@ func prune(cur *curriculum.Curriculum, root string) error {
 		}
 		removed++
 	}
+	man := loadManifest(dir)
+	man.keep(map[string]bool(stems(keep)))
+	if err := man.save(); err != nil {
+		return err
+	}
 	fmt.Printf("  ✓ %d fichier(s) obsolète(s) supprimés (%.1f Mo libérés), %d conservés\n",
 		removed, float64(freed)/(1<<20), len(keep))
 	return nil
+}
+
+// stems turns {"x-1a2b3c.m4a": true} into {"x-1a2b3c": true}.
+func stems(files map[string]bool) map[string]bool {
+	out := make(map[string]bool, len(files))
+	for f := range files {
+		out[strings.TrimSuffix(f, ".m4a")] = true
+	}
+	return out
 }
 
 func check(cur *curriculum.Curriculum, root string) {
@@ -147,68 +175,132 @@ func check(cur *curriculum.Curriculum, root string) {
 type job struct {
 	text  string
 	style speech.Style
+	key   string
 }
 
-func genAudio(cur *curriculum.Curriculum, root, engineName, voice string, workers int, force bool) error {
+// styleRank orders the work when a budget cannot cover it all: the sounds and
+// syllables are where the voice teaches, sentences come last.
+var styleRank = map[speech.Style]int{
+	speech.StyleSound: 0, speech.StyleSyllable: 1, speech.StyleWord: 2, speech.StyleNormal: 3,
+}
+
+// genAudio fills web/audio. Without -force it only makes missing clips; with
+// -force it remakes every clip the chosen voice did not make yet — a clip
+// already in voices.json under the same signature is never requested again,
+// so a paid engine is paid once per line. budget caps the characters sent
+// (0 = no cap); the most useful lines go first.
+func genAudio(cur *curriculum.Curriculum, root, engineName, voice string, workers int, force bool, budget int, dryRun bool) error {
 	eng, ok := engines[engineName]
 	if !ok {
-		return fmt.Errorf("moteur de voix inconnu %q (edge ou say)", engineName)
+		return fmt.Errorf("moteur de voix inconnu %q (edge, elevenlabs ou say)", engineName)
 	}
 	if voice == "" {
 		voice = eng.voice
 	}
-	for _, bin := range []string{eng.bin, "afconvert"} {
-		if _, err := exec.LookPath(bin); err != nil {
-			return fmt.Errorf("`%s` introuvable : %s (afconvert : macOS)", bin, eng.hint)
+	if voice == "" {
+		return fmt.Errorf("le moteur %s a besoin d'une voix : %s", eng.name, eng.hint)
+	}
+	if !dryRun {
+		if eng.name == "elevenlabs" && os.Getenv("ELEVENLABS_API_KEY") == "" {
+			return fmt.Errorf("ELEVENLABS_API_KEY n'est pas défini")
+		}
+		for _, bin := range []string{eng.bin, "afconvert"} {
+			if bin == "" {
+				continue
+			}
+			if _, err := exec.LookPath(bin); err != nil {
+				return fmt.Errorf("`%s` introuvable : %s (afconvert : macOS)", bin, eng.hint)
+			}
 		}
 	}
 	outDir := filepath.Join(root, "web", "audio")
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return err
 	}
+	man := loadManifest(outDir)
+	sig := eng.signature(voice)
+
+	// Teaching order inside each style (SpeechTexts walks route 1 first), so a
+	// budget that runs out leaves the late content for next time.
+	var jobs []job
+	for _, it := range cur.SpeechTexts() {
+		key := speech.Key(it.Text, it.Style)
+		_, err := os.Stat(filepath.Join(outDir, key+".m4a"))
+		exists := err == nil
+		if exists && (!force || man.get(key) == sig) {
+			continue
+		}
+		jobs = append(jobs, job{text: it.Text, style: it.Style, key: key})
+	}
+	sort.SliceStable(jobs, func(i, j int) bool { return styleRank[jobs[i].style] < styleRank[jobs[j].style] })
+
+	total, pending := 0, len(jobs)
+	for _, j := range jobs {
+		total += utf8.RuneCountInString(j.text)
+	}
+	if budget > 0 {
+		kept, spent := jobs[:0], 0
+		for _, j := range jobs {
+			n := utf8.RuneCountInString(j.text)
+			if spent+n > budget {
+				break
+			}
+			kept, spent = append(kept, j), spent+n
+		}
+		jobs = kept
+	}
+	planned := 0
+	for _, j := range jobs {
+		planned += utf8.RuneCountInString(j.text)
+	}
+	if dryRun {
+		fmt.Printf("  %s : %d ligne(s) à faire (%d caractères) ; ce passage : %d ligne(s), %d caractères\n",
+			sig, pending, total, len(jobs), planned)
+		return nil
+	}
+	if len(jobs) == 0 {
+		fmt.Println("  ✓ audio déjà complet pour cette voix")
+		return nil
+	}
+	fmt.Printf("  génération de %d fichier(s), %d caractères (reste à faire après : %d) — %s…\n",
+		len(jobs), planned, total-planned, sig)
+
 	tmpDir, err := os.MkdirTemp("", "pokelecture-voice")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(tmpDir)
 
-	texts := cur.SpeechTexts()
-	var jobs []job
-	for _, it := range texts {
-		if !force {
-			if _, err := os.Stat(filepath.Join(outDir, speech.Key(it.Text, it.Style)+".m4a")); err == nil {
-				continue
-			}
-		}
-		jobs = append(jobs, job{text: it.Text, style: it.Style})
-	}
-	sort.Slice(jobs, func(i, j int) bool { return jobs[i].text < jobs[j].text })
-
-	if len(jobs) == 0 {
-		fmt.Println("  ✓ audio déjà complet")
-		return nil
-	}
-	fmt.Printf("  génération de %d fichier(s) avec la voix %s (%s)…\n", len(jobs), voice, eng.name)
-
 	var (
-		wg    sync.WaitGroup
-		mu    sync.Mutex
-		done  int
-		fails []string
-		ch    = make(chan job)
+		wg      sync.WaitGroup
+		mu      sync.Mutex
+		done    int
+		fails   []string
+		stopped atomic.Bool
+		ch      = make(chan job)
 	)
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func(worker int) {
 			defer wg.Done()
 			for j := range ch {
+				if stopped.Load() {
+					continue
+				}
 				err := synth(j, eng, voice, tmpDir, outDir, worker)
+				if errors.Is(err, errQuota) {
+					stopped.Store(true)
+				}
+				if err == nil {
+					man.set(j.key, sig)
+				}
 				mu.Lock()
 				done++
 				if err != nil {
 					fails = append(fails, fmt.Sprintf("%q: %v", j.text, err))
-				} else if done%25 == 0 || done == len(jobs) {
+				} else if done%25 == 0 {
 					fmt.Printf("  … %d/%d\n", done, len(jobs))
+					_ = man.save() // a run cut short keeps what it paid for
 				}
 				mu.Unlock()
 			}
@@ -219,9 +311,15 @@ func genAudio(cur *curriculum.Curriculum, root, engineName, voice string, worker
 	}
 	close(ch)
 	wg.Wait()
+	if err := man.save(); err != nil {
+		return err
+	}
 
 	for _, f := range fails {
 		fmt.Printf("  ✗ %s\n", f)
+	}
+	if stopped.Load() {
+		fmt.Println("  ⏸ quota atteint : arrêt propre. Ce qui est fait est gardé ; relance quand les crédits reviennent.")
 	}
 	fmt.Printf("  ✓ %d fichier(s) écrits dans %s\n", len(jobs)-len(fails), outDir)
 	return nil

@@ -23,6 +23,15 @@ type engine struct {
 	speak func(text, voice string, style speech.Style, out string) error
 }
 
+// signature names the voice that made a clip, for voices.json. Bump the
+// revision of an engine to deliberately remake its clips after a settings change.
+func (e engine) signature(voice string) string {
+	if e.name == "elevenlabs" {
+		return fmt.Sprintf("elevenlabs:%s:%s:r%d", voice, elevenModel, elevenRev)
+	}
+	return e.name + ":" + voice
+}
+
 var engines = map[string]engine{
 	// Microsoft Edge's neural voices: free, no account, far more natural than
 	// `say`. Needs the network while generating, never at play time.
@@ -33,6 +42,11 @@ var engines = map[string]engine{
 			// --text= and --rate= glued: a value starting with "-" would be read as a flag.
 			return retry("edge-tts", "--voice", voice, "--rate="+edgeRate(style), "--text="+text, "--write-media", out)
 		},
+	},
+	"elevenlabs": {
+		name: "elevenlabs", ext: ".mp3",
+		hint:  "définis ELEVENLABS_API_KEY et passe l'identifiant de voix avec -voice",
+		speak: elevenSpeak,
 	},
 	"say": {
 		name: "say", bin: "say", ext: ".aiff", voice: "Thomas",

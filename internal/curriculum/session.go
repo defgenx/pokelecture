@@ -329,11 +329,11 @@ func (c *Curriculum) BuildSession(ep *Episode, st progress.State, now time.Time)
 		})
 	}
 
-	if items := phraseItems(sentences, diff.choices); len(items) > 0 {
+	if items := phraseItems(sentences, p.words, diff.choices); len(items) > 0 {
 		s.Activities = append(s.Activities, Activity{
 			Kind:        "phrase",
-			Title:       "Construis la phrase",
-			Instruction: "Lis les mots et remets-les dans l'ordre. Surprise à la fin !",
+			Title:       "Lis la phrase",
+			Instruction: "Lis la phrase à voix haute. Si un mot est difficile, touche-le !",
 			Items:       items,
 		})
 	}
@@ -615,19 +615,17 @@ func sentenceWords(text string) []string {
 	return out
 }
 
-// phraseItems builds the sentence workshop: the sentence's words arrive
-// shuffled and the child rebuilds it in order — the battle-tray mechanic
-// applied to syntax. Each placed word is spoken, the whole sentence is read
-// aloud at the end, and the picture is revealed as confirmation. From the
-// hard tier on, one intruder word from another sentence sneaks into the tray.
-func phraseItems(sentences []Sentence, nChoices int) []Item {
-	if len(sentences) == 0 {
-		return nil
-	}
+// phraseItems builds "Lis la phrase": the sentence to read aloud (each word
+// tappable for help), a karaoke check that reads it back word by word, then
+// the comprehension question — which picture goes with the sentence? The
+// wrong pictures never show a word of the sentence itself, or "Otaria utilise
+// Morsure." would have two right answers (Otaria and the Morsure icon).
+func phraseItems(sentences []Sentence, words []Word, nChoices int) []Item {
 	var out []Item
+	nChoices = min(nChoices, 3)
 	for i, s := range sentences {
-		words := sentenceWords(s.Text)
-		if len(words) < 2 {
+		toks := sentenceWords(s.Text)
+		if len(toks) < 2 {
 			continue
 		}
 		pic := s.Pic()
@@ -638,35 +636,48 @@ func phraseItems(sentences []Sentence, nChoices int) []Item {
 			Sprite:    pic.Sprite,
 			Icon:      pic.Icon,
 			Audio:     speech.URL(s.Spoken(), speech.StyleWord),
-			Syllables: words,
+			Syllables: toks,
 		}
-		for _, w := range words {
+		inSentence := map[string]bool{}
+		for _, w := range toks {
 			it.SyllableAudio = append(it.SyllableAudio, speech.URL(w, speech.StyleWord))
+			inSentence[strings.ToLower(w)] = true
 		}
 
-		tray := append([]string(nil), words...)
-		if nChoices >= 4 {
-			inSentence := map[string]bool{}
-			for _, w := range words {
-				inSentence[strings.ToLower(w)] = true
-			}
-			var intruders []string
-			for j, o := range sentences {
-				if j == i {
-					continue
-				}
-				for _, w := range sentenceWords(o.Text) {
-					if !inSentence[strings.ToLower(w)] {
-						intruders = append(intruders, w)
-					}
-				}
-			}
-			if len(intruders) > 0 {
-				tray = append(tray, intruders[rand.IntN(len(intruders))])
+		var others []Picture
+		for j, o := range sentences {
+			if j != i {
+				others = append(others, o.Pic())
 			}
 		}
-		rand.Shuffle(len(tray), func(a, b int) { tray[a], tray[b] = tray[b], tray[a] })
-		it.Tray = tray
+		for _, w := range words {
+			if !inSentence[strings.ToLower(w.Text)] {
+				others = append(others, w.Pic())
+			}
+		}
+		rand.Shuffle(len(others), func(a, b int) { others[a], others[b] = others[b], others[a] })
+		used := map[string]bool{pic.Key(): true}
+		for _, w := range words {
+			if inSentence[strings.ToLower(w.Text)] {
+				used[w.Pic().Key()] = true
+			}
+		}
+		choices := []Choice{{Emoji: pic.Emoji, Sprite: pic.Sprite, Icon: pic.Icon, Correct: true}}
+		for _, op := range others {
+			if op.Empty() || used[op.Key()] {
+				continue
+			}
+			used[op.Key()] = true
+			choices = append(choices, Choice{Emoji: op.Emoji, Sprite: op.Sprite, Icon: op.Icon})
+			if len(choices) == nChoices {
+				break
+			}
+		}
+		if len(choices) < 2 {
+			continue
+		}
+		rand.Shuffle(len(choices), func(a, b int) { choices[a], choices[b] = choices[b], choices[a] })
+		it.Choices = choices
 		out = append(out, it)
 	}
 	return out
@@ -1018,11 +1029,17 @@ func (c *Curriculum) SpeechTexts() []SpeechItem {
 	}
 	for _, p := range c.Arcade {
 		add(p.Spoken(), speech.StyleWord)
+		for _, s := range p.Syllables {
+			add(SpokenSyllable(s), speech.StyleSyllable)
+		}
 	}
 	for _, phrase := range UIPhrases {
 		add(phrase, speech.StyleNormal)
 	}
 	add(TowerTaunt, speech.StyleNormal)
+	for _, phrase := range c.partnerSpeech() {
+		add(phrase, speech.StyleNormal)
+	}
 	return out
 }
 
@@ -1049,6 +1066,72 @@ var UIPhrases = []string{
 	"Termine la route précédente !",
 	"Celui-là, tu ne l'as pas encore attrapé !",
 	"À demain !",
+
+	// The partner, the gift and the tall grass (web/world.js). The gift line
+	// says "trois": it must match giftBalls in internal/api/partner.go.
+	"Cadeau du jour !",
+	"Tu gagnes trois Poké Balls !",
+	"Un Pokémon sauvage apparaît !",
+	"Lis son nom pour l'attraper !",
+	"Lance la Poké Ball !",
+	"Et hop ! Attrapé !",
+	"Tu n'as plus de Poké Balls ! Lis une route pour en gagner.",
+	"Il n'y a personne ici. Apprends de nouveaux sons pour trouver des Pokémon !",
+	"Il se cache dans les hautes herbes !",
+	"Apprends de nouveaux sons pour le trouver !",
+
+	// Lesson instructions (BuildSession): the child cannot read them, so
+	// web/app.js hint() reads each one out as its screen opens.
+	"Touche chaque lettre pour entendre son son.",
+	"Touche la lettre pour entendre son son.",
+	"Touche la première lettre, puis la deuxième. Écoute la syllabe !",
+	"Écoute la syllabe, puis touche-la.",
+	"Lis le mot tout seul, puis touche la bonne image.",
+	"Lis la phrase à voix haute. Si un mot est difficile, touche-le !",
+	"Quelle image va avec la phrase ?",
+	"Remets les syllabes dans l'ordre pour lancer l'attaque.",
+	"On révise avant de partir !",
+	"Bravo ! Tu peux continuer.",
+	"Il faut lire au moins la moitié des mots du premier coup. Réessaie !",
+	"La Tour t'a battu cette fois. Réessaie l'étage !",
+	"Le combat est perdu : l'épisode recommence du début. Tu vas y arriver !",
+	"Touche JOUER pour continuer l'aventure !",
+
+	// The overworld map (web/overworld.js).
+	"Touche une case pour te déplacer, ou utilise les flèches !",
+	"C'est la prochaine route ! Touche JOUER !",
+	"Tu as déjà gagné ici. Tu veux rejouer ?",
+	"La Tour de Combat ! Monte les étages en lisant !",
+	"Le coin des mini-jeux !",
+	"Ton Pokédex ! Regarde tous tes Pokémon.",
+	"Termine la première route pour ouvrir ça !",
+	"Cette région est encore fermée ! Termine les routes d'ici.",
+	"En route vers la région suivante !",
+	"Retour à la région précédente !",
+
+	// Result screens: what the screen shows, said aloud.
+	"Il rejoint ta collection !",
+	"Tu gagnes des Poké Balls !",
+	"Un Pokémon rare de la Tour rejoint ton Pokédex !",
+	"Nouveau record !",
+	"Il rejoint ton Pokédex sauvage !",
+
+	// Screens of world.js.
+	"Il grandit à chaque mot que tu lis.",
+	"Touche le cadeau !",
+	"Touche les herbes. Qui s'y cache ?",
+
+	// Mini-games (the hint of each game's screen).
+	"Choisis un jeu, et bats tes records !",
+	"Retrouve les paires !",
+	"Touche le Pokémon avant qu'il se cache !",
+	"Lis le mot, touche la bonne image !",
+	"Remets les syllabes dans l'ordre, encore et encore !",
+	"Qui est cette ombre ? Lis les noms !",
+	"Associe chaque mot à son image !",
+	"Écoute la syllabe, puis touche-la !",
+	"Combien de syllabes ? Tape sur le bon tambour !",
+	"Quel son manque ? Écoute le mot, trouve les lettres !",
 }
 
 // Fmt is a tiny helper for episode titles in logs.

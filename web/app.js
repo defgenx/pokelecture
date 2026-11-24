@@ -48,6 +48,8 @@ const Voice = {
   missing: new Set(), // URLs the server does not have; never wait on them twice
   primed: new Set(),  // URLs already pushed into the HTTP cache
   cancelled: 0,
+  leading: null, // the instruction being read out; other lines queue behind it
+  gen: 0,        // bumped on every screen change, so a queued line never plays late
 
   // prime() warms the HTTP cache for the screen's audio before the child taps
   // anything: on a slow tablet the first play then starts instantly instead of
@@ -85,7 +87,25 @@ const Voice = {
     window.speechSynthesis.onvoiceschanged = grab;
   },
 
+  // stop() silences everything and drops queued lines: the screen changed.
   stop() {
+    this.gen++;
+    this.leading = null;
+    this.halt();
+  },
+
+  // lead() reads a screen's instruction first: the child cannot read it, and a
+  // word or syllable the screen plays meanwhile waits for it instead of
+  // cutting it off.
+  lead(url, text) {
+    this.stop();
+    const p = this.play(url, text);
+    this.leading = p;
+    p.finally(() => { if (this.leading === p) this.leading = null; });
+    return p;
+  },
+
+  halt() {
     if (this.el) {
       try { this.el.pause(); } catch (_) {}
     }
@@ -99,7 +119,11 @@ const Voice = {
   },
 
   play(url, text) {
-    this.stop();
+    if (this.leading) {
+      const gen = this.gen;
+      return this.leading.then(() => (gen === this.gen ? this.play(url, text) : undefined));
+    }
+    this.halt();
     // No recorded track (or a missing one): straight to the browser voice, with
     // no 404 round trip in front of every single line.
     if (!url || !this.el || this.missing.has(url)) return this.speak(text);
@@ -217,6 +241,23 @@ function say(phrase) {
   return Voice.play(url, phrase);
 }
 
+// hint() is a screen's instruction: shown, read out as the screen opens, and
+// tappable to hear again. Every literal passed here must be in UIPhrases
+// (internal/curriculum/session.go) — speech_coverage_test.go enforces it.
+function hint(text, speak = true) {
+  const label = el('span', {}, text);
+  const node = el('button', { class: 'hint hint-voice', onclick: () => say(label.textContent) }, '🔊 ', label);
+  node.setText = (t) => { label.textContent = t; };
+  if (speak && text) Voice.lead(uiAudio(text), text);
+  return node;
+}
+
+function uiAudio(phrase) {
+  return (Session.data && Session.data.ui && Session.data.ui[phrase])
+    || (App.state && App.state.ui && App.state.ui[phrase])
+    || null;
+}
+
 function praise() {
   burst(['⭐', '🎉', '👏', '💫'][praiseIdx % 4]);
   Sfx.correct();
@@ -225,10 +266,12 @@ function praise() {
 }
 
 /* --------------------------------------------------------------- buddy ---
-   A sprite of his best catch follows him from screen to screen and jumps when
-   he gets one right. Pikachu is the starter buddy so the corner is never empty. */
+   His partner (world.js) follows him from screen to screen and jumps when he
+   gets one right; before one is chosen, his latest catch, then Pikachu. */
 
 function companionId() {
+  const partner = App.state && App.state.partner;
+  if (partner) return partner.species;
   const caught = ((App.state && App.state.pokedex) || []).filter((p) => p.caught);
   return caught.length ? caught[caught.length - 1].id : 25;
 }
@@ -277,7 +320,8 @@ const App = {
 
   async boot() {
     this.state = await api('api/state');
-    this.home();
+    if (!this.state.partner) return Partner.choose();
+    Gift.maybe();
   },
 
   screen(...children) {
@@ -299,9 +343,18 @@ const App = {
 
   /* ------------------------------------------------------------ home ------ */
 
+  // home is the overworld (overworld.js): the map he walks on. The list of
+  // routes, badges and buttons below is the menu (☰ on the map).
   home() {
+    Overworld.open();
+  },
+
+  menu() {
     Voice.stop();
     WakeLock.off();
+    // The welcome line is read once per launch, not on every return home.
+    const greeted = this.greeted;
+    this.greeted = true;
     const s = this.state;
     const next = s.episodes.find((e) => e.id === s.next_episode);
     const caught = s.pokedex.filter((p) => p.caught).length;
@@ -310,15 +363,18 @@ const App = {
     this.screen(
       this.topbar(
         el('span', { class: 'chip' }, `⭐ ${s.stars}`),
+        el('span', { class: 'chip' }, pokeball('pokeball-xs'), ` ${s.balls || 0}`),
         shinies > 0 ? el('span', { class: 'chip' }, `✨ ${shinies}`) : null,
         s.streak > 1 ? el('span', { class: 'chip' }, `🔥 ${s.streak}`) : null,
       ),
       el('div', { class: 'page' },
         el('div', { class: 'home-top' },
+          Partner.card(),
           el('div', { class: 'act' },
             el('h2', {}, s.all_done ? '🏆 Tu es le Champion !' : next ? next.title : 'Bravo !'),
             el('button', { class: 'btn btn-huge', onclick: () => Session.start(s.next_episode) },
               next && next.done > 0 ? 'REJOUER ▶' : 'JOUER ▶'),
+            hint('Touche JOUER pour continuer l\'aventure !', !greeted),
             el('div', { class: 'home-row' },
               el('button', { class: 'btn btn-ghost', onclick: () => this.worldMap() }, '🗺️ Carte'),
               el('button', { class: 'btn btn-ghost', onclick: () => this.pokedex() },
@@ -327,6 +383,8 @@ const App = {
                 `🗼 Tour · Étage ${s.tower_floor + 1}`) : null,
               s.tower ? el('button', { class: 'btn btn-ghost', onclick: () => Arcade.hub() },
                 '🎮 Mini-jeux') : null,
+              s.tower && s.wild && s.wild.total ? el('button', { class: 'btn btn-ghost btn-grass', onclick: () => Wild.enter() },
+                `🌿 Hautes herbes ${s.wild.caught}/${s.wild.available}`) : null,
             ),
           ),
           this.badgeCase(),
@@ -435,12 +493,31 @@ const App = {
 
   /* --------------------------------------------------------- pokédex ------ */
 
-  pokedex() {
+  pokedex(tab) {
     Voice.stop();
+    const s = this.state;
+    const caught = s.pokedex.filter((p) => p.caught).length;
+    const wild = s.wild || { caught: 0, total: 0 };
+    const tabs = el('div', { class: 'dex-tabs' },
+      el('button', { class: `dex-tab ${tab === 'wild' ? '' : 'on'}`, onclick: () => this.pokedex() },
+        `🗺️ Aventure ${caught}/${s.pokedex.length}`),
+      wild.total ? el('button', { class: `dex-tab ${tab === 'wild' ? 'on' : ''}`, onclick: () => this.pokedex('wild') },
+        `🌿 Sauvages ${wild.caught}/${wild.total}`) : null,
+    );
+    if (tab === 'wild') {
+      const grid = el('div', { class: 'dexgrid' }, el('div', { class: 'loading' }, pokeball('spin-fast')));
+      this.screen(
+        this.topbar(el('button', { class: 'btn-icon', onclick: () => this.home() }, '✕')),
+        el('div', { class: 'page' }, el('h2', { style: 'text-align:center;color:#e3350d' }, 'Pokédex'), tabs, grid),
+      );
+      wildDex(grid);
+      return;
+    }
     this.screen(
       this.topbar(el('button', { class: 'btn-icon', onclick: () => this.home() }, '✕')),
       el('div', { class: 'page' },
         el('h2', { style: 'text-align:center;color:#e3350d' }, 'Pokédex'),
+        tabs,
         el('div', { class: 'dexgrid' },
           this.state.pokedex.map((p) => el('button', {
             class: `dexcell ${p.caught ? '' : 'locked'}`,
@@ -472,6 +549,14 @@ const App = {
     Voice.play(p.name_audio, p.name).then(() => Voice.play(p.dex_audio, p.dex));
   },
 };
+
+// ballsWon is the "+3 Poké Balls" line on a result screen.
+function ballsWon(n) {
+  if (!n) return null;
+  const row = el('div', { class: 'ball-row small' });
+  for (let i = 0; i < n; i++) row.append(pokeball('ball-pop'));
+  return el('div', { class: 'balls-won' }, row, el('b', {}, `+${n} Poké Ball${n > 1 ? 's' : ''}`));
+}
 
 /* progressPips shows "where am I in this exercise" as little filling Poké
    Balls — borrowed from every mobile learning app worth copying. */
@@ -663,12 +748,14 @@ const Session = {
             el('div', { class: 'score' }, `${points} point${points > 1 ? 's' : ''} sur ${res.tower_need} demandés`),
             passed
               ? el('div', { class: 'score' }, `L'étage ${towerInfo.floor + 1} t'attend !`)
-              : el('p', { class: 'hint' }, 'Il faut lire au moins la moitié des mots du premier coup. Réessaie !'),
+              : hint('Il faut lire au moins la moitié des mots du premier coup. Réessaie !'),
             catches.length ? el('div', { class: 'newcatch' },
               el('span', { class: 'score' }, '🎉 Un Pokémon rare de la Tour rejoint ton Pokédex !'),
               el('div', { class: 'catchrow' },
                 catches.map((id) => el('img', { src: `sprites/art/${id}.png`, alt: '' }))),
             ) : null,
+            ballsWon(res.balls_won),
+            Partner.gainRow(res.partner_event),
             el('button', { class: 'btn btn-huge', onclick: () => Session.start('tour') },
               passed ? `ÉTAGE ${towerInfo.floor + 1} ▶` : 'RÉESSAYER 🔄'),
             el('button', { class: 'btn btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
@@ -678,6 +765,9 @@ const Session = {
       burst(passed ? '🏅' : '🗼');
       if (passed) { Sfx.fanfare(); confetti(); } else { Sfx.wrong(); }
       await say(passed ? 'Super !' : 'Essaie encore, tu y es presque.');
+      if (catches.length) await say('Un Pokémon rare de la Tour rejoint ton Pokédex !');
+      if (res.balls_won) await say('Tu gagnes des Poké Balls !');
+      await Partner.celebrate(res.partner_event);
       return;
     }
 
@@ -695,6 +785,8 @@ const Session = {
             el('div', { class: 'catchrow' },
               catches.map((id) => el('img', { src: `sprites/art/${id}.png`, alt: '' }))),
           ) : null,
+          ballsWon(res.balls_won),
+          Partner.gainRow(res.partner_event),
           el('button', { class: 'btn btn-huge btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
           el('button', { class: 'btn', onclick: () => Arcade.hub() }, '🎮 MINI-JEUX'),
         ),
@@ -704,6 +796,9 @@ const Session = {
     Sfx.fanfare();
     confetti();
     await say(stars === 3 ? 'Super !' : 'Bravo !');
+    if (catches.length) await say('Tu as attrapé un nouveau Pokémon !');
+    if (res.balls_won) await say('Tu gagnes des Poké Balls !');
+    await Partner.celebrate(res.partner_event);
     await say('À demain !');
   },
 };
@@ -729,7 +824,7 @@ function renderDecouverte(a, body, done) {
   body.append(
     el('h2', {}, a.title),
     letter,
-    el('p', { class: 'hint' }, a.instruction),
+    hint(a.instruction),
     g.example ? el('button', {
       class: 'example',
       onclick: () => Voice.play(g.example_audio, g.example),
@@ -750,7 +845,7 @@ function renderDecouverte(a, body, done) {
 function renderGalerie(a, body, done) {
   const remaining = new Set(a.graphemes.map((g) => g.id));
   const go = el('button', { class: 'btn btn-go', disabled: true, onclick: done }, 'SUIVANT →');
-  const counter = el('p', { class: 'hint' }, a.instruction);
+  const counter = hint(a.instruction);
 
   const grid = el('div', { class: 'grid' });
   a.graphemes.forEach((g) => {
@@ -761,9 +856,10 @@ function renderGalerie(a, body, done) {
       remaining.delete(g.id);
       if (remaining.size === 0) {
         go.disabled = false;
-        counter.textContent = 'Bravo ! Tu peux continuer.';
+        counter.setText('Bravo ! Tu peux continuer.');
+        say('Bravo ! Tu peux continuer.');
       } else {
-        counter.textContent = `Encore ${remaining.size} son${remaining.size > 1 ? 's' : ''} à toucher.`;
+        counter.setText(`Encore ${remaining.size} son${remaining.size > 1 ? 's' : ''} à toucher.`);
       }
     });
     grid.append(tile);
@@ -775,7 +871,7 @@ function renderGalerie(a, body, done) {
 function renderFusion(a, body, done) {
   let idx = 0;
   const stage = el('div', { class: 'fusion-row' });
-  body.append(el('h2', {}, a.title), el('p', { class: 'hint' }, a.instruction), stage);
+  body.append(el('h2', {}, a.title), hint(a.instruction), stage);
 
   const step = () => {
     if (idx >= a.pairs.length) return done();
@@ -821,11 +917,11 @@ function renderFusion(a, body, done) {
 function renderQuiz(a, body, done) {
   let idx = 0;
   const head = el('h2', {}, a.title);
-  const hint = el('p', { class: 'hint' }, a.instruction);
+  const hintEl = hint(a.instruction);
   const combo = comboChip();
   const pipsBox = el('div', { class: 'pips-holder' });
   const stage = el('div', { class: 'act', style: 'width:100%' });
-  body.append(head, hint, el('div', { class: 'meter-row' }, pipsBox, combo), stage);
+  body.append(head, hintEl, el('div', { class: 'meter-row' }, pipsBox, combo), stage);
 
   const step = () => {
     pipsBox.innerHTML = '';
@@ -898,18 +994,19 @@ function renderQuiz(a, body, done) {
   step();
 }
 
-/* renderPhrase is the sentence workshop: the sentence's words arrive shuffled
-   and the child rebuilds it in order — the battle mechanic applied to syntax.
-   Every placed word is spoken, the whole sentence is read aloud at the end, and
-   the hidden picture flips open as the meaning's confirmation. */
+/* "Lis la phrase", the CP way: read the sentence aloud (any word he stalls
+   on can be tapped and heard), then "J'AI LU !" reads it back with each word
+   lighting up as the voice reaches it — he checks himself against it — and
+   finally the comprehension question: which picture goes with the sentence?
+   Only reading the whole sentence answers it. */
 function renderPhrase(a, body, done) {
   let idx = 0;
   const head = el('h2', {}, a.title);
-  const hint = el('p', { class: 'hint' }, a.instruction);
+  const hintEl = hint(a.instruction);
   const combo = comboChip();
   const pipsBox = el('div', { class: 'pips-holder' });
   const stage = el('div', { class: 'act', style: 'width:100%' });
-  body.append(head, hint, el('div', { class: 'meter-row' }, pipsBox, combo), stage);
+  body.append(head, hintEl, el('div', { class: 'meter-row' }, pipsBox, combo), stage);
 
   const step = () => {
     pipsBox.innerHTML = '';
@@ -917,68 +1014,85 @@ function renderPhrase(a, body, done) {
     if (idx >= a.items.length) return done();
     const item = a.items[idx];
     const words = item.syllables; // the sentence's words, in order
-    let pos = 0;
-    let missed = false;
     stage.innerHTML = '';
 
-    // The mystery picture: a Poké Ball until the sentence is rebuilt.
-    const face = item.sprite ? el('img', { src: item.sprite, alt: '' })
-      : item.icon ? iconEl(item.icon)
-      : el('span', { class: 'em' }, item.emoji || '🎁');
-    const mystery = el('div', { class: 'mystery' }, pokeball('pokeball-sm'));
+    const chips = words.map((w, k) => el('button', {
+      class: 'read-word',
+      onclick: () => Voice.play(item.syllable_audio ? item.syllable_audio[k] : null, w),
+    }, w));
+    const sentence = el('div', { class: 'read-sentence' }, chips);
+    const readBtn = el('button', { class: 'btn btn-huge btn-go' }, 'J\'AI LU ! 🔊');
+    readBtn.addEventListener('click', async () => {
+      readBtn.remove();
+      await karaoke(item.audio, item.prompt, chips);
+      ask();
+    }, { once: true });
+    stage.append(sentence, readBtn);
 
-    const slots = el('div', { class: 'slot-row phrase-slots' });
-    words.forEach(() => slots.append(el('div', { class: 'slot word-slot' }, '')));
-
-    const tray = el('div', { class: 'tray' });
-    item.tray.forEach((word) => {
-      const b = el('button', { class: 'syl-btn word-btn' }, word);
-      b.addEventListener('click', async () => {
-        if (b.classList.contains('used')) return;
-        if (word === words[pos]) {
-          Sfx.tap();
-          const slot = slots.children[pos];
-          slot.textContent = word;
-          slot.classList.add('filled');
-          b.classList.add('used');
-          Voice.play(item.syllable_audio ? item.syllable_audio[pos] : null, word);
-          pos++;
-          if (pos === words.length) await complete();
-        } else {
-          missed = true;
-          b.classList.add('bad');
-          setTimeout(() => b.classList.remove('bad'), 450);
-          Sfx.wrong();
-        }
+    const ask = () => {
+      let first = true;
+      const grid = el('div', { class: `grid ${item.choices.length === 3 ? 'three' : 'two'} phrase-pics` });
+      item.choices.forEach((c) => {
+        const face = c.sprite ? el('img', { src: c.sprite, alt: '' })
+          : c.icon ? iconEl(c.icon) : el('span', {}, c.emoji);
+        const tile = el('button', { class: `tile ${c.sprite ? 'sprite' : c.icon ? 'ico' : 'emoji'}` }, face);
+        tile.addEventListener('click', async () => {
+          if (tile.disabled || grid.classList.contains('done')) return;
+          if (c.correct) {
+            grid.classList.add('done');
+            tile.classList.add('good');
+            Session.record(item.id, first);
+            if (first) comboUp(combo); else comboBreak(combo);
+            await praise();
+            await sleep(250);
+            idx++;
+            step();
+          } else {
+            first = false;
+            tile.disabled = true;
+            tile.classList.add('bad');
+            Sfx.wrong();
+            // Wrong picture: hear the sentence again, karaoke and all.
+            await karaoke(item.audio, item.prompt, chips);
+          }
+        });
+        grid.append(tile);
       });
-      tray.append(b);
-    });
-
-    const complete = async () => {
-      Session.record(item.id, !missed);
-      if (missed) comboBreak(combo); else comboUp(combo);
-      stage.innerHTML = '';
-      mystery.innerHTML = '';
-      mystery.append(face);
-      mystery.classList.add('open');
-      stage.append(
-        el('div', { class: 'sentence' }, item.prompt),
-        mystery,
-      );
-      burst('✨');
-      Sfx.merge();
-      cheerCompanion();
-      // The sentence he just built, read back whole: this is the moment the
-      // marks on the screen become speech.
-      await Voice.play(item.audio, item.prompt);
-      await sleep(300);
-      idx++;
-      step();
+      stage.append(hint('Quelle image va avec la phrase ?'), grid);
     };
-
-    stage.append(mystery, slots, tray);
   };
   step();
+}
+
+/* karaoke plays a sentence and lights its words up as the voice reaches
+   them, pacing by the real audio clock (each word gets a share of the clip
+   proportional to its length). Without a clip, a steady beat per word. */
+async function karaoke(url, text, chips) {
+  chips.forEach((c) => c.classList.remove('lit', 'read'));
+  const weights = chips.map((c) => c.textContent.length + 2);
+  const total = weights.reduce((x, y) => x + y, 0);
+  let started = Date.now();
+  const light = (k) => chips.forEach((c, i) => {
+    c.classList.toggle('lit', i === k);
+    c.classList.toggle('read', i < k);
+  });
+  const timer = setInterval(() => {
+    const a = Voice.el;
+    let frac;
+    if (a && a.duration && isFinite(a.duration) && !a.paused) frac = a.currentTime / a.duration;
+    else frac = (Date.now() - started) / (chips.length * 450);
+    let acc = 0;
+    let k = 0;
+    for (; k < weights.length; k++) {
+      acc += weights[k] / total;
+      if (frac < acc) break;
+    }
+    light(Math.min(k, chips.length - 1));
+  }, 60);
+  started = Date.now();
+  await Voice.play(url, text);
+  clearInterval(timer);
+  chips.forEach((c) => { c.classList.remove('lit'); c.classList.add('read'); });
 }
 
 function renderCombat(a, body, done) {
@@ -1023,6 +1137,10 @@ function renderCombat(a, body, done) {
     ),
     el('div', { class: 'mine' },
       el('div', { class: 'platform' }, allyImg),
+      App.state && App.state.partner
+        ? el('div', { class: 'nameplate ally-plate' },
+          el('div', { class: 'name' }, App.state.partner.name, el('span', { class: 'lvl' }, ` N.${App.state.partner.level}`)))
+        : null,
       heartsEl,
     ),
   );
@@ -1042,7 +1160,7 @@ function renderCombat(a, body, done) {
   const stage = el('div', { class: 'act', style: 'width:100%' });
   const cols = el('div', { class: 'combat-cols' },
     el('div', { class: 'combat-left' }, arena),
-    el('div', { class: 'combat-right' }, el('p', { class: 'hint' }, a.instruction), stage),
+    el('div', { class: 'combat-right' }, hint(a.instruction), stage),
   );
   // Plain DOM append stringifies null into a literal "null" text node, so the
   // chip is only ever passed when it exists.
@@ -1184,9 +1302,9 @@ function renderCombat(a, body, done) {
       el('div', { class: 'page' },
         el('div', { class: 'act' },
           el('h2', {}, '💔 Défaite...'),
-          el('p', { class: 'hint' }, isTower
-            ? 'La Tour t\'a battu cette fois. Réessaie l\'étage !'
-            : 'Le combat est perdu : l\'épisode recommence du début. Tu vas y arriver !'),
+          isTower
+            ? hint('La Tour t\'a battu cette fois. Réessaie l\'étage !')
+            : hint('Le combat est perdu : l\'épisode recommence du début. Tu vas y arriver !'),
           el('button', { class: 'btn btn-huge', onclick: () => Session.start(Session.data.episode_id) },
             isTower ? 'RÉESSAYER L\'ÉTAGE 🔄' : 'RECOMMENCER L\'ÉPISODE 🔄'),
           el('button', { class: 'btn btn-ghost', onclick: () => App.home() }, 'CARTE 🗺️'),
@@ -1234,7 +1352,7 @@ function renderBadge(a, body, done) {
   Sfx.badge();
   confetti(70);
   burst('🎖');
-  Voice.play(b.audio, `Tu as gagné le ${b.name} !`);
+  Voice.play(b.audio, `Tu as gagné le ${b.name} !`).then(() => say('Il rejoint ta collection !'));
 }
 
 function renderReward(a, body, done) {
@@ -1325,7 +1443,7 @@ const Arcade = {
       el('div', { class: 'page' },
         el('div', { class: 'act' },
           el('h2', {}, '🎮 Mini-jeux'),
-          el('p', { class: 'hint' }, 'Joue et bats tes records !'),
+          hint('Choisis un jeu, et bats tes records !'),
           el('div', { class: 'game-grid' }, cards),
         ),
       ),
@@ -1339,7 +1457,7 @@ const Arcade = {
       el('div', { class: 'page' },
         el('div', { class: 'act' },
           el('h2', {}, title),
-          hintText ? el('p', { class: 'hint' }, hintText) : null,
+          hintText ? hint(hintText) : null,
           ...rest,
         ),
       ),
@@ -1370,8 +1488,9 @@ const Arcade = {
     this.stop();
     Voice.stop();
     let beaten = false;
+    let res = {};
     try {
-      const res = await api('api/records', { game, score, lower, items: this.items });
+      res = await api('api/records', { game, score, lower, items: this.items });
       App.state = res.state;
       beaten = res.beaten;
     } catch (_) {}
@@ -1384,14 +1503,18 @@ const Arcade = {
           el('h2', {}, title),
           el('div', { class: 'bigscore' }, `${score}${g.unit}`),
           beaten ? el('div', { class: 'score newrecord' }, '🏆 NOUVEAU RECORD !') : el('div', { class: 'score' }, `Record : ${this.record(game)}${g.unit}`),
+          ballsWon(res.balls_won),
+          Partner.gainRow(res.partner_event),
           el('button', { class: 'btn btn-huge', onclick: () => this[game]() }, 'REJOUER 🔄'),
           el('button', { class: 'btn btn-ghost', onclick: () => this.hub() }, '🎮 Mini-jeux'),
           el('button', { class: 'btn btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
         ),
       ),
     );
-    if (beaten) { confetti(90); burst('🏆'); Sfx.fanfare(); await say('Génial !'); }
+    if (beaten) { confetti(90); burst('🏆'); Sfx.fanfare(); await say('Nouveau record !'); }
     else { burst('🎉'); Sfx.correct(); await say('Bravo !'); }
+    if (res.balls_won) await say('Tu gagnes des Poké Balls !');
+    await Partner.celebrate(res.partner_event);
   },
 
   /* Memory: six pairs of Pokémon, the record is the time. */

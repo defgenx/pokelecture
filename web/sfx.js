@@ -126,6 +126,56 @@ const Sfx = {
       this.tone(f, t, 0.34, { gain: 0.85 }));
   },
 
+  // Tall grass rustling: three soft brushes of filtered noise.
+  rustle() {
+    [0, 0.18, 0.36].forEach((t) => this.noise(t, 0.16, { freq: 3200, q: 0.7, gain: 0.5, slideTo: 1800 }));
+  },
+
+  // A wild Pokémon jumps out: a quick rising alarm, two notes.
+  encounter() {
+    this.tone(392, 0, 0.12, { type: 'square', gain: 0.35 });
+    this.tone(587, 0.12, 0.12, { type: 'square', gain: 0.35 });
+    this.tone(784, 0.24, 0.22, { type: 'square', gain: 0.35 });
+  },
+
+  // The ball leaves the hand: an airy upward whoosh.
+  throw_() { this.noise(0, 0.4, { freq: 600, q: 0.9, gain: 0.7, slideTo: 3000 }); },
+
+  // The Pokémon turns to light and goes into the ball.
+  absorb() { this.tone(1200, 0, 0.35, { type: 'sine', gain: 0.5, slideTo: 300 }); },
+
+  // One wobble of the ball on the ground.
+  wobble() {
+    this.tone(180, 0, 0.08, { type: 'square', gain: 0.3 });
+    this.tone(150, 0.16, 0.08, { type: 'square', gain: 0.3 });
+  },
+
+  // The lock clicking shut: caught.
+  click() {
+    this.noise(0, 0.05, { freq: 4000, q: 2, gain: 0.8 });
+    this.tone(1760, 0.03, 0.08, { type: 'square', gain: 0.3 });
+  },
+
+  // Level up: a bright climbing run.
+  levelUp() {
+    [523, 587, 659, 784, 1047].forEach((f, i) => this.tone(f, i * 0.07, 0.18, { gain: 0.7 }));
+  },
+
+  // Evolution: a shimmering trill that climbs for four seconds.
+  evolve() {
+    for (let i = 0; i < 24; i++) {
+      const f = 440 * Math.pow(2, i / 14);
+      this.tone(f, i * 0.17, 0.16, { type: 'sine', gain: 0.45 });
+      this.tone(f * 1.5, i * 0.17 + 0.08, 0.12, { type: 'sine', gain: 0.25 });
+    }
+  },
+
+  // Drum beat for the syllable-counting game.
+  drum() {
+    this.tone(110, 0, 0.18, { type: 'sine', gain: 1, slideTo: 55 });
+    this.noise(0, 0.06, { freq: 900, q: 0.8, gain: 0.5 });
+  },
+
   // Rumble under a legendary's entrance.
   legendary() {
     this.noise(0, 1.1, { freq: 90, q: 0.6, gain: 1 });

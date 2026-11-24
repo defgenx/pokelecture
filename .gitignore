@@ -16,3 +16,6 @@ bin/
 
 # IDE
 .idea/
+
+# Local secrets (ElevenLabs key for scripts/voice-elevenlabs.sh)
+.env.local

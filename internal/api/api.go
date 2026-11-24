@@ -74,6 +74,12 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /api/arcade", s.handleArcade)
 	mux.HandleFunc("POST /api/records", s.handleRecord)
 
+	// The partner, the daily gift and the tall grass.
+	mux.HandleFunc("POST /api/partner", s.handlePartner)
+	mux.HandleFunc("POST /api/gift", s.handleGift)
+	mux.HandleFunc("GET /api/wild", s.handleWild)
+	mux.HandleFunc("POST /api/wild/catch", s.handleWildCatch)
+
 	// Parent-side voice recording.
 	mux.HandleFunc("GET /api/texts", s.handleTexts)
 	mux.HandleFunc("PUT /api/record/{key}", s.handleRecordPut)
@@ -152,6 +158,20 @@ type stateView struct {
 	Pokedex    []pokemonView     `json:"pokedex"`
 	Badges     []badgeView       `json:"badges"`
 	UI         map[string]string `json:"ui"`
+
+	Partner  *partnerView  `json:"partner"`
+	Starters []starterView `json:"starters,omitempty"` // only while none is chosen
+	Prompt   voiceLine     `json:"starter_prompt"`
+	Balls    int           `json:"balls"`
+	Gift     bool          `json:"gift"` // today's gift is waiting
+	Wild     wildCount     `json:"wild"`
+}
+
+type wildCount struct {
+	Caught    int `json:"caught"`
+	Shiny     int `json:"shiny"`
+	Available int `json:"available"`
+	Total     int `json:"total"`
 }
 
 func (s *Server) state() stateView {
@@ -160,6 +180,24 @@ func (s *Server) state() stateView {
 	out := stateView{
 		Name: st.Name, Stars: st.Stars, Streak: st.Streak,
 		TowerFloor: st.TowerFloor, Records: st.Records, UI: curriculum.UIAudio(),
+		Partner: s.partnerView(st.Partner), Balls: st.Balls,
+		Prompt: s.line(curriculum.StarterPrompt, curriculum.StarterPrompt),
+		Gift:   st.Partner != nil && st.GiftDay != time.Now().Format("2006-01-02"),
+	}
+	if st.Partner == nil {
+		out.Starters = s.starters()
+	}
+	for _, v := range s.wildViews(st) {
+		out.Wild.Total++
+		if v.Available {
+			out.Wild.Available++
+		}
+		if v.Caught {
+			out.Wild.Caught++
+		}
+		if v.Shiny {
+			out.Wild.Shiny++
+		}
 	}
 	unlocked := true
 	for _, ep := range s.cur.Episodes {
@@ -297,9 +335,12 @@ type resultResponse struct {
 	// catching it, which is what makes the Pokédex completable.
 	NewCatches []int `json:"new_catches"`
 	// Tower verdict: whether the floor was cleared, and the recomputed target.
-	TowerPassed bool      `json:"tower_passed"`
-	TowerNeed   int       `json:"tower_need"`
-	State       stateView `json:"state"`
+	TowerPassed bool `json:"tower_passed"`
+	TowerNeed   int  `json:"tower_need"`
+	// What the session paid: Poké Balls, and the partner's experience.
+	Balls        int           `json:"balls_won"`
+	PartnerEvent *partnerEvent `json:"partner_event"`
+	State        stateView     `json:"state"`
 }
 
 func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
@@ -331,6 +372,13 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	right := 0
+	for _, it := range req.Items {
+		if it.Correct {
+			right++
+		}
+	}
+
 	res := resultResponse{NewCatches: []int{}}
 	if isTower {
 		// Clearing a floor means at least half the words were built without a
@@ -342,7 +390,9 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 			if id := s.cur.TowerRewardFor(req.Floor); id != 0 && s.store.Catch(id) {
 				res.NewCatches = append(res.NewCatches, id)
 			}
+			res.Balls = towerBalls
 		}
+		res.PartnerEvent = s.award(min(maxSessionXP, right+req.Points))
 	} else if req.Completed {
 		stars := max(0, min(3, req.Stars))
 		s.store.CompleteEpisode(ep.ID, stars, now)
@@ -354,6 +404,11 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		if req.Shiny && ep.RewardPokemon != 0 {
 			s.store.MarkShiny(ep.RewardPokemon)
 		}
+		res.Balls = episodeBalls + stars
+		res.PartnerEvent = s.award(min(maxSessionXP, right+sessionBonusXP+starXP*stars))
+	}
+	if res.Balls > 0 {
+		s.store.AddBalls(res.Balls)
 	}
 	if err := s.store.Save(); err != nil {
 		log.Printf("sauvegarde: %v", err)

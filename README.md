@@ -250,12 +250,80 @@ go run ./cmd/pokecontent audio -force -voice fr-FR-HenriNeural   # autre voix
 go run ./cmd/pokecontent audio -force -engine say -voice Thomas  # l'ancienne voix macOS
 ```
 
-Voix françaises : `edge-tts --list-voices | grep fr-`. Chaque clip est rogné de
+Voix françaises : `edge-tts --list-voices | grep fr-`. Si `make audio` échoue
+avec une erreur **403** : Microsoft a fait tourner son jeton client, mets
+l'outil à jour (`uv tool upgrade edge-tts`). Chaque clip est rogné de
 son silence (Edge ajoute ~1 s de blanc à la fin, entendu comme un temps mort
 entre deux syllabes). La conversion `.m4a` passe par `afconvert` : macOS
 reste nécessaire. Changer de voix ne change pas les URLs (la clé dépend du
 texte, pas de la voix) : après un `-force`, incrémente `CACHE` dans `web/sw.js`
 pour que la tablette oublie l'ancienne.
+
+### ElevenLabs (optionnel)
+
+La clé est dans `.env.local` (ignoré par git), posée par
+`npx -y @elevenlabs/cli@latest onboard init`. Ajoute la voix :
+`ELEVENLABS_VOICE_ID=…` (`scripts/voice-elevenlabs.sh --voices` les liste).
+
+```bash
+scripts/voice-elevenlabs.sh                   # le plan : ce qui reste, ce que ça coûte — n'envoie rien
+scripts/voice-elevenlabs.sh --go              # dépense les crédits du mois sur les lignes les plus utiles
+scripts/voice-elevenlabs.sh --try "Pikachu"   # écouter une ligne (coûte ses caractères)
+```
+
+**Chaque ligne n'est payée qu'une fois.** `web/audio/voices.json` (versionné
+avec l'audio) note quelle voix a fait chaque clip ; une relance saute tout ce
+que la même voix et le même modèle ont déjà fait, sur n'importe quelle machine.
+La piste complète fait ~33 000 caractères ; l'offre gratuite donne 10 000
+crédits par mois, alors le script s'arrête au budget restant, en commençant par
+ce qui enseigne (sons, syllabes, mots ≈ 6 800 caractères), les phrases ensuite.
+Relance `--go` le mois suivant : il reprend où les crédits se sont arrêtés.
+Sur un quota épuisé en cours de route, il s'arrête proprement et garde ce qui
+est fait. `make content` (Edge) ne touche pas aux clips ElevenLabs : il ne
+fait que les manquants.
+
+Réglages (`cmd/pokecontent/elevenlabs.go`) : modèle `eleven_v4` par défaut
+(`ELEVENLABS_MODEL` pour changer), `language_code: fr` pour qu'une syllabe nue
+ne soit pas lue en anglais, et **normalisation désactivée** sur les sons et
+syllabes — c'est elle qui transforme « dre » en *Docteure*. v4 n'a pas de
+réglage de vitesse : les syllabes sortent au débit normal. Changer un réglage ?
+Incrémente `elevenRev` : la prochaine relance refait (et repaie) les clips. Les
+réécritures de `pronunciation.json` ont été réglées sur Edge : après
+ElevenLabs, relance le contrôle ci-dessous.
+
+### Contrôler la prononciation : `pokecontent audit`
+
+Une voix de synthèse lit mal un morceau nu de trois façons, toutes
+silencieuses : elle l'**épelle** (« pho » → P-H-O, « chu » → C-H-U), le lit
+comme une **abréviation** (« dre » → *Docteure*, « min » → *minute*) ou comme
+un **mot étranger** (« bin », « man »), ou dit le **nom** de la lettre (« be »
+→ *bé*). `pokecontent audit` liste les clips sons/syllabes du plus long au plus
+court : un clip épelé dure deux fois plus qu'un clip prononcé, c'est là qu'il
+faut écouter.
+
+La méthode qui a produit les réécritures actuelles : pour chaque clip suspect,
+générer plusieurs graphies candidates, mesurer leur durée et les transcrire
+(reconnaissance vocale), garder celle qui n'est ni épelée ni lue comme un sigle.
+Deux règles en sont sorties :
+
+- **Consonnes : « eu » plutôt que « e »** quand la syllabe n'est pas un vrai
+  mot (`beu`, `peu`, `feu`, `reu`, `gneu`, `kseu`, `bleu`, `dreu`…). « me »,
+  « le », « de », « je » sont des mots et restent tels quels.
+- **Nasales : un vrai mot homophone** (`sen` → « sang », `ten` → « tant »,
+  `pan` → « paon », `min` → « main », `in` → « hein »). Sans ça, la route 10 —
+  qui enseigne `en` = /ɑ̃/ — faisait entendre /sɛn/, /tɛn/.
+
+Et `eu` seul se lit /y/ (« j'ai eu ») : le son se dit « eux ».
+
+### Tout ce qui est écrit est dit
+
+Il ne sait pas lire : chaque consigne affichée est lue à voix haute à
+l'ouverture de l'écran, et se réécoute en la touchant (🔊). Côté code, c'est
+`hint()` dans `web/app.js` ; un mot ou une syllabe joué pendant la consigne
+attend qu'elle finisse au lieu de la couper. Une phrase passée à `hint()` ou
+`say()` doit figurer dans `UIPhrases` (`internal/curriculum/session.go`), sinon
+elle n'a pas de voix : `go test ./...` échoue
+(`speech_coverage_test.go`) — et vérifie aussi les consignes des séances.
 
 ## Studio voix — enregistrer ta propre voix
 
@@ -502,10 +570,69 @@ n'apparaissent que comme récompenses, dont le nom est lu **à** l'enfant.
 Quand tout est terminé, « JOUER » relance l'épisode **le moins récemment
 joué** : la fin du parcours devient une rotation de révision, pas une impasse.
 
+## L'écran d'accueil est une carte où l'on se déplace
+
+Au lancement, le partenaire est **posé sur la prochaine route**, sur la carte
+de sa région : JOUER est déjà là. On se déplace :
+
+- au **clavier** : flèches, ZQSD ou WASD ; Entrée ou Espace = le bouton ;
+- au **doigt** : toucher une case, le partenaire y marche tout seul (chemin le
+  plus court) ; sur tablette, une croix directionnelle en plus (masquée sur
+  téléphone, où l'on touche la carte).
+
+Chaque région a la même carte (`OW_MAP` dans `web/overworld.js`, tournée d'un
+quart de tour sur un écran en portrait) : ses routes sont des Poké Balls le
+long du chemin (le Pokémon à gagner au-dessus), **les hautes herbes** font
+surgir un Pokémon sauvage en marchant (1 pas sur 7, s'il reste des Poké
+Balls), et trois lieux s'ouvrent quand on marche dessus : 🗼 la Tour, 🎮 les
+mini-jeux, 📘 le Pokédex. Les flèches au bord mènent aux régions voisines ; une
+région dont la première route n'est pas débloquée reste fermée. Marcher sur
+quelque chose ouvre une boîte de dialogue **lue à voix haute**, avec un seul
+gros bouton. L'ancienne page d'accueil (liste des routes, badges) est le menu
+☰.
+
+## Le monde Pokémon : partenaire, Poké Balls, hautes herbes
+
+- **Le partenaire.** Au premier lancement : « Choisis ton premier Pokémon ! »
+  — Bulbizarre, Salamèche, Carapuce ou Pikachu (`data/partners.json` : les
+  lignées et les niveaux d'évolution). Il gagne de l'**expérience à chaque
+  lecture** (bonnes réponses d'une séance + bonus d'étoiles, points de la Tour,
+  mini-jeux, captures), monte de niveau (N.5 → N.100) et **évolue à l'écran**
+  (N.16 et N.32 ; Raichu au N.24) : « Quoi ? Salamèche évolue ! ». C'est lui
+  qui combat à ses côtés et le suit d'écran en écran. Une sauvegarde qui
+  existait avant reçoit une avance d'XP (8 par épisode terminé, juste sous la
+  première évolution). Courbe : `curriculum.XPToNext`.
+- **Les Poké Balls.** Gagnées en lisant l'aventure (2 + une par étoile à la fin
+  d'une route, 2 par étage de la Tour, 1 par record battu), plus **le cadeau du
+  jour** (3 Poké Balls, une fois par jour : revenir demain, c'est l'habitude
+  qui apprend à lire). 5 sont offertes avec le partenaire.
+- **🌿 Les hautes herbes.** On touche les herbes, un Pokémon sauvage surgit :
+  pour l'attraper, **lire son nom** en remettant ses syllabes dans l'ordre (avec
+  des intruses), puis lancer la Poké Ball — une secousse si le nom a été lu
+  sans faute, trois sinon. 1 chance sur 16 d'un chromatique. Ils vont dans le
+  **Pokédex sauvage** (second onglet du Pokédex), à côté du Pokédex de
+  l'aventure, qui reste celui qu'on complète en lisant le cours.
+
+### Qui vit dans les hautes herbes
+
+Les Pokémon d'`arcade.json` qui ont un champ `syllables`. Un nom n'entre dans
+les herbes qu'à partir de l'épisode où **tous ses sons sont enseignés et où la
+segmentation donne la vraie lecture** (`WildUnlock`) — sinon « Loupio » serait
+« lisible » dès la route 1 en o-u. Résultat : 5 Pokémon après la route 1, puis
+de nouveaux à presque chaque route, 101 au total. Plus il apprend de sons, plus
+il en trouve.
+
+Les noms qui se liraient faux ne reçoivent pas de syllabes : finale muette
+(Feunard, Tarpaud), `am`/`em` lus /ɑ̃/ (Alakazam, Empiflor), `ill` lu /ij/
+(Marill), nom anglais (Snubbull, Steelix), `cen` avalé par `ce` (Héricendre).
+`pokecontent check` refuse en plus, pour tout Pokémon sauvage, une nasale
+suivie d'une voyelle, un `er` au milieu du mot, un `s` entre voyelles, un
+`c`/`g` devant e/i et un `y` après voyelle.
+
 ## Mini-jeux — chronos, scores et records
 
-Un coin **🎮 Mini-jeux** sur l'accueil (et à la fin de chaque séance) : quatre
-jeux chronométrés, chacun avec **un record enregistré à battre** — nouveau
+Un coin **🎮 Mini-jeux** sur l'accueil (et à la fin de chaque séance) : neuf
+jeux, chacun avec **un record enregistré à battre** — nouveau
 record = feux d'artifice. Deux sont de la pure récompense, deux sont de la
 lecture déguisée :
 
@@ -524,7 +651,17 @@ lecture déguisée :
 - **🌿 La chasse** : 45 secondes, les Pokémon surgissent des hautes herbes de
   plus en plus vite.
 
-Les records se gèrent dans l'admin (effacer un record, ou tous).
+- **🥁 Le tambour des syllabes** : entendre le mot, taper sur le tambour du
+  bon nombre de syllabes ; la réponse est rejouée syllabe par syllabe, un coup
+  de tambour chacune. Les mots finis par une syllabe muette (« Salamèche » :
+  trois syllabes à l'oral, quatre à l'écrit) en sont exclus.
+- **🧩 Le son manquant** : un mot avec un trou, trois graphèmes à proposer
+  (chacun se fait entendre quand on le touche). Jamais deux homophones parmi
+  les choix (`o`/`au`/`eau`, `an`/`en`…) : il aurait raison et on lui dirait
+  non.
+
+Les records se gèrent dans l'admin (effacer un record, ou tous). Chaque partie
+rapporte aussi de l'expérience au partenaire.
 
 Le matériel vient de `GET /api/arcade` : les jeux de lecture n'utilisent que ce
 qui a été appris, mais les trois jeux Pokémon (mystère, memory, chasse) piochent
@@ -536,15 +673,23 @@ n'entrent jamais au Pokédex ; leur artwork est réduit à 240 px par
 d'`arcade.json` (`pokecontent check` le signale). Les records vivent dans la
 sauvegarde (`POST /api/records`).
 
-### La phrase, réécrite : « Construis la phrase »
+### La phrase : « Lis la phrase »
 
-L'ancien exercice « lis la phrase, touche l'image » ne parlait pas et
-n'accrochait pas. Il est remplacé par **le mécanisme du combat appliqué à la
-syntaxe** : les mots de la phrase arrivent mélangés, l'enfant les lit et les
-remet dans l'ordre. Chaque mot posé est **prononcé**, la phrase complète est
-**lue à voix haute** à la fin, et l'image-mystère (une Poké Ball) s'ouvre en
-confirmation du sens. Au palier difficile, un mot intrus d'une autre phrase se
-glisse dans le tas.
+Comme au CP, en trois temps :
+
+1. **Lire à voix haute** — la phrase en grand, chaque mot touchable pour
+   l'entendre s'il bloque.
+2. **« J'AI LU ! »** — la voix relit la phrase et **chaque mot s'allume** au
+   moment où elle le prononce (karaoké calé sur l'horloge du clip) : il se
+   corrige tout seul.
+3. **Comprendre** — « Quelle image va avec la phrase ? », trois images. Les
+   mauvaises ne montrent jamais un mot de la phrase (avec « Otaria utilise
+   Morsure. », l'icône Morsure serait aussi une bonne réponse). Une erreur
+   relance le karaoké.
+
+L'ancien « Construis la phrase » (remettre les mots mélangés dans l'ordre)
+demandait de deviner la syntaxe sans modèle sous les yeux : ce n'était pas de
+la lecture.
 
 ### La prononciation des syllabes : `data/pronunciation.json`
 
