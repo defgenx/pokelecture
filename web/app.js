@@ -275,6 +275,85 @@ document.addEventListener('visibilitychange', () => {
   else if (App.state && $('.ow-map')) App.home();
 });
 
+/* ------------------------------------------------------------- fullscreen ---
+   The installed app is already fullscreen (manifest "display": "fullscreen");
+   in a browser tab, the address bar and tabs eat the screen. Fullscreen is
+   asked for on the COMMENCER tap (browsers only allow it from a gesture),
+   and a button in the top bar toggles it. Leaving fullscreen is remembered on
+   the device, so the game does not force it back at the next launch. iPhone
+   Safari has no fullscreen for pages: the button simply does not show. */
+
+const Fullscreen = {
+  KEY: 'pk-fullscreen',
+
+  supported() {
+    const d = document.documentElement;
+    return !!(d.requestFullscreen || d.webkitRequestFullscreen);
+  },
+
+  installed() {
+    return window.matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+  },
+
+  active() { return !!(document.fullscreenElement || document.webkitFullscreenElement); },
+
+  wanted() {
+    try { return localStorage.getItem(this.KEY) !== 'off'; } catch (_) { return true; }
+  },
+
+  remember(on) {
+    try { localStorage.setItem(this.KEY, on ? 'on' : 'off'); } catch (_) {}
+  },
+
+  async enter() {
+    const d = document.documentElement;
+    try {
+      if (d.requestFullscreen) await d.requestFullscreen({ navigationUI: 'hide' });
+      else d.webkitRequestFullscreen();
+    } catch (_) {}
+  },
+
+  async exit() {
+    try {
+      if (document.exitFullscreen) await document.exitFullscreen();
+      else document.webkitExitFullscreen();
+    } catch (_) {}
+  },
+
+  toggle() {
+    const on = !this.active();
+    this.remember(on);
+    if (on) this.enter(); else this.exit();
+  },
+
+  // Four corners pointing out (enter) or in (leave): an SVG, because the
+  // emoji for it is missing from older Android fonts.
+  icon() {
+    const out = 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5';
+    const inn = 'M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5';
+    return `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${this.active() ? inn : out}"/></svg>`;
+  },
+
+  button() {
+    if (!this.supported() || this.installed()) return null;
+    return el('button', {
+      class: 'btn-icon fs-btn', title: 'Plein écran', 'aria-label': 'Plein écran',
+      html: this.icon(), onclick: () => this.toggle(),
+    });
+  },
+
+  paint() { document.querySelectorAll('.fs-btn').forEach((b) => { b.innerHTML = this.icon(); }); },
+};
+
+document.addEventListener('fullscreenchange', () => Fullscreen.paint());
+document.addEventListener('webkitfullscreenchange', () => Fullscreen.paint());
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey && !e.altKey && Fullscreen.supported()) {
+    Fullscreen.toggle();
+  }
+});
+
 /* ------------------------------------------------------------------ shell --- */
 
 const App = {
@@ -300,6 +379,7 @@ const App = {
       el('span', { class: 'lights', 'aria-hidden': 'true' }, el('i'), el('i'), el('i')),
       el('span', { class: 'grow' }),
       ...right,
+      Fullscreen.button(),
     );
   },
 
@@ -2057,6 +2137,8 @@ function faceKey(w) {
 /* ------------------------------------------------------------------ boot --- */
 
 $('#gate-btn').addEventListener('click', async () => {
+  // First: fullscreen must be asked for inside the tap itself.
+  if (Fullscreen.supported() && !Fullscreen.installed() && Fullscreen.wanted()) Fullscreen.enter();
   Voice.unlock();
   Sfx.unlock();
   Sfx.tap();

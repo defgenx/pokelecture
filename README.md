@@ -25,6 +25,13 @@ portrait **et** paysage, zones sûres (barre d'état, encoche), pincer-zoomer et
 appui long neutralisés (des doigts de cinq ans touchent partout), et l'écran
 reste allumé pendant une séance (wake lock, en HTTPS).
 
+**Plein écran** : installé sur l'écran d'accueil, le jeu est d'office en plein
+écran (manifeste `"display": "fullscreen"`). Dans un onglet de navigateur, il
+passe en plein écran au toucher de COMMENCER, et un bouton dans la barre du
+haut (ou la touche `F`) l'enlève ou le remet ; le choix est mémorisé sur
+l'appareil. Safari sur iPhone ne permet pas le plein écran d'une page : le
+bouton n'y apparaît pas, l'installation sur l'écran d'accueil le remplace.
+
 En **paysage**, la mise en page change vraiment : arène de combat à gauche et
 mots à droite (plus de défilement en plein combat), carte des routes sur deux
 colonnes, actions et vitrine à badges côte à côte, et les très grands corps de
