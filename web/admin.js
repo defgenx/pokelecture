@@ -1,7 +1,8 @@
 'use strict';
 
 /* Administration — the parent's control room.
-   Everything reads and writes var/progress.json through /api/admin/*: check the
+   Everything reads and writes one player's save (var/players/<id>.json, the
+   one picked in the player bar) through /api/admin/*: check the
    progression, spot what is fragile, rename the child, replay or skip an
    episode, fix the Pokédex, or wipe the save and start over. */
 
@@ -24,18 +25,33 @@ const TABS = [
   ['danger', 'Réglages'],
 ];
 
-const state = { sum: null, tab: 'episodes' };
+// player: whose save the page shows and acts on (every admin call carries it).
+const state = { sum: null, tab: 'episodes', players: [], player: null };
 
 /* ------------------------------------------------------------------ api --- */
 
+// withPlayer adds ?player= to an admin call: the page acts on one save.
+function withPlayer(path) {
+  if (!state.player) return path;
+  return `${path}${path.includes('?') ? '&' : '?'}player=${encodeURIComponent(state.player)}`;
+}
+
+async function loadPlayers() {
+  const res = await fetch('api/admin/players');
+  if (!res.ok) throw new Error(await res.text());
+  state.players = (await res.json()).players || [];
+  if (!state.players.some((p) => p.id === state.player)) state.player = state.players.length ? state.players[0].id : null;
+}
+
 async function load() {
-  const res = await fetch('api/admin/summary');
+  await loadPlayers();
+  const res = await fetch(withPlayer('api/admin/summary'));
   if (!res.ok) throw new Error(await res.text());
   state.sum = await res.json();
 }
 
 async function post(path, body) {
-  const res = await fetch(path, {
+  const res = await fetch(path.startsWith('api/admin/players') ? path : withPlayer(path), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body || {}),
@@ -295,10 +311,52 @@ function dangerTab(list) {
         },
       }, '🗑 Réinitialiser la sauvegarde'),
     ),
+    state.players.length > 1 ? el('div', { class: 'dangerzone' },
+      el('p', {}, `Supprime le joueur ${state.sum.name} et toute sa progression. Sa sauvegarde part dans var/players/trash/ : on peut la récupérer.`),
+      el('button', {
+        onclick: async () => {
+          if (!window.confirm(`Supprimer le joueur ${state.sum.name} ?`)) return;
+          try {
+            await post(`api/admin/players/${encodeURIComponent(state.player)}/delete`);
+            state.player = null;
+            await load();
+            render();
+          } catch (err) { warn(`Suppression impossible : ${err.message}`); }
+        },
+      }, `🗑 Supprimer le joueur ${state.sum.name}`),
+    ) : null,
   ));
 }
 
+/* The players: one save each. Pick whose save the page shows, add one,
+   remove one (its file goes to var/players/trash/, recoverable). */
+function playerBar() {
+  const bar = $('#players');
+  bar.innerHTML = '';
+  bar.append(el('b', {}, '👥 Joueur :'));
+  state.players.forEach((p) => {
+    bar.append(el('button', {
+      class: `player-chip ${p.id === state.player ? 'on' : ''}`,
+      onclick: async () => { state.player = p.id; await load(); render(); },
+    }, el('img', { src: `sprites/art/${p.avatar}.png`, alt: '' }), `${p.name} · ⭐ ${p.stars}`));
+  });
+  bar.append(el('button', {
+    class: 'player-chip add',
+    onclick: async () => {
+      const name = window.prompt('Prénom du nouveau joueur ?');
+      if (!name || !name.trim()) return;
+      try {
+        const res = await post('api/admin/players', { name: name.trim() });
+        state.player = res.id;
+        await load();
+        render();
+      } catch (err) { warn(`Création impossible : ${err.message}`); }
+    },
+  }, '➕ Nouveau joueur'));
+}
+
 function render() {
+  playerBar();
   tabs();
   tally();
   const list = $('#list');

@@ -122,6 +122,9 @@ type State struct {
 	// itself on the first event of a new day.
 	Today Today `json:"today"`
 
+	// Created dates the save (players are listed oldest first).
+	Created time.Time `json:"created,omitempty"`
+
 	Settings  Settings  `json:"settings"`
 	Streak    int       `json:"streak"`
 	LastDay   string    `json:"last_day"`
@@ -180,6 +183,7 @@ func Open(path string, name string) (*Store, error) {
 		if s.state.Name == "" {
 			s.state.Name = DefaultName
 		}
+		s.state.Created = time.Now()
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			return nil, err
 		}
@@ -717,10 +721,11 @@ func (s *Store) Reset() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	name, settings := s.state.Name, s.state.Settings
+	name, settings, created := s.state.Name, s.state.Settings, s.state.Created
 	s.state = State{
 		Name:     name,
 		Settings: settings,
+		Created:  created,
 		Episodes: map[string]EpisodeStat{},
 		Items:    map[string]Item{},
 	}

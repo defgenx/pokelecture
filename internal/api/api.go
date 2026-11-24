@@ -21,23 +21,30 @@ import (
 
 // Server wires the curriculum, the savegame and the static frontend together.
 type Server struct {
-	cur    *curriculum.Curriculum
-	store  *progress.Store
-	web    http.Handler
-	webDir string
-	base   string
-	auth   *Auth // nil: the parent side is closed (see auth.go)
+	cur     *curriculum.Curriculum
+	players *progress.Registry
+	store   *progress.Store // the save a request is served with (see play / adminPlay)
+	web     http.Handler
+	webDir  string
+	base    string
+	auth    *Auth // nil: the parent side is closed (see auth.go)
 }
 
 // New returns a Server serving the frontend from webDir, mounted at base
 // ("/" standalone, or e.g. "/pokelecture/" behind a reverse proxy).
+// New serves a single player's save (tests, tools); NewPlayers serves many.
 func New(cur *curriculum.Curriculum, store *progress.Store, webDir, base string) *Server {
+	return NewPlayers(cur, progress.Single(store), webDir, base)
+}
+
+// NewPlayers serves every player of a registry, one save each.
+func NewPlayers(cur *curriculum.Curriculum, players *progress.Registry, webDir, base string) *Server {
 	return &Server{
-		cur:    cur,
-		store:  store,
-		web:    http.FileServer(http.Dir(webDir)),
-		webDir: webDir,
-		base:   base,
+		cur:     cur,
+		players: players,
+		web:     http.FileServer(http.Dir(webDir)),
+		webDir:  webDir,
+		base:    base,
 	}
 }
 
@@ -92,23 +99,30 @@ func (s *Server) page(w http.ResponseWriter, r *http.Request, file string) {
 // Routes builds the mux.
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/state", s.handleState)
-	mux.HandleFunc("GET /api/session/{id}", s.handleSession)
-	mux.HandleFunc("POST /api/session/{id}/result", s.handleResult)
+	mux.HandleFunc("GET /api/state", s.play((*Server).handleState))
+	mux.HandleFunc("GET /api/session/{id}", s.play((*Server).handleSession))
+	mux.HandleFunc("POST /api/session/{id}/result", s.play((*Server).handleResult))
 
 	// Mini-games: learned material to play with, and best scores to beat.
-	mux.HandleFunc("GET /api/arcade", s.handleArcade)
-	mux.HandleFunc("POST /api/records", s.handleRecord)
+	mux.HandleFunc("GET /api/arcade", s.play((*Server).handleArcade))
+	mux.HandleFunc("POST /api/records", s.play((*Server).handleRecord))
 
 	// The partner, the daily gift and the tall grass.
-	mux.HandleFunc("POST /api/partner", s.handlePartner)
-	mux.HandleFunc("POST /api/gift", s.handleGift)
-	mux.HandleFunc("GET /api/wild", s.handleWild)
-	mux.HandleFunc("POST /api/wild/catch", s.handleWildCatch)
-	mux.HandleFunc("POST /api/find", s.handleFind)
-	mux.HandleFunc("GET /api/team", s.handleTeam)
-	mux.HandleFunc("POST /api/team", s.handleTeamChoose)
-	mux.HandleFunc("POST /api/feed", s.handleFeed)
+	mux.HandleFunc("POST /api/partner", s.play((*Server).handlePartner))
+	mux.HandleFunc("POST /api/gift", s.play((*Server).handleGift))
+	mux.HandleFunc("GET /api/wild", s.play((*Server).handleWild))
+	mux.HandleFunc("POST /api/wild/catch", s.play((*Server).handleWildCatch))
+	mux.HandleFunc("POST /api/find", s.play((*Server).handleFind))
+	mux.HandleFunc("GET /api/team", s.play((*Server).handleTeam))
+	mux.HandleFunc("POST /api/team", s.play((*Server).handleTeamChoose))
+	mux.HandleFunc("POST /api/feed", s.play((*Server).handleFeed))
+
+	// Players: who plays on this device ("Qui joue ?").
+	mux.HandleFunc("GET /api/players", s.handlePlayers)
+	mux.HandleFunc("POST /api/players/select", s.handlePlayerSelect)
+	mux.HandleFunc("GET /api/admin/players", s.guard(s.handleAdminPlayers))
+	mux.HandleFunc("POST /api/admin/players", s.guard(s.handleAdminPlayerCreate))
+	mux.HandleFunc("POST /api/admin/players/{id}/delete", s.guard(s.handleAdminPlayerDelete))
 
 	// Parent-side voice recording — behind the Google sign-in when it is on.
 	mux.HandleFunc("GET /api/texts", s.guard(s.handleTexts))
@@ -116,15 +130,15 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("DELETE /api/record/{key}", s.guard(s.handleRecordDelete))
 
 	// Parent-side administration: inspect and repair the savegame.
-	mux.HandleFunc("GET /api/admin/summary", s.guard(s.handleAdminSummary))
-	mux.HandleFunc("POST /api/admin/name", s.guard(s.handleAdminName))
-	mux.HandleFunc("POST /api/admin/reset", s.guard(s.handleAdminReset))
-	mux.HandleFunc("POST /api/admin/episodes/{id}/reset", s.guard(s.handleAdminEpisodeReset))
-	mux.HandleFunc("POST /api/admin/episodes/{id}/complete", s.guard(s.handleAdminEpisodeComplete))
-	mux.HandleFunc("POST /api/admin/pokedex/{id}", s.guard(s.handleAdminPokedex))
-	mux.HandleFunc("POST /api/admin/settings", s.guard(s.handleAdminSettings))
-	mux.HandleFunc("POST /api/admin/episodes/{id}/stars", s.guard(s.handleAdminEpisodeStars))
-	mux.HandleFunc("POST /api/admin/records/reset", s.guard(s.handleAdminRecordsReset))
+	mux.HandleFunc("GET /api/admin/summary", s.guard(s.adminPlay((*Server).handleAdminSummary)))
+	mux.HandleFunc("POST /api/admin/name", s.guard(s.adminPlay((*Server).handleAdminName)))
+	mux.HandleFunc("POST /api/admin/reset", s.guard(s.adminPlay((*Server).handleAdminReset)))
+	mux.HandleFunc("POST /api/admin/episodes/{id}/reset", s.guard(s.adminPlay((*Server).handleAdminEpisodeReset)))
+	mux.HandleFunc("POST /api/admin/episodes/{id}/complete", s.guard(s.adminPlay((*Server).handleAdminEpisodeComplete)))
+	mux.HandleFunc("POST /api/admin/pokedex/{id}", s.guard(s.adminPlay((*Server).handleAdminPokedex)))
+	mux.HandleFunc("POST /api/admin/settings", s.guard(s.adminPlay((*Server).handleAdminSettings)))
+	mux.HandleFunc("POST /api/admin/episodes/{id}/stars", s.guard(s.adminPlay((*Server).handleAdminEpisodeStars)))
+	mux.HandleFunc("POST /api/admin/records/reset", s.guard(s.adminPlay((*Server).handleAdminRecordsReset)))
 
 	// Google sign-in for the parent pages.
 	mux.HandleFunc("GET /auth/login", s.handleLogin)
@@ -214,6 +228,7 @@ type stateView struct {
 	Wild     wildCount     `json:"wild"`
 
 	Trainer trainerView    `json:"trainer"`
+	Players int            `json:"players"` // how many players share the game
 	TeamN   int            `json:"team_size"`
 	Bag     map[string]int `json:"bag"`
 	Found   []string       `json:"found"`  // hidden objects picked today
@@ -250,6 +265,7 @@ func (s *Server) state() stateView {
 	}
 	out.Hungry = st.Partner != nil && !today.Fed
 	out.Trainer = trainerOf(st)
+	out.Players = len(s.players.List())
 	out.TeamN = len(s.team(st))
 	for _, v := range s.wildViews(st) {
 		out.Wild.Total++

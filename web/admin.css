@@ -58,3 +58,10 @@
 /* Google sign-in: who is signed in, and the way out. */
 .auth-bar { display: flex; gap: 14px; align-items: center; justify-content: flex-end; font-size: 14px; color: #4d5566; margin-top: 6px; }
 .auth-bar a { color: #3b4cca; font-weight: 700; }
+
+/* The player bar: whose save the page shows. */
+.players { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 4px; }
+.player-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 6px; border-radius: 999px; border: 1px solid #c6ccd6; background: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.player-chip img { width: 28px; height: 28px; object-fit: contain; }
+.player-chip.on { background: #ffcb05; border-color: #c98f00; }
+.player-chip.add { padding: 6px 14px; color: #3b4cca; }

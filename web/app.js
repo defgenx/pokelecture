@@ -28,7 +28,11 @@ async function api(path, body) {
     ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
     : {};
   const res = await fetch(path, opts);
-  if (!res.ok) throw new Error(`${path}: ${res.status} ${await res.text()}`);
+  if (!res.ok) {
+    const err = new Error(`${path}: ${res.status} ${await res.text()}`);
+    err.status = res.status; // 409 on a game call: no player picked on this device
+    throw err;
+  }
   return res.json();
 }
 
@@ -370,7 +374,12 @@ const App = {
   state: null,
 
   async boot() {
-    this.state = await api('api/state');
+    try {
+      this.state = await api('api/state');
+    } catch (err) {
+      if (err.status === 409) return Players.pick();
+      throw err;
+    }
     if (!this.state.partner) return Partner.choose();
     Gift.maybe();
   },
@@ -403,7 +412,11 @@ const App = {
   // nothing — the old partner and Poké Balls stayed on screen.
   async home() {
     Session.data = null; // no session running: the map is the resting state
-    try { this.state = await api('api/state'); } catch (_) {}
+    try {
+      this.state = await api('api/state');
+    } catch (err) {
+      if (err.status === 409) return Players.pick(); // the player was removed
+    }
     if (!this.state.partner) return Partner.choose();
     Overworld.open();
   },
@@ -449,6 +462,7 @@ const App = {
           this.badgeCase(),
         ),
         this.map(s),
+        s.players > 1 ? el('button', { class: 'btn btn-ghost switch-player', onclick: () => Players.pick() }, '👥 Changer de joueur') : null,
         // For the parents: the admin asks for a Google sign-in anyway.
         el('a', { class: 'parent-link', href: 'admin' }, '🔧 Espace parents'),
       ),
@@ -620,6 +634,34 @@ function ballsWon(n) {
   for (let i = 0; i < n; i++) row.append(pokeball('ball-pop'));
   return el('div', { class: 'balls-won' }, row, el('b', {}, `+${n} Poké Ball${n > 1 ? 's' : ''}`));
 }
+
+/* "Qui joue ?": each child taps their own partner — they cannot read the
+   names yet, they know their Pokémon. The device then remembers the player. */
+const Players = {
+  async pick() {
+    Voice.stop();
+    let data;
+    try { data = await api('api/players'); } catch (_) { return; }
+    const grid = el('div', { class: 'player-grid' },
+      data.players.map((p) => el('button', {
+        class: `player-card ${p.id === data.current ? 'current' : ''}`,
+        onclick: async () => {
+          Sfx.pop();
+          try { await api('api/players/select', { id: p.id }); } catch (_) { return; }
+          App.state = await api('api/state');
+          if (!App.state.partner) return Partner.choose();
+          Gift.maybe();
+        },
+      },
+        el('img', { src: `sprites/art/${p.avatar}.png`, alt: '' }),
+        el('b', {}, p.name),
+        p.trainer_level ? el('small', {}, `🎖 N.${p.trainer_level} · ⭐ ${p.stars}`) : null,
+      )),
+    );
+    App.screen(App.topbar(), el('div', { class: 'page' },
+      el('div', { class: 'act' }, el('h2', {}, 'Qui joue ?'), hint('Qui joue ? Touche ton Pokémon !'), grid)));
+  },
+};
 
 /* progressPips shows "where am I in this exercise" as little filling Poké
    Balls — borrowed from every mobile learning app worth copying. */

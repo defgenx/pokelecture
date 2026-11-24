@@ -39,7 +39,9 @@ func main() {
 		log.Fatalf("%d problème(s) de contenu — corrige data/ puis relance", len(errs))
 	}
 
-	store, err := progress.Open(filepath.Join(*root, "var", "progress.json"), *name)
+	// One save per player in var/players/; a save from before players becomes
+	// the first one (-name / POKELECTURE_NAME applies while there is only one).
+	players, err := progress.OpenRegistry(filepath.Join(*root, "var"), *name)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,7 +62,7 @@ func main() {
 		log.Printf("connexion Google active (%d adresse(s) autorisée(s))", len(auth.Allowed))
 	}
 
-	handler := api.New(cur, store, filepath.Join(*root, "web"), mount).WithAuth(auth).Routes()
+	handler := api.NewPlayers(cur, players, filepath.Join(*root, "web"), mount).WithAuth(auth).Routes()
 
 	// Mounted under a sub-path, strip it before the app's own mux sees the
 	// request. Go's ServeMux also redirects /pokelecture → /pokelecture/ for us,
@@ -78,7 +80,7 @@ func main() {
 	}
 
 	fmt.Printf("\n  Pokélecture — %s, %d épisode(s), %d pokémon (monté sur %s)\n",
-		store.Name(), len(cur.Episodes), len(cur.Pokemon), mount)
+		playerNames(players), len(cur.Episodes), len(cur.Pokemon), mount)
 	for _, u := range urls(*addr) {
 		fmt.Printf("  ▸ %s%s\n", u, strings.TrimPrefix(mount, "/"))
 	}
@@ -143,4 +145,12 @@ func urls(addr string) []string {
 		}
 	}
 	return out
+}
+
+func playerNames(r *progress.Registry) string {
+	var names []string
+	for _, p := range r.List() {
+		names = append(names, p.Name)
+	}
+	return strings.Join(names, ", ")
 }

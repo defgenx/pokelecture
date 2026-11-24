@@ -1182,6 +1182,7 @@ var UIPhrases = []string{
 	"Touche JOUER pour continuer l'aventure !",
 
 	// Missions, the partner's hunger, the Super Ball, map trainers.
+	"Qui joue ? Touche ton Pokémon !",
 	"Mission accomplie !",
 	"Tes missions du jour !",
 	"Miam ! Ton partenaire adore les baies !",

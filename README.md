@@ -54,7 +54,20 @@ permet (Chrome récent, Safari) — ces enregistrements passent partout. Un viei
 enregistrement `.webm` continue de marcher sur Android mais retombe sur la voix
 de synthèse côté iPad : ré-enregistre la ligne et c'est réglé.
 
-La sauvegarde est un simple fichier JSON : `var/progress.json`. `make reset`
+**Plusieurs enfants** : une sauvegarde par joueur, `var/players/<id>.json`. Les
+parents ajoutent un joueur dans l'administration (**➕ Nouveau joueur**, en
+haut) ; dans le jeu, l'écran **« Qui joue ? »** montre le Pokémon partenaire de
+chacun (il ne sait pas lire les prénoms, il reconnaît son Pokémon), et chaque
+appareil retient son joueur (cookie, un an) — **👥 Changer de joueur** dans le
+menu ☰. Tout est par joueur (Pokédex, partenaire, badges, missions, records,
+réglages de déblocage et de vies) ; seuls la voix et les enregistrements du
+studio sont communs. Supprimer un joueur déplace sa sauvegarde dans
+`var/players/trash/` (récupérable). Une sauvegarde d'avant les joueurs
+(`var/progress.json`) devient le premier joueur au démarrage, l'original étant
+gardé en `progress.json.before-players` ; `POKELECTURE_NAME` ne s'applique que
+tant qu'il n'y a qu'un joueur.
+
+La sauvegarde de chaque joueur est un simple fichier JSON. `make reset`
 repart de zéro — ou, plus fin, l'**administration** sur l'ordinateur :
 `http://localhost:8080/admin` (voir plus bas).
 
@@ -367,7 +380,8 @@ make run
 # puis, sur l'ordinateur : http://localhost:8080/admin
 ```
 
-Quatre onglets, tout agit sur `var/progress.json` immédiatement :
+En haut, la barre **👥 Joueur** choisit la sauvegarde affichée (et en ajoute
+une) ; quatre onglets, tout agit immédiatement sur la sauvegarde de ce joueur :
 
 - **Épisodes** : parties jouées, étoiles, dernière session. « ↺ Rejouer comme
   neuf » efface les stats d'un épisode (les étoiles déjà gagnées restent
