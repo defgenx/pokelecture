@@ -435,6 +435,11 @@ Règles de sécurité (relecture indépendante du code faite) :
   vérifié aux premiers octets), ne sont servis qu'avec un type audio, et aucune
   réponse ne laisse le navigateur deviner un type (`nosniff`).
 
+On y arrive depuis le jeu par le lien **🔧 Espace parents**, en bas du menu ☰.
+Sans session, la page affiche un bouton **« Se connecter avec Google »** — elle
+n'envoie jamais d'elle-même vers Google ; déjà connecté, on arrive directement
+sur l'admin, et « Se déconnecter » ramène au bouton.
+
 La session dure 30 jours (cookie signé, `HttpOnly`) ; retirer une adresse de
 `POKELECTURE_ADMINS` la révoque au redémarrage suivant. Le jeton d'identité est
 reçu directement de Google en HTTPS, ses champs (client, expiration, nonce,

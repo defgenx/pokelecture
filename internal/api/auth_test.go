@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -128,9 +129,14 @@ func TestAuthGuardsOnlyTheParentSide(t *testing.T) {
 			t.Errorf("%s sans connexion : %d, attendu 401", u, got)
 		}
 	}
+	// Not signed in, the page shows a sign-in button — it does not send the
+	// browser to Google by itself.
 	resp, _ := c.Get(app.URL + "/admin.html")
-	if resp.StatusCode != http.StatusFound || !strings.Contains(resp.Header.Get("Location"), "auth/login?next=admin.html") {
-		t.Errorf("admin.html sans connexion : %d → %s", resp.StatusCode, resp.Header.Get("Location"))
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized || resp.Header.Get("Location") != "" ||
+		!strings.Contains(string(body), "auth/login?next=admin.html") || !strings.Contains(string(body), "Se connecter avec Google") {
+		t.Errorf("admin.html sans connexion : %d, Location %q — attendu une page avec le bouton", resp.StatusCode, resp.Header.Get("Location"))
 	}
 	// The child's game is never behind the sign-in.
 	for _, u := range []string{"/", "/api/state"} {
@@ -335,5 +341,17 @@ func TestGmailVariantSignsIn(t *testing.T) {
 	// a gmail variant of an unlisted address must still be refused.
 	if resp := signIn(t, app, c, g); resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("adresse hors liste : %d, attendu 403", resp.StatusCode)
+	}
+}
+
+func TestSignedInGoesStraightToTheAdmin(t *testing.T) {
+	g := &fakeGoogle{claims: goodClaims("papa@example.com")}
+	app, c := newAuthApp(t, g)
+	signIn(t, app, c, g)
+	resp, _ := c.Get(app.URL + "/admin.html")
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || strings.Contains(string(body), "Se connecter avec Google") {
+		t.Fatalf("connecté, admin.html doit s'ouvrir directement : %d", resp.StatusCode)
 	}
 }

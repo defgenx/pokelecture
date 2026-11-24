@@ -224,8 +224,9 @@ func (s *Server) guard(h http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		if strings.HasSuffix(r.URL.Path, ".html") {
-			next := strings.TrimPrefix(r.URL.Path, "/")
-			http.Redirect(w, r, s.base+"auth/login?next="+url.QueryEscape(next), http.StatusFound)
+			// Not signed in: a page with a sign-in button — never a jump
+			// straight to Google. Signed in, the guard above lets it through.
+			s.signInPage(w, safeNext(strings.TrimPrefix(r.URL.Path, "/")))
 			return
 		}
 		http.Error(w, "connexion requise", http.StatusUnauthorized)
@@ -433,6 +434,26 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"enabled": true, "email": s.email(r)})
 }
 
+// signInPage is what a parent page shows to someone not signed in.
+func (s *Server) signInPage(w http.ResponseWriter, next string) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusUnauthorized)
+	title := "Espace parents"
+	if next == "parent.html" {
+		title = "Studio voix"
+	}
+	fmt.Fprintf(w, `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pokélecture — %[1]s</title>
+<body style="font-family:system-ui,sans-serif;max-width:30em;margin:14vh auto;padding:0 16px;text-align:center;background:#eef3fb;color:#1a1d24">
+<h1 style="margin-bottom:.2em">Pokélecture</h1>
+<p style="font-size:1.25em;font-weight:700;margin-top:0">🔒 %[1]s</p>
+<p style="color:#4d5566">Réservé aux parents : connecte-toi avec un compte Google autorisé.</p>
+<p><a href="%[2]sauth/login?next=%[3]s" style="display:inline-flex;gap:10px;align-items:center;padding:14px 24px;background:#fff;color:#1a1d24;border:1px solid #c6ccd6;border-radius:12px;text-decoration:none;font-weight:700;font-size:1.05em;box-shadow:0 2px 6px rgba(0,0,0,.08)">Se connecter avec Google</a></p>
+<p><a href="%[2]s" style="color:#3b4cca;font-weight:600">← Retour au jeu</a></p>
+</body></html>`, html.EscapeString(title), s.base, url.QueryEscape(next))
+}
+
 func (s *Server) authPage(w http.ResponseWriter, code int, msg, email string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
@@ -445,6 +466,7 @@ func (s *Server) authPage(w http.ResponseWriter, code int, msg, email string) {
 <title>Pokélecture — connexion</title>
 <body style="font-family:system-ui,sans-serif;max-width:32em;margin:15vh auto;padding:0 16px;text-align:center;background:#eef3fb;color:#1a1d24">
 <h1>Pokélecture</h1><p>%s</p>%s
-<p><a href="%sauth/login" style="display:inline-block;padding:12px 22px;background:#3b4cca;color:#fff;border-radius:12px;text-decoration:none;font-weight:700">Se connecter avec un autre compte Google</a></p>
+<p><a href="%[3]sauth/login" style="display:inline-block;padding:12px 22px;background:#3b4cca;color:#fff;border-radius:12px;text-decoration:none;font-weight:700">Se connecter avec un autre compte Google</a></p>
+<p><a href="%[3]s" style="color:#3b4cca;font-weight:600">← Retour au jeu</a></p>
 </body>`, html.EscapeString(msg), who, s.base)
 }
