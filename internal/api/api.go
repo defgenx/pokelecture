@@ -44,8 +44,12 @@ func New(cur *curriculum.Curriculum, store *progress.Store, webDir, base string)
 // handlePage serves an HTML page (or the manifest) with the __BASE__ placeholder
 // replaced by the real mount path. This is the whole mechanism that lets the same
 // build run at / locally and under /pokelecture/ in production.
-// parentPages maps each parent page's address to its file: /admin, /studio.
-var parentPages = map[string]string{"admin": "admin.html", "studio": "parent.html"}
+// parentPages maps each parent page's address to its file: the admin, and
+// the voice studio under it.
+var parentPages = map[string]string{"admin": "admin.html", "admin/studio": "parent.html"}
+
+// oldParentPages are earlier addresses of the parent pages, now redirects.
+var oldParentPages = map[string]string{"admin.html": "admin", "parent.html": "admin/studio", "studio": "admin/studio"}
 
 // servePage serves one named page file, whatever the request path.
 func (s *Server) servePage(file string) http.HandlerFunc {
@@ -140,7 +144,9 @@ func (s *Server) Routes() http.Handler {
 	// .html addresses only redirect (bookmarks keep working).
 	for route, file := range parentPages {
 		mux.HandleFunc("/"+route, s.guard(getOnly(s.servePage(file))))
-		mux.HandleFunc("/"+file, getOnly(s.redirectTo(route)))
+	}
+	for old, route := range oldParentPages {
+		mux.HandleFunc("/"+old, getOnly(s.redirectTo(route)))
 	}
 	// Recordings are served only through handleAudio, with an audio type.
 	mux.HandleFunc("/audio/recorded/", http.NotFound)

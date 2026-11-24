@@ -77,7 +77,7 @@ func goodClaims(email string) func(string) map[string]any {
 // signIn walks the flow: /auth/login, then the callback Google would call.
 func signIn(t *testing.T, app *httptest.Server, c *http.Client, g *fakeGoogle) *http.Response {
 	t.Helper()
-	resp, err := c.Get(app.URL + "/auth/login?next=studio")
+	resp, err := c.Get(app.URL + "/auth/login?next=admin%2Fstudio")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func status(t *testing.T, c *http.Client, u string) int {
 // allowlist, so the parent side is closed — and the game still open.
 func TestAuthOffClosesTheParentSide(t *testing.T) {
 	app, c := newAuthApp(t, nil)
-	for _, u := range []string{"/api/admin/summary", "/api/texts", "/admin", "/studio"} {
+	for _, u := range []string{"/api/admin/summary", "/api/texts", "/admin", "/admin/studio"} {
 		if got := status(t, c, app.URL+u); got == http.StatusOK {
 			t.Errorf("sans configuration, %s doit être fermé : %d", u, got)
 		}
@@ -150,7 +150,7 @@ func TestAllowedEmailSignsIn(t *testing.T) {
 	g := &fakeGoogle{claims: goodClaims("Papa@example.com")} // case-insensitive
 	app, c := newAuthApp(t, g)
 	resp := signIn(t, app, c, g)
-	if resp.StatusCode != http.StatusFound || resp.Header.Get("Location") != "/studio" {
+	if resp.StatusCode != http.StatusFound || resp.Header.Get("Location") != "/admin/studio" {
 		t.Fatalf("connexion autorisée : %d → %s", resp.StatusCode, resp.Header.Get("Location"))
 	}
 	if got := status(t, c, app.URL+"/api/admin/summary"); got != http.StatusOK {
@@ -303,7 +303,7 @@ func TestGuardedPagesHaveNoBackDoor(t *testing.T) {
 			t.Errorf("%s /admin sans connexion : 200", m)
 		}
 	}
-	for _, p := range []string{"/ADMIN", "/Admin", "/admin/", "/Studio", "/ADMIN.HTML", "/Parent.html", "/audio/recorded/x.m4a", "/audio/", "/sprites/"} {
+	for _, p := range []string{"/ADMIN", "/Admin", "/admin/", "/Admin/Studio", "/admin/studio/", "/ADMIN.HTML", "/Parent.html", "/audio/recorded/x.m4a", "/audio/", "/sprites/"} {
 		if got := status(t, c, app.URL+p); got == http.StatusOK {
 			t.Errorf("%s sans connexion : 200", p)
 		}
@@ -383,7 +383,7 @@ func TestSignedInGoesStraightToTheAdmin(t *testing.T) {
 // The old .html addresses only redirect — they never show the page itself.
 func TestOldPageAddressesRedirect(t *testing.T) {
 	app, c := newAuthApp(t, &fakeGoogle{claims: goodClaims("papa@example.com")})
-	for old, now := range map[string]string{"/admin.html": "/admin", "/parent.html": "/studio"} {
+	for old, now := range map[string]string{"/admin.html": "/admin", "/parent.html": "/admin/studio", "/studio": "/admin/studio"} {
 		resp, _ := c.Get(app.URL + old)
 		resp.Body.Close()
 		if resp.StatusCode != http.StatusMovedPermanently || resp.Header.Get("Location") != now {
@@ -393,5 +393,21 @@ func TestOldPageAddressesRedirect(t *testing.T) {
 		if resp, _ := c.Do(req); resp.StatusCode == http.StatusOK {
 			t.Errorf("POST %s : 200", old)
 		}
+	}
+}
+
+func TestStudioLivesUnderTheAdmin(t *testing.T) {
+	g := &fakeGoogle{claims: goodClaims("papa@example.com")}
+	app, c := newAuthApp(t, g)
+	resp, _ := c.Get(app.URL + "/admin/studio")
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized || !strings.Contains(string(body), "Studio voix") ||
+		!strings.Contains(string(body), "next=admin%2Fstudio") {
+		t.Fatalf("/admin/studio sans connexion : %d — attendu le bouton du studio", resp.StatusCode)
+	}
+	signIn(t, app, c, g)
+	if got := status(t, c, app.URL+"/admin/studio"); got != http.StatusOK {
+		t.Fatalf("connecté, /admin/studio : %d", got)
 	}
 }

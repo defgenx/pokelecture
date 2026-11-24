@@ -476,7 +476,7 @@ func (s *Server) signInPage(w http.ResponseWriter, next string) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusUnauthorized)
 	title := "Espace parents"
-	if next == "studio" {
+	if next == "admin/studio" {
 		title = "Studio voix"
 	}
 	fmt.Fprintf(w, `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">

@@ -230,7 +230,7 @@ $('#only-tts').addEventListener('change', (e) => { state.onlyTts = e.target.chec
 
 (async () => {
   if (!window.isSecureContext) {
-    warn("Le micro est bloqué : cette page doit être ouverte sur http://localhost:8080/studio (pas via l'adresse IP).");
+    warn("Le micro est bloqué : cette page doit être ouverte sur http://localhost:8080/admin/studio (pas via l'adresse IP).");
   } else if (!Mic.supported()) {
     warn("Ce navigateur n'expose pas MediaRecorder. Utilise Chrome sur l'ordinateur.");
   }
