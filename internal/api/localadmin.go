@@ -1,7 +1,11 @@
+//go:build dev
+
 package api
 
-// Local admin: `make run` opens the parent side without Google sign-in, to
-// the computer the server runs on only. README, « Administration ».
+// Local admin: `make run` (a `-tags dev` build) opens the parent side without
+// Google sign-in, to the computer the server runs on only. A build without
+// the tag — the Docker image — has no bypass at all (localadmin_prod.go).
+// README, « Administration ».
 
 import (
 	"net"
@@ -9,6 +13,9 @@ import (
 	"net/netip"
 	"strings"
 )
+
+// DevBuild: this binary was built with -tags dev.
+const DevBuild = true
 
 // WithLocalAdmin lets requests from this computer into the parent side
 // without signing in. Only the -local-admin flag turns it on — never an

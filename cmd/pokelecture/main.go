@@ -25,8 +25,12 @@ func main() {
 	// back to progress.DefaultName on a fresh one.
 	name := flag.String("name", envOr("POKELECTURE_NAME", ""), "prénom de l'enfant (défaut: celui de la sauvegarde)")
 	base := flag.String("base", envOr("POKELECTURE_BASE", "/"), "chemin de montage, ex. /pokelecture/")
-	// A flag, not an env var: a deployment's env_file must never be able to turn it on.
-	localAdmin := flag.Bool("local-admin", false, "ouvre l'admin sans connexion Google, depuis cet ordinateur seulement (localhost)")
+	// Only a dev build (-tags dev, `make run`) knows this flag; the production
+	// build rejects it. A flag, not an env var: an env_file can never set it.
+	localAdmin := new(bool)
+	if api.DevBuild {
+		flag.BoolVar(localAdmin, "local-admin", false, "ouvre l'admin sans connexion Google, depuis cet ordinateur seulement (localhost)")
+	}
 	flag.Parse()
 
 	mount := normalizeBase(*base)

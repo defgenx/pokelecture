@@ -402,8 +402,8 @@ make run
 # puis, sur l'ordinateur : http://localhost:8080/admin
 ```
 
-**En local, pas de connexion Google** : `make run` passe `-local-admin`, qui
-ouvre l'admin et le studio voix **depuis cet ordinateur seulement** — une
+**En local, pas de connexion Google** : `make run` compile en **mode dev**
+(`go run -tags dev`) et passe `-local-admin`, qui ouvre l'admin et le studio voix **depuis cet ordinateur seulement** — une
 connexion directe en boucle locale (127.0.0.1 / ::1), adressée à `localhost`,
 sans aucun en-tête de proxy (`X-Forwarded-*`, `X-Real-IP`, `Forwarded`). La
 tablette, sur le réseau, reste refusée ; une page d'un autre site ne peut ni
@@ -411,8 +411,11 @@ tablette, sur le réseau, reste refusée ; une page d'un autre site ne peut ni
 `Host`). C'est un **drapeau** et non une variable d'environnement, pour que le
 `env_file` d'un déploiement ne puisse jamais l'activer — et le serveur refuse
 de démarrer avec `-local-admin` si `POKELECTURE_URL` pointe ailleurs que sur
-localhost. L'image Docker ne le passe pas : en production, Google reste
-obligatoire.
+localhost. **Le contournement n'existe que dans une build dev** : le code est
+derrière le build tag `dev` (`internal/api/localadmin.go`) ; la build normale
+— celle de l'image Docker, `make build` — ne le contient pas et refuse
+l'option (`flag provided but not defined: -local-admin`). En production,
+Google reste obligatoire. `make test` teste les deux builds.
 
 En haut, la barre **👥 Joueur** choisit la sauvegarde affichée (et en ajoute
 une) ; quatre onglets, tout agit immédiatement sur la sauvegarde de ce joueur :

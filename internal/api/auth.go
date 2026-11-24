@@ -232,7 +232,7 @@ func (s *Server) cookie(r *http.Request, name, value string, ttl time.Duration) 
 // the SameSite cookie), and the pages refuse to be framed by another site.
 func (s *Server) guard(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.localAdmin && fromThisComputer(r) {
+		if DevBuild && s.localAdmin && fromThisComputer(r) {
 			w.Header().Set("X-Frame-Options", "DENY")
 			w.Header().Set("Content-Security-Policy", "frame-ancestors 'none'")
 			if r.Method != http.MethodGet && r.Method != http.MethodHead && !s.sameOrigin(r) {

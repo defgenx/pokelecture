@@ -1,4 +1,4 @@
-.PHONY: run check content audio sprites prune reset build audit voice-plan
+.PHONY: run test check content audio sprites prune reset build audit voice-plan
 
 # Everything you need after editing data/: validate, fill the gaps, drop the
 # audio that no longer matches the content.
@@ -22,7 +22,12 @@ sprites:
 # .env.local (git-ignored) carries the secrets: ElevenLabs, and the Google
 # sign-in for the parent pages (GOOGLE_CLIENT_ID, …, see README).
 run:
-	@set -a; if [ -f .env.local ]; then . ./.env.local; fi; set +a; go run ./cmd/pokelecture -local-admin -name "$(NAME)"
+	@set -a; if [ -f .env.local ]; then . ./.env.local; fi; set +a; go run -tags dev ./cmd/pokelecture -local-admin -name "$(NAME)"
+
+# Both builds: the production one (no sign-in bypass) and the dev one.
+test:
+	go vet ./... && go vet -tags dev ./...
+	go test ./... && go test -tags dev ./internal/api
 
 build:
 	go build -o bin/pokelecture ./cmd/pokelecture
