@@ -1762,3 +1762,13 @@ img.shiny { filter: hue-rotate(300deg) saturate(1.3) brightness(1.06) drop-shado
 .player-card.current { border-color: var(--yellow); }
 .player-card:active { transform: scale(.97); }
 .switch-player { display: block; margin: 30px auto 0; }
+
+/* "Comment tu t'appelles ?" and the new-player card. */
+.name-input {
+  font: inherit; font-size: clamp(32px, 6vw, 48px); font-weight: 800; text-align: center;
+  width: min(92vw, 520px); padding: 14px 18px; border-radius: var(--r-md);
+  border: 3px solid var(--blue); background: #fff; color: var(--ink); box-shadow: var(--lift-2);
+  user-select: text; -webkit-user-select: text;
+}
+.player-card.new { border-style: dashed; border-color: #c6ccd6; background: var(--glass); }
+.player-plus { font-size: 72px; line-height: 120px; }

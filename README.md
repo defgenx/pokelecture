@@ -54,9 +54,12 @@ permet (Chrome récent, Safari) — ces enregistrements passent partout. Un viei
 enregistrement `.webm` continue de marcher sur Android mais retombe sur la voix
 de synthèse côté iPad : ré-enregistre la ligne et c'est réglé.
 
-**Plusieurs enfants** : une sauvegarde par joueur, `var/players/<id>.json`. Les
-parents ajoutent un joueur dans l'administration (**➕ Nouveau joueur**, en
-haut) ; dans le jeu, l'écran **« Qui joue ? »** montre le Pokémon partenaire de
+**Plusieurs enfants** : une sauvegarde par joueur, `var/players/<id>.json`. Au
+premier lancement, le jeu demande **« Comment tu t'appelles ? »** (un grand
+tape le prénom) ; un autre enfant s'ajoute par **➕ Nouveau joueur** sur l'écran
+« Qui joue ? » (menu ☰ → 👥), ou dans l'administration. Depuis le jeu, on ne
+peut que nommer un joueur qui n'a pas encore de prénom (renommer reste dans
+l'admin), et 12 joueurs au plus ; dans le jeu, l'écran **« Qui joue ? »** montre le Pokémon partenaire de
 chacun (il ne sait pas lire les prénoms, il reconnaît son Pokémon), et chaque
 appareil retient son joueur (cookie, un an) — **👥 Changer de joueur** dans le
 menu ☰. Tout est par joueur (Pokédex, partenaire, badges, missions, records,

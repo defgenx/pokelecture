@@ -8,6 +8,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/adelvecchio/pokelecture/internal/progress"
@@ -123,11 +124,15 @@ func (s *Server) handlePlayerSelect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "joueur inconnu", http.StatusNotFound)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name: playerCookie, Value: req.ID, Path: s.base, HttpOnly: true,
-		SameSite: http.SameSiteLaxMode, Secure: s.scheme(r) == "https", MaxAge: int(playerTTL.Seconds()),
-	})
+	http.SetCookie(w, s.playerCookie(r, req.ID))
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+func (s *Server) playerCookie(r *http.Request, id string) *http.Cookie {
+	return &http.Cookie{
+		Name: playerCookie, Value: id, Path: s.base, HttpOnly: true,
+		SameSite: http.SameSiteLaxMode, Secure: s.scheme(r) == "https", MaxAge: int(playerTTL.Seconds()),
+	}
 }
 
 /* ---------------------------------------------------------------- admin --- */
@@ -158,4 +163,57 @@ func (s *Server) handleAdminPlayerDelete(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"players": s.playerViews()})
+}
+
+/* ------------------------------------------------------- from the game --- */
+
+// maxPlayers caps the players the game itself may create: it has no
+// sign-in, so this is what keeps an open page from filling the disk.
+const maxPlayers = 12
+
+// handlePlayerCreate: "➕ Nouveau joueur" on the "Qui joue ?" screen. The
+// new player becomes this device's player.
+func (s *Server) handlePlayerCreate(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.Name) == "" {
+		http.Error(w, "prénom manquant", http.StatusBadRequest)
+		return
+	}
+	if len(s.players.List()) >= maxPlayers {
+		http.Error(w, "trop de joueurs : demande à un parent d'en retirer dans l'administration", http.StatusConflict)
+		return
+	}
+	id, err := s.players.Create(req.Name)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	http.SetCookie(w, s.playerCookie(r, id))
+	writeJSON(w, http.StatusOK, map[string]any{"id": id})
+}
+
+// handleName names this device's player — only one that has no name yet
+// (the "Dresseur" a fresh install starts with). Renaming a named child stays
+// in the admin.
+func (s *Server) handleName(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name string `json:"name"`
+	}
+	name := ""
+	if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+		name = strings.TrimSpace(req.Name)
+	}
+	if name == "" || len([]rune(name)) > 30 {
+		http.Error(w, "prénom manquant ou trop long", http.StatusBadRequest)
+		return
+	}
+	if s.store.Snapshot().Name != progress.DefaultName {
+		http.Error(w, "ce joueur a déjà un prénom", http.StatusConflict)
+		return
+	}
+	s.store.Rename(name)
+	s.save()
+	writeJSON(w, http.StatusOK, map[string]any{"state": s.state()})
 }

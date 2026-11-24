@@ -112,3 +112,54 @@ func TestAdminActsOnTheNamedPlayer(t *testing.T) {
 		t.Fatalf("créer un joueur sans connexion : %d", resp.StatusCode)
 	}
 }
+
+func TestTheGameNamesAndCreatesPlayers(t *testing.T) {
+	cur, _ := curriculum.Load(filepath.Join("..", "..", "data"))
+	reg, _ := progress.OpenRegistry(t.TempDir(), "") // fresh install: one unnamed "Dresseur"
+	app := httptest.NewServer(NewPlayers(cur, reg, filepath.Join("..", "..", "web"), "/").Routes())
+	defer app.Close()
+	jar, _ := cookiejar.New(nil)
+	c := &http.Client{Jar: jar}
+	post := func(path, body string) int {
+		resp, err := c.Post(app.URL+path, "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	named := func() (string, bool) {
+		resp, _ := c.Get(app.URL + "/api/state")
+		var s map[string]any
+		_ = json.NewDecoder(resp.Body).Decode(&s)
+		return s["name"].(string), s["named"].(bool)
+	}
+	if name, ok := named(); ok || name != progress.DefaultName {
+		t.Fatalf("installation neuve : %q named=%v, attendu Dresseur sans prénom", name, ok)
+	}
+	if got := post("/api/name", `{"name":"Léo"}`); got != http.StatusOK {
+		t.Fatalf("donner son prénom : %d", got)
+	}
+	if name, ok := named(); !ok || name != "Léo" {
+		t.Fatalf("après le prénom : %q named=%v", name, ok)
+	}
+	// A named child is renamed in the admin only.
+	if got := post("/api/name", `{"name":"Intrus"}`); got != http.StatusConflict {
+		t.Fatalf("renommer un joueur qui a un prénom depuis le jeu : %d, attendu 409", got)
+	}
+	// "➕ Nouveau joueur": the new one becomes this device's player.
+	if got := post("/api/players", `{"name":"Mia"}`); got != http.StatusOK {
+		t.Fatalf("nouveau joueur : %d", got)
+	}
+	if name, _ := named(); name != "Mia" {
+		t.Fatalf("l'appareil doit passer au nouveau joueur : %q", name)
+	}
+	for len(reg.List()) < maxPlayers {
+		if _, err := reg.Create("X"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := post("/api/players", `{"name":"Un de trop"}`); got != http.StatusConflict {
+		t.Fatalf("au-delà de %d joueurs : %d, attendu 409", maxPlayers, got)
+	}
+}

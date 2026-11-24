@@ -1183,6 +1183,7 @@ var UIPhrases = []string{
 
 	// Missions, the partner's hunger, the Super Ball, map trainers.
 	"Qui joue ? Touche ton Pokémon !",
+	"Comment tu t'appelles ? Demande à un grand de t'aider à l'écrire.",
 	"Mission accomplie !",
 	"Tes missions du jour !",
 	"Miam ! Ton partenaire adore les baies !",

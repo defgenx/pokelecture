@@ -120,6 +120,8 @@ func (s *Server) Routes() http.Handler {
 	// Players: who plays on this device ("Qui joue ?").
 	mux.HandleFunc("GET /api/players", s.handlePlayers)
 	mux.HandleFunc("POST /api/players/select", s.handlePlayerSelect)
+	mux.HandleFunc("POST /api/players", s.handlePlayerCreate)
+	mux.HandleFunc("POST /api/name", s.play((*Server).handleName))
 	mux.HandleFunc("GET /api/admin/players", s.guard(s.handleAdminPlayers))
 	mux.HandleFunc("POST /api/admin/players", s.guard(s.handleAdminPlayerCreate))
 	mux.HandleFunc("POST /api/admin/players/{id}/delete", s.guard(s.handleAdminPlayerDelete))
@@ -229,6 +231,7 @@ type stateView struct {
 
 	Trainer trainerView    `json:"trainer"`
 	Players int            `json:"players"` // how many players share the game
+	Named   bool           `json:"named"`   // false: still the default "Dresseur", ask the name
 	TeamN   int            `json:"team_size"`
 	Bag     map[string]int `json:"bag"`
 	Found   []string       `json:"found"`  // hidden objects picked today
@@ -266,6 +269,7 @@ func (s *Server) state() stateView {
 	out.Hungry = st.Partner != nil && !today.Fed
 	out.Trainer = trainerOf(st)
 	out.Players = len(s.players.List())
+	out.Named = st.Name != progress.DefaultName
 	out.TeamN = len(s.team(st))
 	for _, v := range s.wildViews(st) {
 		out.Wild.Total++

@@ -380,8 +380,7 @@ const App = {
       if (err.status === 409) return Players.pick();
       throw err;
     }
-    if (!this.state.partner) return Partner.choose();
-    Gift.maybe();
+    Players.next();
   },
 
   screen(...children) {
@@ -462,7 +461,8 @@ const App = {
           this.badgeCase(),
         ),
         this.map(s),
-        s.players > 1 ? el('button', { class: 'btn btn-ghost switch-player', onclick: () => Players.pick() }, '👥 Changer de joueur') : null,
+        el('button', { class: 'btn btn-ghost switch-player', onclick: () => Players.pick() },
+          s.players > 1 ? '👥 Changer de joueur' : '👥 Joueurs'),
         // For the parents: the admin asks for a Google sign-in anyway.
         el('a', { class: 'parent-link', href: 'admin' }, '🔧 Espace parents'),
       ),
@@ -638,6 +638,52 @@ function ballsWon(n) {
 /* "Qui joue ?": each child taps their own partner — they cannot read the
    names yet, they know their Pokémon. The device then remembers the player. */
 const Players = {
+  next() {
+    if (!App.state.named) return this.askName('name');
+    if (!App.state.partner) return Partner.choose();
+    Gift.maybe();
+  },
+
+  /* "Comment tu t'appelles ?" — said aloud; an adult types it on the
+     tablet's keyboard. mode "name" names this device's unnamed player,
+     "new" creates another player and makes it this device's. */
+  askName(mode) {
+    const input = el('input', {
+      class: 'name-input', type: 'text', maxlength: '30', autocomplete: 'off',
+      autocapitalize: 'words', spellcheck: 'false', 'aria-label': 'Prénom',
+    });
+    const go = el('button', { class: 'btn btn-huge btn-go', disabled: true }, 'C\'EST MOI ! ▶');
+    input.addEventListener('input', () => { go.disabled = !input.value.trim(); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && input.value.trim()) go.click(); });
+    go.addEventListener('click', async () => {
+      const name = input.value.trim();
+      if (!name) return;
+      go.disabled = true;
+      try {
+        if (mode === 'new') await api('api/players', { name });
+        else await api('api/name', { name });
+        App.state = await api('api/state');
+      } catch (err) {
+        go.disabled = false;
+        return;
+      }
+      Sfx.catch_();
+      burst('🎉');
+      this.next();
+    });
+    App.screen(
+      App.topbar(mode === 'new' ? el('button', { class: 'btn-icon', onclick: () => this.pick() }, '✕') : null),
+      el('div', { class: 'page' },
+        el('div', { class: 'act' },
+          el('h2', {}, 'Comment tu t\'appelles ?'),
+          hint('Comment tu t\'appelles ? Demande à un grand de t\'aider à l\'écrire.'),
+          input, go,
+        ),
+      ),
+    );
+    setTimeout(() => input.focus(), 300);
+  },
+
   async pick() {
     Voice.stop();
     let data;
@@ -649,14 +695,15 @@ const Players = {
           Sfx.pop();
           try { await api('api/players/select', { id: p.id }); } catch (_) { return; }
           App.state = await api('api/state');
-          if (!App.state.partner) return Partner.choose();
-          Gift.maybe();
+          this.next();
         },
       },
         el('img', { src: `sprites/art/${p.avatar}.png`, alt: '' }),
         el('b', {}, p.name),
         p.trainer_level ? el('small', {}, `🎖 N.${p.trainer_level} · ⭐ ${p.stars}`) : null,
       )),
+      el('button', { class: 'player-card new', onclick: () => this.askName('new') },
+        el('span', { class: 'player-plus' }, '➕'), el('b', {}, 'Nouveau joueur')),
     );
     App.screen(App.topbar(), el('div', { class: 'page' },
       el('div', { class: 'act' }, el('h2', {}, 'Qui joue ?'), hint('Qui joue ? Touche ton Pokémon !'), grid)));
