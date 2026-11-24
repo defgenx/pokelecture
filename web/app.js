@@ -678,6 +678,8 @@ const Players = {
           el('h2', {}, 'Comment tu t\'appelles ?'),
           hint('Comment tu t\'appelles ? Demande à un grand de t\'aider à l\'écrire.'),
           input, go,
+          // Already played on another device, or not this player: pick one.
+          mode === 'name' ? el('button', { class: 'btn btn-ghost switch-player', onclick: () => this.pick() }, '👥 Choisir un autre joueur') : null,
         ),
       ),
     );
@@ -704,7 +706,7 @@ const Players = {
       },
         el('img', { src: `sprites/art/${p.avatar}.png`, alt: '' }),
         el('b', {}, p.locked ? `🔒 ${p.name}` : p.name),
-        p.trainer_level ? el('small', {}, `🎖 N.${p.trainer_level} · ⭐ ${p.stars}`) : null,
+        p.trainer_level ? el('small', {}, `🎖 N.${p.trainer_level} · ⭐ ${p.stars || 0}`) : null,
       )),
       el('button', { class: 'player-card new', onclick: () => this.askName('new') },
         el('span', { class: 'player-plus' }, '➕'), el('b', {}, 'Nouveau joueur')),

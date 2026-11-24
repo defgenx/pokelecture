@@ -281,6 +281,14 @@ func TestPrivatePlayerNeedsItsCode(t *testing.T) {
 	}
 	_ = json.NewDecoder(resp.Body).Decode(&list)
 	for _, p := range list.Players {
+		if p["id"] == mia {
+			// A public player with nothing yet still shows its zeros.
+			for _, k := range []string{"stars", "caught", "trainer_level"} {
+				if _, ok := p[k]; !ok {
+					t.Errorf("joueur public : %q manque (le jeu afficherait « undefined »)", k)
+				}
+			}
+		}
 		if p["id"] == nino {
 			if p["locked"] != true {
 				t.Errorf("Nino doit apparaître privé")

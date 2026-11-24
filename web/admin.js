@@ -390,7 +390,7 @@ function playerBar() {
     bar.append(el('button', {
       class: `player-chip ${p.id === state.player ? 'on' : ''}`,
       onclick: async () => { state.player = p.id; await load(); render(); },
-    }, el('img', { src: `sprites/art/${p.avatar}.png`, alt: '' }), `${p.locked ? '🔒 ' : ''}${p.name} · ⭐ ${p.stars}`));
+    }, el('img', { src: `sprites/art/${p.avatar}.png`, alt: '' }), `${p.locked ? '🔒 ' : ''}${p.name} · ⭐ ${p.stars || 0}`));
   });
   bar.append(el('button', {
     class: 'player-chip add',

@@ -118,12 +118,17 @@ type playerView struct {
 	Name   string `json:"name"`
 	Locked bool   `json:"locked"` // a picture code guards this save
 	Avatar int    `json:"avatar"` // the partner's species: what the child recognises
-	// The rest is left out for a private player on the game's list: anyone
-	// can open "Qui joue ?", and a name and a Pokémon are all it needs.
-	Stars   int       `json:"stars,omitzero"`
-	Caught  int       `json:"caught,omitzero"`
-	Level   int       `json:"trainer_level,omitzero"`
-	Updated time.Time `json:"updated_at,omitzero"`
+	// Left out (nil) for a private player on the game's list: anyone can
+	// open "Qui joue ?", and a name and a Pokémon are all it needs.
+	*playerStats
+}
+
+// playerStats are always all present (0 included) when shown.
+type playerStats struct {
+	Stars   int       `json:"stars"`
+	Caught  int       `json:"caught"`
+	Level   int       `json:"trainer_level"`
+	Updated time.Time `json:"updated_at"`
 }
 
 // playerViews lists the players; full adds a private player's progress
@@ -138,7 +143,7 @@ func (s *Server) playerViews(full bool) []playerView {
 		snap := st.Snapshot()
 		v := playerView{ID: p.ID, Name: snap.Name, Locked: snap.Lock != nil, Avatar: 25}
 		if full || snap.Lock == nil {
-			v.Stars, v.Caught, v.Level, v.Updated = snap.Stars, len(snap.Pokedex), trainerOf(snap).Level, snap.UpdatedAt
+			v.playerStats = &playerStats{Stars: snap.Stars, Caught: len(snap.Pokedex), Level: trainerOf(snap).Level, Updated: snap.UpdatedAt}
 		}
 		if pv := s.partnerView(snap); pv != nil {
 			v.Avatar = pv.Species
