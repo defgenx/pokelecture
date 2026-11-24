@@ -3,8 +3,8 @@ package api
 // The parent backoffice: inspect the savegame, rename the child, replay or
 // force-complete an episode, fix the Pokédex, or wipe everything.
 //
-// No authentication, like the voice studio — fine on the home network, put an
-// auth_basic in front on a public URL (see deploy/delvecch.io.md).
+// Behind the Google sign-in when it is configured (auth.go), like the voice
+// studio; open otherwise.
 
 import (
 	"encoding/json"

@@ -387,8 +387,59 @@ Quatre onglets, tout agit sur `var/progress.json` immédiatement :
   épisode terminé ou la Tour les justifie) — tout se regagne en rejouant,
   jamais en double. Les **vies en combat** se règlent ici aussi.
 
-Comme le studio voix, la page n'a **aucune authentification** : en public,
-mets un `auth_basic` devant.
+### Se connecter avec Google
+
+L'administration et le studio voix ne s'ouvrent **qu'aux adresses de
+`POKELECTURE_ADMINS`**, connectées avec Google — pages **et** endpoints
+(`api/admin/*`, `api/texts`, `api/record/*`). Sans configuration, ils sont
+**fermés à tout le monde** (pas de liste, pas d'accès). Le jeu de l'enfant,
+lui, n'est jamais derrière.
+
+1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials) →
+   *Identifiants* → *Créer des identifiants* → *ID client OAuth* → type
+   *Application Web*.
+2. *URI de redirection autorisés* — exactement, caractère pour caractère :
+   `http://localhost:8080/auth/callback` (en local) et
+   `https://delvecch.io/pokelecture/auth/callback` (en ligne). Google refuse
+   le `http://` sur une adresse IP du réseau (`192.168.…`) : l'admin se
+   consulte alors sur `localhost` ou en HTTPS.
+3. *Écran de consentement OAuth* en mode *Test* suffit : ajoute les adresses
+   autorisées comme *utilisateurs test*.
+4. Dans `.env.local` (ignoré par git ; `make run` le lit) ou les variables du
+   conteneur :
+
+```bash
+GOOGLE_CLIENT_ID=…apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=…
+POKELECTURE_ADMINS=toi@gmail.com,autre@gmail.com   # les seuls comptes acceptés
+POKELECTURE_SESSION_KEY=…   # openssl rand -hex 32 — 32 caractères minimum, sinon le serveur refuse de démarrer
+POKELECTURE_URL=https://delvecch.io/pokelecture/   # en ligne : toujours le mettre
+```
+
+Règles de sécurité (relecture indépendante du code faite) :
+
+- **Le compte Google ne risque rien** : Pokélecture ne voit jamais le mot de
+  passe, ne demande que `openid email`, pas d'accès hors ligne, aucun jeton
+  gardé. Le pire d'un bug serait l'accès à l'admin Pokélecture.
+- **`POKELECTURE_SESSION_KEY` longue et aléatoire** : une clé courte se casse
+  hors ligne et permettrait de forger une session. Changer la clé déconnecte
+  tout le monde.
+- **En ligne, toujours `POKELECTURE_URL`** : alors aucun en-tête
+  `X-Forwarded-*` envoyé par un client n'est cru.
+- **De préférence des adresses Gmail** dans la liste : pour une adresse sur un
+  domaine à soi, c'est celui qui contrôle le domaine qui contrôle l'identité.
+- **Un secret qui fuit** (`GOOGLE_CLIENT_SECRET`) : le régénérer dans la
+  console Google. Les secrets vivent dans `.env.local` ou `.env`, ignorés par
+  git et par Docker.
+- Les enregistrements du studio voix doivent être de l'audio (MP4/M4A ou WebM,
+  vérifié aux premiers octets), ne sont servis qu'avec un type audio, et aucune
+  réponse ne laisse le navigateur deviner un type (`nosniff`).
+
+La session dure 30 jours (cookie signé, `HttpOnly`) ; retirer une adresse de
+`POKELECTURE_ADMINS` la révoque au redémarrage suivant. Le jeton d'identité est
+reçu directement de Google en HTTPS, ses champs (client, expiration, nonce,
+adresse vérifiée) sont contrôlés — `internal/api/auth.go`, testé contre un faux
+Google dans `auth_test.go`.
 
 ### Pourquoi les `say_as` sont ce qu'ils sont
 

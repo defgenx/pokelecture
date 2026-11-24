@@ -14,6 +14,13 @@ services:
       # Set POKELECTURE_NAME (shell or .env) to name the child; it overrides the
       # savegame at every start. Left empty, the savegame keeps its own name.
       POKELECTURE_NAME: ${POKELECTURE_NAME:-}
+      # Google sign-in for admin.html and the voice studio (README,
+      # « Administration »). Unset GOOGLE_CLIENT_ID: both stay open.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      POKELECTURE_ADMINS: ${POKELECTURE_ADMINS:-}
+      POKELECTURE_URL: ${POKELECTURE_URL:-}
+      POKELECTURE_SESSION_KEY: ${POKELECTURE_SESSION_KEY:-}
     volumes:
       # The savegame. Keep it, or he starts over at route 1.
       - pokelecture_var:/app/var

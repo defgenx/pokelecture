@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -25,6 +26,7 @@ type Server struct {
 	web    http.Handler
 	webDir string
 	base   string
+	auth   *Auth // nil: the parent side is closed (see auth.go)
 }
 
 // New returns a Server serving the frontend from webDir, mounted at base
@@ -84,21 +86,27 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /api/team", s.handleTeamChoose)
 	mux.HandleFunc("POST /api/feed", s.handleFeed)
 
-	// Parent-side voice recording.
-	mux.HandleFunc("GET /api/texts", s.handleTexts)
-	mux.HandleFunc("PUT /api/record/{key}", s.handleRecordPut)
-	mux.HandleFunc("DELETE /api/record/{key}", s.handleRecordDelete)
+	// Parent-side voice recording — behind the Google sign-in when it is on.
+	mux.HandleFunc("GET /api/texts", s.guard(s.handleTexts))
+	mux.HandleFunc("PUT /api/record/{key}", s.guard(s.handleRecordPut))
+	mux.HandleFunc("DELETE /api/record/{key}", s.guard(s.handleRecordDelete))
 
 	// Parent-side administration: inspect and repair the savegame.
-	mux.HandleFunc("GET /api/admin/summary", s.handleAdminSummary)
-	mux.HandleFunc("POST /api/admin/name", s.handleAdminName)
-	mux.HandleFunc("POST /api/admin/reset", s.handleAdminReset)
-	mux.HandleFunc("POST /api/admin/episodes/{id}/reset", s.handleAdminEpisodeReset)
-	mux.HandleFunc("POST /api/admin/episodes/{id}/complete", s.handleAdminEpisodeComplete)
-	mux.HandleFunc("POST /api/admin/pokedex/{id}", s.handleAdminPokedex)
-	mux.HandleFunc("POST /api/admin/settings", s.handleAdminSettings)
-	mux.HandleFunc("POST /api/admin/episodes/{id}/stars", s.handleAdminEpisodeStars)
-	mux.HandleFunc("POST /api/admin/records/reset", s.handleAdminRecordsReset)
+	mux.HandleFunc("GET /api/admin/summary", s.guard(s.handleAdminSummary))
+	mux.HandleFunc("POST /api/admin/name", s.guard(s.handleAdminName))
+	mux.HandleFunc("POST /api/admin/reset", s.guard(s.handleAdminReset))
+	mux.HandleFunc("POST /api/admin/episodes/{id}/reset", s.guard(s.handleAdminEpisodeReset))
+	mux.HandleFunc("POST /api/admin/episodes/{id}/complete", s.guard(s.handleAdminEpisodeComplete))
+	mux.HandleFunc("POST /api/admin/pokedex/{id}", s.guard(s.handleAdminPokedex))
+	mux.HandleFunc("POST /api/admin/settings", s.guard(s.handleAdminSettings))
+	mux.HandleFunc("POST /api/admin/episodes/{id}/stars", s.guard(s.handleAdminEpisodeStars))
+	mux.HandleFunc("POST /api/admin/records/reset", s.guard(s.handleAdminRecordsReset))
+
+	// Google sign-in for the parent pages.
+	mux.HandleFunc("GET /auth/login", s.handleLogin)
+	mux.HandleFunc("GET /auth/callback", s.handleCallback)
+	mux.HandleFunc("GET /auth/logout", s.handleLogout)
+	mux.HandleFunc("GET /auth/me", s.handleMe)
 
 	// Must sit in front of the file server so a recording can shadow the
 	// generated file behind the same URL.
@@ -107,11 +115,15 @@ func (s *Server) Routes() http.Handler {
 	// These must sit in front of the file server so their <base href> gets rewritten.
 	mux.HandleFunc("GET /{$}", s.handlePage)
 	mux.HandleFunc("GET /index.html", s.handlePage)
-	mux.HandleFunc("GET /parent.html", s.handlePage)
-	mux.HandleFunc("GET /admin.html", s.handlePage)
+	// Registered for every method: a POST or PUT must not slip past the guard
+	// to the static file server.
+	mux.HandleFunc("/parent.html", s.guard(getOnly(s.handlePage)))
+	mux.HandleFunc("/admin.html", s.guard(getOnly(s.handlePage)))
+	// Recordings are served only through handleAudio, with an audio type.
+	mux.HandleFunc("/audio/recorded/", http.NotFound)
 	mux.HandleFunc("GET /manifest.webmanifest", s.handlePage)
 
-	mux.Handle("/", noStore(s.web))
+	mux.Handle("/", noStore(static(s.web)))
 	return logging(mux)
 }
 
@@ -516,8 +528,48 @@ func noStore(next http.Handler) http.Handler {
 
 func hasPrefix(s, p string) bool { return len(s) >= len(p) && s[:len(p)] == p }
 
+func getOnly(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			http.Error(w, "méthode non permise", http.StatusMethodNotAllowed)
+			return
+		}
+		h(w, r)
+	}
+}
+
+// static is the file server behind the app's own routes: GET and HEAD only,
+// never the parent pages under another spelling (a case-insensitive disk
+// would serve /ADMIN.HTML), and never a type guessed from the content.
+func static(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			http.Error(w, "méthode non permise", http.StatusMethodNotAllowed)
+			return
+		}
+		switch strings.ToLower(path.Base(r.URL.Path)) {
+		case "admin.html", "parent.html":
+			http.NotFound(w, r)
+			return
+		}
+		if strings.HasPrefix(strings.ToLower(r.URL.Path), "/audio/recorded/") {
+			http.NotFound(w, r)
+			return
+		}
+		// No directory listings (the page itself is served by GET /{$}).
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Never let a browser guess a type from the bytes (an HTML page
+		// uploaded as a "recording" would run as one).
+		w.Header().Set("X-Content-Type-Options", "nosniff")
 		start := time.Now()
 		next.ServeHTTP(w, r)
 		if hasPrefix(r.URL.Path, "/api/") {

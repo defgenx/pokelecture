@@ -54,3 +54,7 @@
 }
 .dangerzone button:hover { background: var(--red); color: #fff; }
 .dangerzone p { margin: 0 0 10px; color: #7a1d1d; font-size: 13px; }
+
+/* Google sign-in: who is signed in, and the way out. */
+.auth-bar { display: flex; gap: 14px; align-items: center; justify-content: flex-end; font-size: 14px; color: #4d5566; margin-top: 6px; }
+.auth-bar a { color: #3b4cca; font-weight: 700; }

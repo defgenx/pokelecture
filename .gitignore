@@ -17,5 +17,6 @@ bin/
 # IDE
 .idea/
 
-# Local secrets (ElevenLabs key for scripts/voice-elevenlabs.sh)
-.env.local
+# Local secrets: ElevenLabs key, Google sign-in (client secret, session key).
+.env
+.env.*

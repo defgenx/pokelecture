@@ -175,9 +175,17 @@ curl -s -o /dev/null -w '%{http_code} %{content_type}\n' \
 
 ## Notes
 
-- Le studio voix **et l'administration** sont derrière `auth_basic` (étape
-  4 bis) : pages **et** endpoints d'écriture — `api/admin/reset` efface toute la
-  sauvegarde. Le micro exige un contexte sécurisé, ce que HTTPS fournit.
+- Le studio voix **et l'administration** se protègent soit par la **connexion
+  Google** (README, « Se connecter avec Google » : `GOOGLE_CLIENT_ID`,
+  `POKELECTURE_ADMINS`, `POKELECTURE_URL=https://delvecch.io/pokelecture/`,
+  URL de rappel `https://delvecch.io/pokelecture/auth/callback`), soit par
+  l'`auth_basic` de l'étape 4 bis — pages **et** endpoints d'écriture :
+  `api/admin/reset` efface toute la sauvegarde. Sans `GOOGLE_CLIENT_ID`,
+  l'admin et le studio sont **fermés** (503/403) : avec Google, l'`auth_basic`
+  du studio devient inutile. Passe les variables au conteneur (`GOOGLE_CLIENT_ID`,
+  `GOOGLE_CLIENT_SECRET`, `POKELECTURE_ADMINS`, `POKELECTURE_SESSION_KEY`,
+  `POKELECTURE_URL`) via un `.env` à côté du compose — jamais versionné. Le
+  micro exige un contexte sécurisé, ce que HTTPS fournit.
 - Le Pokédex, la progression et les étoiles sont **globaux** : une seule
   sauvegarde, pas de comptes. C'est voulu (un seul enfant), mais ça veut dire que
   n'importe quel visiteur fait avancer sa progression. Même remarque : si l'URL

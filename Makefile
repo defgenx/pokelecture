@@ -19,8 +19,10 @@ sprites:
 	go run ./cmd/pokecontent sprites
 
 # NAME= renomme l'enfant et écrase la sauvegarde ; sans lui, elle garde son prénom.
+# .env.local (git-ignored) carries the secrets: ElevenLabs, and the Google
+# sign-in for the parent pages (GOOGLE_CLIENT_ID, …, see README).
 run:
-	go run ./cmd/pokelecture -name "$(NAME)"
+	@set -a; if [ -f .env.local ]; then . ./.env.local; fi; set +a; go run ./cmd/pokelecture -name "$(NAME)"
 
 build:
 	go build -o bin/pokelecture ./cmd/pokelecture

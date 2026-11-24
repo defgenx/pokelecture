@@ -130,11 +130,21 @@ func (s *Server) handleRecordPut(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "enregistrement vide", http.StatusBadRequest)
 		return
 	}
+	// Only real audio: an MP4/M4A file starts with an "ftyp" box, a WebM one
+	// with the EBML magic. Anything else (an HTML page passed off as a take)
+	// would otherwise be stored and served from our origin.
+	isMP4 := len(data) >= 12 && string(data[4:8]) == "ftyp"
+	isWebM := len(data) >= 4 && data[0] == 0x1A && data[1] == 0x45 && data[2] == 0xDF && data[3] == 0xA3
+	if !isMP4 && !isWebM {
+		http.Error(w, "ce n'est pas un enregistrement audio", http.StatusUnsupportedMediaType)
+		return
+	}
 
 	// Extension by what the browser recorded; a new take replaces any previous
 	// take in the *other* container too, or the stale one would keep shadowing.
+	// The extension follows the bytes, not the header the client claims.
 	ext := ".webm"
-	if ct := r.Header.Get("Content-Type"); strings.HasPrefix(ct, "audio/mp4") || strings.HasPrefix(ct, "audio/aac") {
+	if isMP4 {
 		ext = ".m4a"
 	}
 	dst := filepath.Join(dir, key+ext)

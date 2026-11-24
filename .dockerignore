@@ -6,6 +6,8 @@ bin/
 var/
 README.md
 Makefile
+.env
+.env.*
 
 # NOT ignored on purpose:
 #   web/audio/    — the generated voice track; macOS-only to produce, so it has

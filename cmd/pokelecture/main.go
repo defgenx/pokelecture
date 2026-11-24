@@ -44,7 +44,23 @@ func main() {
 		log.Fatal(err)
 	}
 
-	handler := api.New(cur, store, filepath.Join(*root, "web"), mount).Routes()
+	// Google sign-in for the parent pages (admin, voice studio): on as soon
+	// as a client id is set. README, « Administration ».
+	auth, err := api.NewAuth(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET"),
+		os.Getenv("POKELECTURE_ADMINS"), os.Getenv("POKELECTURE_URL"), os.Getenv("POKELECTURE_SESSION_KEY"))
+	if err != nil {
+		log.Fatalf("connexion Google : %v", err)
+	}
+	switch {
+	case auth == nil:
+		log.Printf("admin et studio voix FERMÉS : définis GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET et POKELECTURE_ADMINS pour y accéder")
+	case os.Getenv("POKELECTURE_SESSION_KEY") == "":
+		log.Printf("connexion Google active (%d adresse(s)) — POKELECTURE_SESSION_KEY vide : reconnexion à chaque redémarrage", len(auth.Allowed))
+	default:
+		log.Printf("connexion Google active (%d adresse(s) autorisée(s))", len(auth.Allowed))
+	}
+
+	handler := api.New(cur, store, filepath.Join(*root, "web"), mount).WithAuth(auth).Routes()
 
 	// Mounted under a sub-path, strip it before the app's own mux sees the
 	// request. Go's ServeMux also redirects /pokelecture → /pokelecture/ for us,
