@@ -5,7 +5,7 @@
    shows who is signed in, with a link back to the game. With the sign-in off (no GOOGLE_CLIENT_ID), nothing shows. */
 
 (() => {
-  const page = location.pathname.split('/').pop() || 'admin.html';
+  const page = location.pathname.split('/').pop() || 'admin';
   // A call refused mid-use (the session ended): reload the page, which then
   // shows its sign-in button — never a jump straight to Google.
   const login = () => { location.href = page; };

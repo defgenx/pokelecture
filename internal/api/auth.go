@@ -234,7 +234,7 @@ func (s *Server) guard(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if s.auth == nil {
 			// No sign-in configured means no allowlist: nobody gets in.
-			if strings.HasSuffix(r.URL.Path, ".html") {
+			if isParentPage(r) {
 				s.authPage(w, http.StatusServiceUnavailable,
 					"L'administration est fermée : configure la connexion Google (GOOGLE_CLIENT_ID et POKELECTURE_ADMINS).", "")
 				return
@@ -252,7 +252,7 @@ func (s *Server) guard(h http.HandlerFunc) http.HandlerFunc {
 			h(w, r)
 			return
 		}
-		if strings.HasSuffix(r.URL.Path, ".html") {
+		if isParentPage(r) {
 			// Not signed in: a page with a sign-in button — never a jump
 			// straight to Google. Signed in, the guard above lets it through.
 			s.signInPage(w, safeNext(strings.TrimPrefix(r.URL.Path, "/")))
@@ -320,13 +320,20 @@ func (s *Server) callbackURL(r *http.Request) string {
 	return s.scheme(r) + "://" + host + s.base + "auth/callback"
 }
 
-// safeNext keeps the post-sign-in redirect inside the app.
+// isParentPage tells a parent page (sign-in screen if needed) from its API
+// calls (a bare 401).
+func isParentPage(r *http.Request) bool {
+	_, ok := parentPages[strings.TrimPrefix(r.URL.Path, "/")]
+	return ok
+}
+
+// safeNext keeps the post-sign-in redirect inside the app: one of the parent
+// pages, nothing else.
 func safeNext(next string) string {
-	switch next {
-	case "admin.html", "parent.html":
+	if _, ok := parentPages[next]; ok {
 		return next
 	}
-	return "admin.html"
+	return "admin"
 }
 
 func randomHex(n int) string {
@@ -451,7 +458,7 @@ func (s *Server) exchange(r *http.Request, code string) (idClaims, error) {
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, s.cookie(r, sessionCookie, "", -time.Second))
-	http.Redirect(w, r, s.base+"admin.html", http.StatusFound)
+	http.Redirect(w, r, s.base+"admin", http.StatusFound)
 }
 
 // handleMe tells the parent pages who is signed in.
@@ -469,7 +476,7 @@ func (s *Server) signInPage(w http.ResponseWriter, next string) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusUnauthorized)
 	title := "Espace parents"
-	if next == "parent.html" {
+	if next == "studio" {
 		title = "Studio voix"
 	}
 	fmt.Fprintf(w, `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">

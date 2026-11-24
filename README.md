@@ -56,7 +56,7 @@ de synthèse côté iPad : ré-enregistre la ligne et c'est réglé.
 
 La sauvegarde est un simple fichier JSON : `var/progress.json`. `make reset`
 repart de zéro — ou, plus fin, l'**administration** sur l'ordinateur :
-`http://localhost:8080/admin.html` (voir plus bas).
+`http://localhost:8080/admin` (voir plus bas).
 
 ---
 
@@ -345,7 +345,7 @@ n'est donc qu'un **filet de sécurité** : la vraie voix du jeu, c'est la tienne
 
 ```bash
 make run
-# puis, sur l'ORDINATEUR : http://localhost:8080/parent.html
+# puis, sur l'ORDINATEUR : http://localhost:8080/studio
 ```
 
 Maintiens **ENREGISTRER** pendant que tu parles, relâche : c'est envoyé. Le
@@ -364,7 +364,7 @@ sons, c'est ~5 minutes et c'est là que se joue l'essentiel.
 
 ```bash
 make run
-# puis, sur l'ordinateur : http://localhost:8080/admin.html
+# puis, sur l'ordinateur : http://localhost:8080/admin
 ```
 
 Quatre onglets, tout agit sur `var/progress.json` immédiatement :
@@ -435,7 +435,9 @@ Règles de sécurité (relecture indépendante du code faite) :
   vérifié aux premiers octets), ne sont servis qu'avec un type audio, et aucune
   réponse ne laisse le navigateur deviner un type (`nosniff`).
 
-On y arrive depuis le jeu par le lien **🔧 Espace parents**, en bas du menu ☰.
+Les adresses : **`/admin`** (l'administration) et **`/studio`** (le studio
+voix) ; les anciennes `admin.html` et `parent.html` redirigent vers elles. On y
+arrive depuis le jeu par le lien **🔧 Espace parents**, en bas du menu ☰.
 Sans session, la page affiche un bouton **« Se connecter avec Google »** — elle
 n'envoie jamais d'elle-même vers Google ; déjà connecté, on arrive directement
 sur l'admin, et « Se déconnecter » ramène au bouton.

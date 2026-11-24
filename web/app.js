@@ -450,7 +450,7 @@ const App = {
         ),
         this.map(s),
         // For the parents: the admin asks for a Google sign-in anyway.
-        el('a', { class: 'parent-link', href: 'admin.html' }, '🔧 Espace parents'),
+        el('a', { class: 'parent-link', href: 'admin' }, '🔧 Espace parents'),
       ),
     );
   },

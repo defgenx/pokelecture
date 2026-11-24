@@ -142,12 +142,13 @@ Vérifier après `docker compose up -d pokelecture` :
 
 ```bash
 docker compose logs pokelecture | grep connexion     # « connexion Google active (1 adresse(s) autorisée(s)) »
-curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://delvecch.io/pokelecture/admin.html
-# 302 https://delvecch.io/pokelecture/auth/login?next=admin.html
+curl -s -o /dev/null -w '%{http_code}\n' https://delvecch.io/pokelecture/admin
+# 401 : la page avec le bouton « Se connecter avec Google »
 curl -s -o /dev/null -w '%{http_code}\n' -X POST https://delvecch.io/pokelecture/api/admin/reset   # 401
 ```
 
-Puis ouvrir `https://delvecch.io/pokelecture/admin.html` : Google, puis l'admin.
+Puis ouvrir `https://delvecch.io/pokelecture/admin` : le bouton, Google, puis l'admin
+(le studio voix : `/pokelecture/studio`).
 
 **Variante sans Google : `auth_basic` dans nginx.** Le jeu reste ouvert (pas de mot de passe devant un enfant de cinq ans), mais le
 studio et l'administration sont publics sinon : n'importe qui pourrait écraser
@@ -157,11 +158,11 @@ qu'on atteint directement en `curl` sans jamais charger la page. Il faut donc
 tous ces emplacements, **avant** `location /pokelecture/` :
 
 ```nginx
-    location = /pokelecture/parent.html {
+    location = /pokelecture/studio {
         include /etc/nginx/conf.d/studio-auth.inc;
     }
 
-    location = /pokelecture/admin.html {
+    location = /pokelecture/admin {
         include /etc/nginx/conf.d/studio-auth.inc;
     }
 
@@ -181,7 +182,8 @@ tous ces emplacements, **avant** `location /pokelecture/` :
 `studio-auth.inc` porte l'`auth_basic`, le `proxy_pass` et le
 `client_max_body_size 12m` (les enregistrements montent à ~8 Mo). Un seul realm
 pour tous, afin que le navigateur réutilise les identifiants saisis sur
-`parent.html` ou `admin.html` quand la page appelle ensuite ses endpoints.
+`/studio` ou `/admin` quand la page appelle ensuite ses endpoints. (Les
+anciennes adresses `parent.html` et `admin.html` ne font plus que rediriger.)
 
 Crée le fichier d'identifiants **sur le serveur** (jamais versionné) :
 

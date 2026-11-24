@@ -44,12 +44,32 @@ func New(cur *curriculum.Curriculum, store *progress.Store, webDir, base string)
 // handlePage serves an HTML page (or the manifest) with the __BASE__ placeholder
 // replaced by the real mount path. This is the whole mechanism that lets the same
 // build run at / locally and under /pokelecture/ in production.
+// parentPages maps each parent page's address to its file: /admin, /studio.
+var parentPages = map[string]string{"admin": "admin.html", "studio": "parent.html"}
+
+// servePage serves one named page file, whatever the request path.
+func (s *Server) servePage(file string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) { s.page(w, r, file) }
+}
+
+// redirectTo sends an old address to its new one, inside the mount.
+func (s *Server) redirectTo(route string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, s.base+route, http.StatusMovedPermanently)
+	}
+}
+
 func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Path
 	if name == "/" {
 		name = "/index.html"
 	}
-	b, err := os.ReadFile(filepath.Join(s.webDir, filepath.Base(name)))
+	s.page(w, r, filepath.Base(name))
+}
+
+func (s *Server) page(w http.ResponseWriter, r *http.Request, file string) {
+	name := file
+	b, err := os.ReadFile(filepath.Join(s.webDir, file))
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -115,10 +135,13 @@ func (s *Server) Routes() http.Handler {
 	// These must sit in front of the file server so their <base href> gets rewritten.
 	mux.HandleFunc("GET /{$}", s.handlePage)
 	mux.HandleFunc("GET /index.html", s.handlePage)
-	// Registered for every method: a POST or PUT must not slip past the guard
-	// to the static file server.
-	mux.HandleFunc("/parent.html", s.guard(getOnly(s.handlePage)))
-	mux.HandleFunc("/admin.html", s.guard(getOnly(s.handlePage)))
+	// The parent pages live at clean addresses, registered for every method
+	// so a POST or PUT cannot slip past the guard to the file server. The old
+	// .html addresses only redirect (bookmarks keep working).
+	for route, file := range parentPages {
+		mux.HandleFunc("/"+route, s.guard(getOnly(s.servePage(file))))
+		mux.HandleFunc("/"+file, getOnly(s.redirectTo(route)))
+	}
 	// Recordings are served only through handleAudio, with an audio type.
 	mux.HandleFunc("/audio/recorded/", http.NotFound)
 	mux.HandleFunc("GET /manifest.webmanifest", s.handlePage)
