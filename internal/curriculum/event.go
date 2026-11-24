@@ -180,6 +180,12 @@ func (c *Curriculum) EventToday(st progress.State, now time.Time) *Event {
 	if recent {
 		return nil
 	}
+	// An exam never tried waits every day: the first one must be seen.
+	for i := range c.Events {
+		if ev := c.Events[i]; c.Eligible(ev, st) && st.Exams[ev.ID].Attempts == 0 {
+			return &c.Events[i]
+		}
+	}
 	for i := range c.Events {
 		ev := c.Events[i]
 		if c.Eligible(ev, st) && ev.appearsOn(now) {
@@ -308,6 +314,7 @@ const (
 	ExamWhere      = "Réussis un examen surprise pour l'attraper !"
 	ExamDone       = "Tu as déjà réussi cet examen. Bravo !"
 	ExamGate       = "Pour entrer ici, réussis l'examen du professeur ! Il t'attend sur la carte."
+	ExamList       = "Les examens surprises ! Réussis-les pour attraper des Pokémon rares."
 )
 
 // BuildExam generates an exam: four strict sections drawn from everything

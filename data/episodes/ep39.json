@@ -3,7 +3,7 @@
   "route": 31,
   "title": "Académie 4 — le e qui fait è",
   "region": "Académie Pokémon",
-  "story": "Dernier cours : un secret de grand lecteur. Quand le e est devant deux lettres pareilles, il fait le son è : ette, elle, esse, enne. Mimiqui s'est caché dans la classe... trouve-le !",
+  "story": "Dernier cours : un secret de grand lecteur. Devant deux lettres pareilles, le e fait le son è : ette, elle, esse, enne. Mimiqui s'est caché dans la classe, et Spectrum l'aide à jouer des tours. Trouve-le !",
   "new_graphemes": [
     "ette",
     "elle",
@@ -114,5 +114,9 @@
     "pokemon": 745,
     "hp": 4,
     "taunt": "Lougaroc hurle dans la cour de l'Académie ! Lis plus fort que lui !"
-  }
+  },
+  "cameo": [
+    778,
+    93
+  ]
 }

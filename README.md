@@ -641,6 +641,20 @@ fait maintenant plus petit, perché dans le coin, et l'arrêt reste visible.
 Les routes 19–24 sont **les Îles Lointaines**, sur le thème de l'évolution :
 les Pokémon attrapés au début de l'aventure ont grandi avec le lecteur.
 
+### Les nouveaux Pokémon dans l'aventure
+
+Les Pokémon de la Tour se montrent bien avant leur étage :
+
+- **Chaque écran d'histoire** a un Pokémon qui jette un œil (👀) : un Pokémon de
+  la Tour pas encore attrapé, différent selon les jours, avec la ligne « Il
+  t'attend à l'étage… » (touchable, déjà dans la voix).
+- **Les histoires de l'Académie les nomment** (Alakazam le directeur,
+  Typhlosion, Leveinard, Spectrum, Tyranocif, Méganium) : le champ `cameo` d'un
+  épisode affiche leurs images au-dessus du texte ; `pokecontent check` refuse
+  un cameo que l'histoire ne nomme pas.
+- **Sur la carte**, la 🗼 porte le Pokémon du prochain étage qui en donne un,
+  et chaque Dresseur montre (et dit) le Pokémon qu'il envoie aujourd'hui.
+
 ### Les régions et la carte du monde
 
 Chaque épisode déclare sa **région** (`"region": "Forêt Émeraude"`) : Forêt
@@ -685,10 +699,17 @@ l'examen et de la fenêtre de jours : aléatoire, mais stable sur la journée),
 
 | Examen | Apparaît après | Questions (sons / syllabes / mots / phrases) | Réussite | Pokémon |
 |---|---|---|---|---|
-| Examen surprise | Arène de l'Orage | 6 / 5 / 5 / 2 | 70 % | Créfadet |
-| Examen surprise | Arène du Volcan | 7 / 5 / 5 / 3 | 75 % | Créfollet |
+| Examen surprise | Arène de Glace (1ᵉʳ badge) | 6 / 5 / 5 / 2 | 70 % | Créfadet |
+| Examen surprise | Arène Psy (3ᵉ badge) | 7 / 5 / 5 / 3 | 75 % | Créfollet |
 | Le Grand Examen | Tour du Ciel (8 badges) | 8 / 4 / 5 / 3 | 80 % | Créhelf |
 | L'Examen de Maître | Arène du Savoir | 8 / 4 / 5 / 3 | 85 % | Arceus |
+
+**Un examen jamais tenté attend chaque jour** sur la carte, dès qu'il est
+ouvert : le premier doit se voir. Ensuite seulement il devient surprise. Le
+menu ☰ a une page **🎓 Examens** (chaque gardien, en silhouette tant qu'il
+n'est pas attrapé : plus tard / sur la carte aujourd'hui / un autre jour /
+réussi), et un bouton 🎓 apparaît dans la barre du haut de la carte les jours
+d'examen.
 
 **Vingt questions au plus, un examen par semaine au plus** : après une
 tentative, aucun autre examen n'apparaît pendant six jours (celui du jour

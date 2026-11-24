@@ -3,7 +3,7 @@
   "route": 30,
   "title": "Académie 3 — œu et ç",
   "region": "Académie Pokémon",
-  "story": "Troisième cours : deux lettres très spéciales. Le o et le e qui se tiennent la main, comme dans cœur. Et le c avec une petite queue, comme dans leçon. Gardevoir surveille la classe !",
+  "story": "Troisième cours : deux lettres très spéciales. Le o et le e se tiennent la main, comme dans cœur, et le c a une petite queue, comme dans leçon. Leveinard apporte des œufs pour la classe, et Gardevoir surveille !",
   "new_graphemes": [
     "œu",
     "oeu",
@@ -120,5 +120,9 @@
     "pokemon": 712,
     "hp": 4,
     "taunt": "Grelaçon gèle le tableau de la classe ! Lis pour le faire fondre !"
-  }
+  },
+  "cameo": [
+    113,
+    282
+  ]
 }

@@ -3,7 +3,7 @@
   "route": 0,
   "title": "Arène du Savoir — Meloetta",
   "region": "Académie Pokémon",
-  "story": "Le grand jour : l'Arène du Savoir ! Tout ce que tu as appris, depuis la toute première route, est ici. Meloetta chante la musique de l'Académie. Gagne, et tu recevras le Diplôme de l'Académie !",
+  "story": "Le grand jour : l'Arène du Savoir ! Tyranocif garde la porte, et Méganium a couvert la salle de fleurs. Tout ce que tu as appris est ici. Meloetta chante la musique de l'Académie. Gagne le Diplôme !",
   "new_graphemes": [],
   "syllables": [],
   "words": [],
@@ -18,5 +18,10 @@
     "pokemon": 648,
     "hp": 6,
     "taunt": "Meloetta chante, et toute l'arène se met à briller ! Lis en musique !"
-  }
+  },
+  "cameo": [
+    248,
+    154,
+    648
+  ]
 }

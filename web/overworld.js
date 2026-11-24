@@ -201,6 +201,7 @@ const Overworld = {
           (s.bag && s.bag.berry) ? el('span', { class: 'chip chip-extra' }, `🍓 ${s.bag.berry}`) : null,
           Trainer.chip(),
         ].filter(Boolean)),
+        s.event ? el('button', { class: 'btn-icon exam-btn', title: 'Examen surprise', onclick: () => this.examDialog(s.event) }, '🎓') : null,
         el('button', { class: 'btn-icon', title: 'Mon équipe', onclick: () => Team.open() }, '👥'),
         el('button', { class: 'btn-icon quest-btn', title: 'Missions', onclick: () => Quests.panel() },
           `📜 ${(s.quests || []).filter((q) => q.done).length}/${(s.quests || []).length}`),
@@ -264,7 +265,14 @@ const Overworld = {
       case '=': t.classList.add('ow-path'); break;
       case 'F': t.classList.add('ow-flower'); t.textContent = '🌼'; break;
       case 'g': t.classList.add('ow-grass'); t.textContent = '🌿'; break;
-      case 'O': t.classList.add('ow-place'); t.textContent = '🗼'; break;
+      case 'O':
+        t.classList.add('ow-place');
+        t.textContent = '🗼';
+        // The Pokémon the next Tower floor gives: the new ones in sight.
+        if (App.state.tower && App.state.tower_next) {
+          t.append(el('img', { class: 'ow-place-mon', src: `sprites/art/${App.state.tower_next.pokemon}.png`, alt: '', loading: 'lazy' }));
+        }
+        break;
       case 'A': t.classList.add('ow-place'); t.textContent = '🎮'; break;
       case 'P': t.classList.add('ow-place'); t.textContent = '📘'; break;
       case 'X':
@@ -404,7 +412,9 @@ const Overworld = {
     if (ch === 'X' && s.event) return this.examDialog(s.event);
     switch (ch) {
       case 'O': return s.tower
-        ? this.show('🗼 La Tour de Combat', `Étage ${s.tower_floor + 1}`, 'ENTRER ▶', () => Session.start('tour'), spoken('La Tour de Combat ! Monte les étages en lisant !'))
+        ? this.show('🗼 La Tour de Combat', [el('span', {}, `Étage ${s.tower_floor + 1}`),
+          s.tower_next ? el('span', { class: 'ow-dialog-reward' }, '🎁 ', el('img', { class: 'ow-dialog-mon', src: `sprites/art/${s.tower_next.pokemon}.png`, alt: '' }), ` étage ${s.tower_next.floor}`) : null],
+        'ENTRER ▶', () => Session.start('tour'), spoken('La Tour de Combat ! Monte les étages en lisant !'))
         : this.show('🗼 La Tour de Combat', '🔒', null, null, spoken('Termine la première route pour ouvrir ça !'));
       case 'A': return s.tower
         ? this.show('🎮 Les mini-jeux', '', 'ENTRER ▶', () => Arcade.hub(), spoken('Le coin des mini-jeux !'))
@@ -439,8 +449,12 @@ const Overworld = {
       return this.show(`${face} Dresseur battu`, '⭐', null, null, spoken('Bravo, tu m\'as battu ! Reviens demain pour une revanche.'));
     }
     Sfx.encounter();
-    this.show(`${face} Un Dresseur te défie !`, '⚔️ 3 mots à lire', 'COMBAT ▶',
-      () => Session.start(`dresseur-${this.region}-${n}`), spoken('Un Dresseur veut se battre ! Lis vite pour gagner !'));
+    const mon = (s.trainer_mons || {})[key];
+    this.show(`${face} Un Dresseur te défie !`,
+      [mon ? el('img', { class: 'ow-dialog-mon', src: `sprites/art/${mon.pokemon}.png`, alt: '' }) : null, el('span', {}, mon ? `${mon.name} · ⚔️ 3 mots` : '⚔️ 3 mots à lire')],
+      'COMBAT ▶', () => Session.start(`dresseur-${this.region}-${n}`), spoken('Un Dresseur veut se battre ! Lis vite pour gagner !'));
+    // Then the name of the Pokémon he sends out, in the track's voice.
+    if (mon) Voice.play(mon.name_audio, mon.name);
   },
 
   // A sparkle under his feet: the server rolls what it was.

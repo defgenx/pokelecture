@@ -3,7 +3,7 @@
   "route": 28,
   "title": "Académie 1 — le son tion",
   "region": "Académie Pokémon",
-  "story": "Bienvenue à l'Académie Pokémon, l'école des grands lecteurs ! Ici, on apprend les sons difficiles. Premier cours : tion, comme dans évolution. Les évolutions d'Évoli t'attendent en classe !",
+  "story": "Bienvenue à l'Académie Pokémon, l'école des grands lecteurs ! Le directeur, c'est Alakazam : il se souvient de tout ce qu'il a lu. Premier cours : tion, comme dans évolution. Les évolutions d'Évoli t'attendent en classe !",
   "new_graphemes": [
     "tion"
   ],
@@ -90,5 +90,8 @@
     "hp": 4,
     "taunt": "Givrali fait tomber la neige sur la classe ! Lis vite !"
   },
-  "requires_exam": "grand"
+  "requires_exam": "grand",
+  "cameo": [
+    65
+  ]
 }

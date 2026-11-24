@@ -48,6 +48,22 @@ func ParseTrainer(id string) (region, n int, ok bool) {
 	return region, n, err1 == nil && err2 == nil && n >= 0 && n < 2 && region >= 0
 }
 
+// TrainerPokemon is the Pokémon a map trainer sends out today: drawn per
+// trainer and per day from the whole roster (legendaries excepted), so the
+// map shows it before the battle.
+func (c *Curriculum) TrainerPokemon(region, n int, now time.Time) Pokemon {
+	h := fnv.New64a()
+	fmt.Fprintf(h, "%s:%d:%d", now.Format("2006-01-02"), region, n)
+	rng := rand.New(rand.NewPCG(h.Sum64(), 0xd7e5))
+	var pool []Pokemon
+	for _, p := range c.Roster() {
+		if !p.Legendary {
+			pool = append(pool, p)
+		}
+	}
+	return pool[rng.IntN(len(pool))]
+}
+
 // BuildTrainer is a three-word battle on everything learned so far, against
 // a non-legendary Pokémon drawn for this trainer and this day.
 func (c *Curriculum) BuildTrainer(st progress.State, region, n int, now time.Time) (Session, bool) {
@@ -61,16 +77,7 @@ func (c *Curriculum) BuildTrainer(st progress.State, region, n int, now time.Tim
 	}
 	f.HP = len(f.Rounds)
 
-	h := fnv.New64a()
-	fmt.Fprintf(h, "%s:%d:%d", now.Format("2006-01-02"), region, n)
-	rng := rand.New(rand.NewPCG(h.Sum64(), 0xd7e5))
-	var pool []Pokemon
-	for _, p := range c.Roster() {
-		if !p.Legendary {
-			pool = append(pool, p)
-		}
-	}
-	p := pool[rng.IntN(len(pool))]
+	p := c.TrainerPokemon(region, n, now)
 	f.Pokemon, f.Name, f.Syllables = p.ID, p.Name, p.Syllables
 	f.Legendary = false
 	f.Taunt = TrainerTaunt

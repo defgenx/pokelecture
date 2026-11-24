@@ -3,7 +3,7 @@
   "route": 29,
   "title": "Académie 2 — eil, ail, eille, aille",
   "region": "Académie Pokémon",
-  "story": "Deuxième cours de l'Académie : le soleil et la bataille ! Les lettres i et l, à la fin d'un mot, chantent un son nouveau. Lucario et son petit Riolu sont tes professeurs aujourd'hui.",
+  "story": "Deuxième cours : le soleil et la bataille ! Typhlosion allume ses flammes pour éclairer la classe. Les lettres i et l, à la fin d'un mot, chantent un son nouveau. Lucario et son petit Riolu sont tes professeurs.",
   "new_graphemes": [
     "ail",
     "eil",
@@ -113,5 +113,10 @@
     "pokemon": 416,
     "hp": 4,
     "taunt": "Apireine appelle toute sa ruche ! Bzzz ! Lis pour gagner la bataille !"
-  }
+  },
+  "cameo": [
+    157,
+    448,
+    447
+  ]
 }

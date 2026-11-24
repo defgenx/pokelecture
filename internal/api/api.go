@@ -251,6 +251,23 @@ type stateView struct {
 	Event *eventView `json:"event,omitempty"`
 	Games []string   `json:"games"`
 	Font  string     `json:"font,omitempty"` // reading font (admin setting)
+	// Exams lists every surprise exam and where he stands (menu « Examens »).
+	Exams []examCard `json:"exams"`
+	// TowerNext: the Pokémon the next paying Tower floor awards (map's 🗼).
+	TowerNext *towerNext `json:"tower_next,omitempty"`
+	// TrainerMons: today's Pokémon of each map trainer, "region:n" → id.
+	TrainerMons map[string]trainerMon `json:"trainer_mons"`
+}
+
+type towerNext struct {
+	Pokemon int `json:"pokemon"`
+	Floor   int `json:"floor"`
+}
+
+type trainerMon struct {
+	Pokemon   int    `json:"pokemon"`
+	Name      string `json:"name"`
+	NameAudio string `json:"name_audio"`
 }
 
 type wildCount struct {
@@ -285,6 +302,17 @@ func (s *Server) state() stateView {
 	out.Quests = s.questViews()
 	out.Event = s.eventToday(st)
 	out.Font = st.Settings.Font
+	out.Exams = s.examCards(st)
+	if id, f := s.cur.TowerNext(st.TowerFloor); id != 0 {
+		out.TowerNext = &towerNext{Pokemon: id, Floor: f}
+	}
+	out.TrainerMons = map[string]trainerMon{}
+	for r := 0; r < s.regionCount(); r++ {
+		for n := 0; n < 2; n++ {
+			p := s.cur.TrainerPokemon(r, n, time.Now())
+			out.TrainerMons[fmt.Sprintf("%d:%d", r, n)] = trainerMon{Pokemon: p.ID, Name: p.Name, NameAudio: speech.URL(p.Spoken(), speech.StyleWord)}
+		}
+	}
 	out.Games = s.cur.GamesOpen(st)
 	if out.Games == nil {
 		out.Games = []string{}
@@ -639,6 +667,19 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, http.StatusOK, res)
+}
+
+// regionCount counts the map's regions as the client does (web/overworld.js
+// regions()): runs of consecutive episodes sharing a region.
+func (s *Server) regionCount() int {
+	n, last := 0, ""
+	for i, ep := range s.cur.Episodes {
+		if i == 0 || ep.Region != last {
+			n++
+		}
+		last = ep.Region
+	}
+	return n
 }
 
 // speedMinAnswers: below this many timed answers, his usual speed is unknown

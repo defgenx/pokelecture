@@ -504,6 +504,8 @@ const App = {
                 `🗼 Tour · Étage ${s.tower_floor + 1}`) : null,
               s.tower ? el('button', { class: 'btn btn-ghost', onclick: () => Arcade.hub() },
                 '🎮 Mini-jeux') : null,
+              (s.exams || []).length ? el('button', { class: 'btn btn-ghost', onclick: () => App.exams() },
+                `🎓 Examens ${(s.exams || []).filter((x) => x.status === 'passed').length}/${s.exams.length}`) : null,
               s.tower && s.wild && s.wild.total ? el('button', { class: 'btn btn-ghost btn-grass', onclick: () => Wild.enter() },
                 `🌿 Hautes herbes ${s.wild.caught}/${s.wild.available}`) : null,
             ),
@@ -574,6 +576,29 @@ const App = {
               }),
             ),
           )),
+        ),
+      ),
+    );
+  },
+
+  /* « Examens »: every surprise exam and its guardian — still to open,
+     waiting on the map today, waiting for another day, or passed. */
+  exams() {
+    Voice.stop();
+    const s = this.state;
+    const label = { locked: '🔒 Plus tard dans l\'aventure', today: '🎓 Il t\'attend sur la carte aujourd\'hui !', waiting: '⏳ Il reviendra un autre jour', passed: '✅ Réussi !' };
+    this.screen(
+      this.topbar(el('button', { class: 'btn-icon', onclick: () => this.home() }, '✕')),
+      el('div', { class: 'page' },
+        el('div', { class: 'act' },
+          el('h2', {}, '🎓 Les examens surprises'),
+          hint('Les examens surprises ! Réussis-les pour attraper des Pokémon rares.'),
+          el('div', { class: 'exam-list' }, (s.exams || []).map((x) => el('div', { class: `exam-card ${x.status}` },
+            el('img', { class: x.status === 'passed' ? '' : 'silhouette', src: `sprites/art/${x.pokemon}.png`, alt: '' }),
+            el('div', {}, el('b', {}, x.title), el('small', {}, label[x.status] || ''),
+              x.status === 'locked' && x.after ? el('small', {}, `Après : ${x.after}`) : null),
+            x.status === 'today' ? el('button', { class: 'btn btn-go', onclick: () => Session.start(`examen-${x.id}`) }, 'EXAMEN ▶') : null,
+          ))),
         ),
       ),
     );
@@ -1142,10 +1167,21 @@ const Session = {
 
 /* ------------------------------------------------------------- activities --- */
 
+/* The story screen: the text read aloud, the Pokémon it names (tap one to
+   hear its name), and a Tower Pokémon peeking in — one not caught yet, with
+   where it waits — so the new Pokémon show up from the very first route. */
 function renderStory(a, body, done) {
-  body.append(
+  const cameo = (a.cameo || []).length ? el('div', { class: 'story-cameo' },
+    a.cameo.map((f) => el('button', { class: 'story-mon', onclick: () => Voice.play(f.name_audio, f.name) },
+      el('img', { src: `sprites/art/${f.pokemon}.png`, alt: '' }), el('small', {}, f.name)))) : null;
+  const peek = a.peek ? el('button', { class: 'story-peek', onclick: () => Voice.play(a.peek.line_audio, a.peek.line) },
+    el('img', { src: `sprites/art/${a.peek.pokemon}.png`, alt: '' }),
+    el('span', {}, '👀 ', el('b', {}, a.peek.name), el('small', {}, a.peek.line))) : null;
+  put(body,
     el('h2', {}, a.title),
+    cameo,
     el('div', { class: 'dex', style: 'max-width:34ch' }, a.text),
+    peek,
     el('button', { class: 'btn btn-huge btn-go', onclick: done }, "C'EST PARTI ▶"),
   );
   Voice.play(a.audio, a.text);

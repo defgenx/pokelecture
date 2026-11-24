@@ -110,6 +110,59 @@ type Activity struct {
 	Fight       *Fight         `json:"fight,omitempty"`
 	Reward      *Reward        `json:"reward,omitempty"`
 	Badge       *BadgeCard     `json:"badge,omitempty"`
+	// Story screens: the Pokémon the story names, and a Tower Pokémon
+	// peeking in (one he has not caught yet, with where it waits).
+	Cameo []Face `json:"cameo,omitempty"`
+	Peek  *Face  `json:"peek,omitempty"`
+}
+
+// Face is a Pokémon shown on a story screen: its picture, its name, and,
+// for a peek, the spoken line saying where it waits.
+type Face struct {
+	Pokemon   int    `json:"pokemon"`
+	Name      string `json:"name"`
+	NameAudio string `json:"name_audio"`
+	Line      string `json:"line,omitempty"`
+	LineAudio string `json:"line_audio,omitempty"`
+}
+
+func (c *Curriculum) face(id int) Face {
+	p := c.Pokemon[id]
+	return Face{Pokemon: id, Name: p.Name, NameAudio: speech.URL(p.Spoken(), speech.StyleWord)}
+}
+
+// TowerPeek is a Tower Pokémon he has not caught yet, drawn for the day:
+// the new Pokémon show up in every lesson long before their floor.
+func (c *Curriculum) TowerPeek(st progress.State, now time.Time) *Face {
+	caught := map[int]bool{}
+	for _, id := range st.Pokedex {
+		caught[id] = true
+	}
+	var left []int
+	for _, id := range c.TowerLadder {
+		if !caught[id] {
+			left = append(left, id)
+		}
+	}
+	if len(left) == 0 {
+		return nil
+	}
+	day := int(now.Sub(eventEpoch).Hours() / 24)
+	f := c.face(left[(day*7+len(st.Pokedex))%len(left)])
+	f.Line = c.Where(f.Pokemon)
+	f.LineAudio = speech.URL(f.Line, speech.StyleNormal)
+	return &f
+}
+
+// TowerNext is the Pokémon the next Tower floor (or the first paying one
+// above it) awards, 0 when the ladder is done: shown on the map's 🗼.
+func (c *Curriculum) TowerNext(cleared int) (pokemon, floor int) {
+	for f := cleared + 1; f <= cleared+2; f++ {
+		if id := c.TowerRewardFor(f); id != 0 {
+			return id, f
+		}
+	}
+	return 0, 0
 }
 
 // Session is the generated playable episode.
@@ -261,12 +314,17 @@ func (c *Curriculum) BuildSession(ep *Episode, st progress.State, now time.Time)
 	}
 
 	if ep.Story != "" {
-		s.Activities = append(s.Activities, Activity{
+		story := Activity{
 			Kind:  "story",
 			Title: ep.Title,
 			Text:  ep.Story,
 			Audio: speech.URL(ep.Story, speech.StyleNormal),
-		})
+			Peek:  c.TowerPeek(st, now),
+		}
+		for _, id := range ep.Cameo {
+			story.Cameo = append(story.Cameo, c.face(id))
+		}
+		s.Activities = append(s.Activities, story)
 	}
 
 	if rev := c.reviewActivity(idx, p, st, now, diff); rev != nil {
@@ -1388,6 +1446,7 @@ var UIPhrases = []string{
 	ExamWhere,
 	ExamDone,
 	ExamGate,
+	ExamList,
 	NoTicket,
 	TicketWon,
 	NewGame,

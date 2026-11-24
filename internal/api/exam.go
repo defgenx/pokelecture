@@ -32,6 +32,36 @@ func (s *Server) eventToday(st progress.State) *eventView {
 	return &eventView{ID: ev.ID, Title: ev.Title, Pokemon: ev.Pokemon, Pass: ev.PassMark(), Attempts: r.Attempts, Best: r.Best}
 }
 
+// examCard is one exam in the child's « Examens » list.
+type examCard struct {
+	ID      string `json:"id"`
+	Title   string `json:"title"`
+	Pokemon int    `json:"pokemon"`
+	Status  string `json:"status"` // locked | today | waiting | passed
+	After   string `json:"after"`  // the episode that opens it, by title
+}
+
+func (s *Server) examCards(st progress.State) []examCard {
+	today := s.cur.EventToday(st, time.Now())
+	out := []examCard{}
+	for _, ev := range s.cur.Events {
+		c := examCard{ID: ev.ID, Title: ev.Title, Pokemon: ev.Pokemon, Status: "waiting"}
+		if ep, ok := s.cur.Episode(ev.After); ok {
+			c.After = ep.Title
+		}
+		switch {
+		case st.Exams[ev.ID].Passed:
+			c.Status = "passed"
+		case today != nil && today.ID == ev.ID:
+			c.Status = "today"
+		case !s.cur.Eligible(ev, st):
+			c.Status = "locked"
+		}
+		out = append(out, c)
+	}
+	return out
+}
+
 // missedView is one wrong answer, shown and playable on the result screen.
 type missedView struct {
 	ID    string `json:"id"`

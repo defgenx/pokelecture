@@ -178,6 +178,10 @@ type Episode struct {
 	// RequiresExam: a surprise exam (events.json id) that must be passed to
 	// enter this episode — the exam is the door (README « examen d'entrée »).
 	RequiresExam string `json:"requires_exam,omitempty"`
+
+	// Cameo: Pokémon the story names (any Pokémon, read TO the child),
+	// pictured on the story screen.
+	Cameo []int `json:"cameo,omitempty"`
 }
 
 // CatchablePokemon lists every Pokémon completing this episode adds to the
@@ -539,6 +543,13 @@ func (c *Curriculum) Validate() []error {
 				if _, ok := c.Pokemon[id]; !ok {
 					errs = append(errs, fmt.Errorf("%s: pokémon #%d absent de pokemon.json", ep.ID, id))
 				}
+			}
+		}
+		for _, id := range ep.Cameo {
+			if _, ok := c.Pokemon[id]; !ok {
+				errs = append(errs, fmt.Errorf("%s: cameo #%d absent de pokemon.json", ep.ID, id))
+			} else if !strings.Contains(ep.Story, c.Pokemon[id].Name) {
+				errs = append(errs, fmt.Errorf("%s: cameo %s n'est pas nommé dans l'histoire", ep.ID, c.Pokemon[id].Name))
 			}
 		}
 		if ep.Badge != nil {

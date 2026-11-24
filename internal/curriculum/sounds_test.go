@@ -98,3 +98,29 @@ func TestWordQuizPrefersLookAlikes(t *testing.T) {
 		}
 	}
 }
+
+func TestFirstExamWaitsEveryDay(t *testing.T) {
+	c := loadCur(t)
+	st := progress.State{Episodes: map[string]progress.EpisodeStat{}}
+	for _, ep := range c.Episodes {
+		st.Episodes[ep.ID] = progress.EpisodeStat{Completions: 1}
+		if ep.ID == "ep03b" { // the first badge
+			break
+		}
+	}
+	for d := 0; d < 10; d++ {
+		if ev := c.EventToday(st, time.Now().Add(time.Duration(d)*24*time.Hour)); ev == nil || ev.ID != "petit" {
+			t.Fatalf("day %d: the first exam, never tried, should wait on the map (got %v)", d, ev)
+		}
+	}
+}
+
+func TestStoryShowsCameoAndPeek(t *testing.T) {
+	c := loadCur(t)
+	ep, _ := c.Episode("ep37")
+	s := c.BuildSession(ep, progress.State{Episodes: map[string]progress.EpisodeStat{}}, time.Now())
+	story := s.Activities[0]
+	if story.Kind != "story" || len(story.Cameo) == 0 || story.Peek == nil || story.Peek.Line == "" {
+		t.Fatalf("story screen: %+v", story)
+	}
+}
