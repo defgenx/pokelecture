@@ -1987,3 +1987,30 @@ body.font-cursive .exam-label {
 .exam-card.today { outline: 3px solid var(--yellow); }
 .exam-card.locked { opacity: .65; }
 .exam-btn { animation: ow-prof-bob 1.2s ease-in-out infinite; }
+
+/* ------------------------------------------------- la pêche (README) ------ */
+.fish-pond {
+  position: relative; width: min(86vw, 420px); aspect-ratio: 16 / 10; border-radius: var(--r-lg);
+  background: radial-gradient(ellipse at 50% 120%, #1f7fc8, #4fb6ee 60%, #8fd6f6);
+  box-shadow: var(--lift-2), inset 0 -10px 30px rgba(0, 40, 90, .25); cursor: pointer; overflow: hidden;
+}
+.fish-pond::before, .fish-pond::after {
+  content: ''; position: absolute; left: 50%; top: 58%; width: 26%; aspect-ratio: 3 / 1;
+  border: 2px solid rgba(255, 255, 255, .55); border-radius: 50%; transform: translate(-50%, -50%);
+  animation: ripple 2.4s ease-out infinite;
+}
+.fish-pond::after { animation-delay: 1.2s; }
+.fish-float {
+  position: absolute; left: 50%; top: 50%; width: 9%; aspect-ratio: 1; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(180deg, #ee1515 0 50%, #fff 50% 100%); border: 2px solid #1a1d24;
+  animation: bob 1.6s ease-in-out infinite;
+}
+.fish-float.bite { animation: dip .35s ease-in-out infinite; }
+.fish-pull { animation: pop .35s ease; }
+@keyframes ripple { 0% { opacity: .9; width: 10%; } 100% { opacity: 0; width: 60%; } }
+@keyframes bob { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, -38%); } }
+@keyframes dip { 0%, 100% { transform: translate(-50%, -20%); } 50% { transform: translate(-50%, 20%) scale(.85); } }
+.watermark { position: absolute; top: 4px; left: 6px; font-size: 18px; }
+.ow-fisher .ow-bang { font-style: normal; }
+.rod-won .game-icon { font-size: 54px; }

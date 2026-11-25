@@ -55,10 +55,10 @@ func checkMap(m []string) []string {
 			return []string{fmt.Sprintf("row %d: %d columns, want %d", y, len([]rune(r)), w)}
 		}
 		for x, c := range []rune(r) {
-			if !strings.ContainsRune("TW.=Fg<>OAPDEX12345", c) {
+			if !strings.ContainsRune("TW.=Fg<>OAPDEXK12345", c) {
 				errs = append(errs, fmt.Sprintf("unknown tile %q at %d,%d", c, x, y))
 			}
-			if strings.ContainsRune("<>OAPDEX12345", c) {
+			if strings.ContainsRune("<>OAPDEXK12345", c) {
 				if _, dup := pos[c]; dup {
 					errs = append(errs, fmt.Sprintf("two %q", c))
 				}
@@ -168,6 +168,18 @@ func TestEveryRegionHasItsOwnMap(t *testing.T) {
 			t.Errorf("%s has the same obstacle %s as %s", name, r.tree, other)
 		}
 		seenTree[r.tree] = name
+	}
+}
+
+// The fisherman who gives the rod stands on the Côte Saphir, where RodFrom
+// is: his line and the rod's voice line both name that region.
+func TestFishermanOnTheCoteSaphir(t *testing.T) {
+	c := loadCur(t)
+	if !strings.Contains(strings.Join(overworldRegions(t)["Côte Saphir"].rows, ""), "K") {
+		t.Error("no fisherman (K) on the Côte Saphir map")
+	}
+	if i := c.Index(RodFrom); i < 0 || c.Episodes[i].Region != "Côte Saphir" {
+		t.Errorf("RodFrom %s is not a Côte Saphir route", RodFrom)
 	}
 }
 

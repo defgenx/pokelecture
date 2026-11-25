@@ -203,8 +203,17 @@ const Gift = {
 
 const Wild = {
   pool: null,
+  // 'grass' or 'fish': the same encounter, met in the tall grass or fished
+  // out of the water (README « La pêche »). Water Pokémon are only fished.
+  mode: 'grass',
 
-  available() { return ((this.pool && this.pool.pokemon) || []).filter((p) => p.available); },
+  available() {
+    const fish = this.mode === 'fish';
+    return ((this.pool && this.pool.pokemon) || []).filter((p) => p.available && !!p.water === fish);
+  },
+
+  // After an encounter: back to where it came from.
+  again() { return this.mode === 'fish' ? this.fish() : this.enter(); },
 
   async load() {
     try { this.pool = await api('api/wild'); } catch (_) { this.pool = null; }
@@ -215,6 +224,7 @@ const Wild = {
      rustles out. The bag shows the Poké Balls left. */
   async enter() {
     Voice.stop();
+    this.mode = 'grass';
     if (!(await this.load())) return App.home();
     const pool = this.pool;
     const avail = this.available();
@@ -259,6 +269,78 @@ const Wild = {
     );
   },
 
+  /* La pêche: the float sits on the water; when it dips (« Ça mord ! »),
+     a tap in time pulls a water Pokémon out — then the same reading as in
+     the grass. Too slow and it swims off; the float goes back out. */
+  async fish() {
+    Voice.stop();
+    this.mode = 'fish';
+    if (!(await this.load())) return App.home();
+    const avail = this.available();
+    const pond = el('div', { class: 'fish-pond' });
+    const float = el('div', { class: 'fish-float' });
+    const pull = el('button', { class: 'btn btn-huge btn-go fish-pull', hidden: true }, 'TIRE ! 🎣');
+    pond.append(float);
+    let timer = null;
+    let biting = false;
+    const cast = () => {
+      biting = false;
+      pull.hidden = true;
+      float.classList.remove('bite');
+      timer = setTimeout(() => {
+        if (!document.body.contains(pond)) return;
+        biting = true;
+        float.classList.add('bite');
+        pull.hidden = false;
+        Sfx.encounter();
+        say('Ça mord ! Touche vite !');
+        timer = setTimeout(async () => {
+          if (!biting || !document.body.contains(pond)) return;
+          biting = false;
+          pull.hidden = true;
+          float.classList.remove('bite');
+          await say('Trop tard, il est reparti. Réessaie !');
+          if (document.body.contains(pond)) cast();
+        }, 3500);
+      }, 1500 + Math.random() * 2500);
+    };
+    const reel = () => {
+      if (!biting) return;
+      biting = false;
+      clearTimeout(timer);
+      Sfx.catch_();
+      this.encounter();
+    };
+    pull.addEventListener('click', reel);
+    pond.addEventListener('click', reel);
+
+    const body = [];
+    if (!avail.length) {
+      body.push(hint('Il n\'y a pas de poisson ici pour l\'instant. Apprends de nouveaux sons !'));
+    } else if (this.pool.balls <= 0) {
+      body.push(el('div', { class: 'empty-bag' }, pokeball('pokeball-sm'), ' ✕ 0'),
+        hint('Tu n\'as plus de Poké Balls ! Lis une route pour en gagner.'));
+    } else {
+      body.push(pond, pull, hint('Attends que ça morde...'));
+    }
+    const caught = avail.filter((p) => p.caught).length;
+    App.screen(
+      App.topbar(
+        el('span', { class: 'chip' }, pokeball('pokeball-xs'), ` ${this.pool.balls}`),
+        el('button', { class: 'btn-icon', onclick: () => { clearTimeout(timer); App.home(); } }, '✕'),
+      ),
+      el('div', { class: 'page' },
+        el('div', { class: 'act grass-act' },
+          el('h2', {}, '🎣 La pêche'),
+          el('div', { class: 'wild-count' }, `Pêchés : ${caught} / ${avail.length}`),
+          ...body,
+          el('button', { class: 'btn btn-ghost', onclick: () => { clearTimeout(timer); App.pokedex('wild'); } }, '📘 Pokédex sauvage'),
+        ),
+      ),
+    );
+    if (avail.length && this.pool.balls > 0) cast();
+  },
+
   /* Uncaught Pokémon come out first, so the collection always grows; once
      all are caught, any of them — with the odd shiny. */
   pick() {
@@ -289,7 +371,7 @@ const Wild = {
     const tray = [...p.syllables, ...traps.slice(0, p.syllables.length >= 3 ? 2 : 1)].sort(() => Math.random() - 0.5);
     const trayEl = el('div', { class: 'tray' });
     const word = el('div', { class: 'word arcade-word wild-name' }, p.name);
-    const flee = el('button', { class: 'btn btn-ghost', onclick: () => this.enter() }, '🏃 Fuir');
+    const flee = el('button', { class: 'btn btn-ghost', onclick: () => this.again() }, '🏃 Fuir');
 
     tray.forEach((syl) => {
       const b = el('button', { class: 'syl-btn' }, syl);
@@ -336,7 +418,7 @@ const Wild = {
       ),
       el('div', { class: 'page' },
         el('div', { class: 'act' },
-          el('h2', {}, shiny ? '✨ Un Pokémon chromatique sauvage !' : 'Un Pokémon sauvage apparaît !'),
+          el('h2', {}, shiny ? '✨ Un Pokémon chromatique sauvage !' : this.mode === 'fish' ? '🎣 Un Pokémon sort de l\'eau !' : 'Un Pokémon sauvage apparaît !'),
           el('div', { class: 'combat-cols' },
             el('div', { class: 'combat-left' }, el('div', { class: 'wild-arena' }, el('div', { class: 'platform' }, sprite))),
             el('div', { class: 'combat-right act' }, word, slots, trayEl, ballSlot, flee),
@@ -345,7 +427,7 @@ const Wild = {
       ),
     );
     Sfx.encounter();
-    say(shiny ? 'Ouah ! Un Pokémon chromatique !' : 'Un Pokémon sauvage apparaît !')
+    say(shiny ? 'Ouah ! Un Pokémon chromatique !' : this.mode === 'fish' ? 'Un Pokémon sort de l\'eau !' : 'Un Pokémon sauvage apparaît !')
       .then(() => say('Lis son nom pour l\'attraper !'));
   },
 
@@ -378,7 +460,7 @@ const Wild = {
       res = await api('api/wild/catch', { id: p.id, shiny, slips, attempt, super: !!isSuper });
       App.state = res.state;
     } catch (_) {
-      return this.enter();
+      return this.again();
     }
     if (this.pool) this.pool.balls = App.state.balls;
     const bag = $('.bag-chip');
@@ -412,7 +494,7 @@ const Wild = {
         sprite.classList.add('fled');
         await say('Oh non, il s\'est enfui !');
         zone.append(el('div', { class: 'home-row' },
-          el('button', { class: 'btn btn-huge btn-go', onclick: () => this.enter() }, 'ENCORE 🌿'),
+          el('button', { class: 'btn btn-huge btn-go', onclick: () => this.again() }, this.mode === 'fish' ? 'ENCORE 🎣' : 'ENCORE 🌿'),
           el('button', { class: 'btn btn-ghost', onclick: () => App.home() }, 'CARTE 🗺️')));
         return;
       }
@@ -442,7 +524,7 @@ const Wild = {
     put(zone,
       res.partner_event ? Partner.gainRow(res.partner_event) : null,
       el('div', { class: 'home-row' },
-        el('button', { class: 'btn btn-huge btn-go', onclick: () => this.enter() }, 'ENCORE 🌿'),
+        el('button', { class: 'btn btn-huge btn-go', onclick: () => this.again() }, this.mode === 'fish' ? 'ENCORE 🎣' : 'ENCORE 🌿'),
         el('button', { class: 'btn btn-ghost', onclick: () => App.home() }, 'CARTE 🗺️'),
       ),
     );
@@ -464,12 +546,14 @@ async function wildDex(grid) {
       class: `dexcell ${cls}`,
       onclick: () => {
         if (p.caught) return Voice.play(p.name_audio, p.name);
-        say(p.available ? 'Il se cache dans les hautes herbes !' : 'Apprends de nouveaux sons pour le trouver !');
+        if (!p.available) return say('Apprends de nouveaux sons pour le trouver !');
+        say(p.water ? 'Il vit dans l\'eau ! Pêche-le avec ta canne.' : 'Il se cache dans les hautes herbes !');
       },
     },
       el('img', { class: p.shiny ? 'shiny' : '', src: p.sprite, alt: '', loading: 'lazy' }),
       p.shiny ? el('span', { class: 'shinymark' }, '✨') : null,
       !p.available && !p.caught ? el('span', { class: 'lockmark' }, '🔒') : null,
+      p.water ? el('span', { class: 'watermark' }, '🎣') : null,
       el('b', {}, p.caught ? p.name : '???'),
     ));
   });

@@ -1216,6 +1216,9 @@ const Session = {
           this.timed ? el('div', { class: `speed-row ${slow ? 'slow' : ''}` },
             `⚡ ${this.fast} réponse${this.fast > 1 ? 's' : ''} rapide${this.fast > 1 ? 's' : ''} sur ${this.timed}`) : null,
           newGamesRow(res.new_games),
+          res.rod_won ? el('div', { class: 'newcatch rod-won' },
+            el('span', { class: 'score' }, '🎣 La canne à pêche est à toi !'),
+            el('div', { class: 'catchrow' }, el('span', { class: 'game-icon' }, '🎣'))) : null,
           catches.length ? el('div', { class: 'newcatch' },
             el('span', { class: 'score' }, catches.length > 1
               ? `🎉 ${catches.length} nouveaux Pokémon dans le Pokédex !`
@@ -1237,6 +1240,7 @@ const Session = {
     await say(stars === MAX_STARS ? 'Super !' : 'Bravo !');
     if (catches.length) await say('Tu as attrapé un nouveau Pokémon !');
     if ((res.new_games || []).length) { Sfx.badge(); await say('Un nouveau mini-jeu est débloqué !'); }
+    if (res.rod_won) { Sfx.badge(); confetti(60); await say('Tu as gagné la canne à pêche ! Touche l\'eau sur la carte pour pêcher.'); }
     if (res.balls_won) await say('Tu gagnes des Poké Balls !');
     if (res.tickets_won) await say('Tu gagnes un ticket de jeu !');
     await celebrateAll(res);

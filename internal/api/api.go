@@ -250,6 +250,7 @@ type stateView struct {
 	// Event is today's surprise exam on the map; Games the open mini-games.
 	Event *eventView `json:"event,omitempty"`
 	Games []string   `json:"games"`
+	Rod   bool       `json:"rod"`            // the fishing rod is earned (README « La pêche »)
 	Font  string     `json:"font,omitempty"` // reading font (admin setting)
 	// Exams lists every surprise exam and where he stands (menu « Examens »).
 	Exams []examCard `json:"exams"`
@@ -313,6 +314,7 @@ func (s *Server) state() stateView {
 			out.TrainerMons[fmt.Sprintf("%d:%d", r, n)] = trainerMon{Pokemon: p.ID, Name: p.Name, NameAudio: speech.URL(p.Spoken(), speech.StyleWord)}
 		}
 	}
+	out.Rod = s.cur.HasRod(st)
 	out.Games = s.cur.GamesOpen(st)
 	if out.Games == nil {
 		out.Games = []string{}
@@ -540,8 +542,10 @@ type resultResponse struct {
 	Milestone    *voiceLine    `json:"milestone,omitempty"`
 	Exam         *examResult   `json:"exam,omitempty"`
 	// NewGames lists the mini-games this result opened.
-	NewGames []string  `json:"new_games"`
-	State    stateView `json:"state"`
+	NewGames []string `json:"new_games"`
+	// RodWon: this route earned the fishing rod.
+	RodWon bool      `json:"rod_won,omitempty"`
+	State  stateView `json:"state"`
 }
 
 func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
@@ -596,6 +600,7 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 
 	res := resultResponse{NewCatches: []int{}, NewGames: []string{}}
 	gamesBefore := s.cur.GamesOpen(s.store.Snapshot())
+	rodBefore := s.cur.HasRod(s.store.Snapshot())
 	if isExamID {
 		if !s.gradeExam(examID, req, &res, now) {
 			http.Error(w, "examen inconnu", http.StatusNotFound)
@@ -663,6 +668,7 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res.State = s.state()
+	res.RodWon = !rodBefore && res.State.Rod
 	open := map[string]bool{}
 	for _, g := range gamesBefore {
 		open[g] = true

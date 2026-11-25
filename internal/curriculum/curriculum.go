@@ -222,6 +222,9 @@ type Pokemon struct {
 	// Tower marks a Pokémon obtainable only by climbing the Tour de Combat —
 	// awarded every second floor, in pokemon.json file order.
 	Tower bool `json:"tower,omitempty"`
+
+	// Water marks an arcade.json Pokémon met only by fishing, never in the grass.
+	Water bool `json:"water,omitempty"`
 }
 
 // Spoken is the phonetic respelling if one is given, else the name itself.

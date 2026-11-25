@@ -3,6 +3,8 @@ package curriculum
 import (
 	"fmt"
 	"strings"
+
+	"github.com/adelvecchio/pokelecture/internal/progress"
 )
 
 // The tall grass ("les hautes herbes"): arcade Pokémon with a syllable split
@@ -12,7 +14,32 @@ import (
 // wrong reading (Loupio as l-o-u-p-i-o before "ou" exists).
 
 // Wild reports whether an arcade Pokémon can appear in the tall grass.
-func (p Pokemon) Wild() bool { return len(p.Syllables) > 0 }
+func (p Pokemon) Wild() bool { return len(p.Syllables) > 0 && !p.Water }
+
+// Fish reports whether an arcade Pokémon lives in the water: met only with
+// the fishing rod (README « La pêche »). Same reading rules as the grass.
+func (p Pokemon) Fish() bool { return len(p.Syllables) > 0 && p.Water }
+
+// RodFrom is the first route that can earn the fishing rod; RodStars the
+// stars needed on it or any later route — 4 is at least 90 % right first try.
+const (
+	RodFrom  = "ep13"
+	RodStars = 4
+)
+
+// HasRod reports whether the child has earned the fishing rod.
+func (c *Curriculum) HasRod(st progress.State) bool {
+	from := c.Index(RodFrom)
+	if from < 0 {
+		return false
+	}
+	for _, ep := range c.Episodes[from:] {
+		if st.Episodes[ep.ID].BestStars >= RodStars {
+			return true
+		}
+	}
+	return false
+}
 
 // allGraphemes is every grapheme, longest first, as KnownGraphemes orders them.
 func (c *Curriculum) allGraphemes() []string {
@@ -103,7 +130,7 @@ func (c *Curriculum) validateWild() []error {
 	var errs []error
 	all := c.allGraphemes()
 	for _, p := range c.Arcade {
-		if !p.Wild() {
+		if !p.Wild() && !p.Fish() {
 			continue
 		}
 		where := fmt.Sprintf("arcade.json: %s (#%d)", p.Name, p.ID)

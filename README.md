@@ -1012,6 +1012,35 @@ gros bouton. L'ancienne page d'accueil (liste des routes, badges) est le menu
   **Pokédex sauvage** (second onglet du Pokédex), à côté du Pokédex de
   l'aventure, qui reste celui qu'on complète en lisant le cours.
 
+### La pêche
+
+**🎣 La canne à pêche se mérite.** Un **Pêcheur** (👴, case `K`) se tient près
+du ponton de la Côte Saphir : « Lis une route presque sans faute, et ma canne
+à pêche est à toi ! ». Elle est gagnée dès qu'une route, de la première de la
+Côte Saphir (`curriculum.RodFrom` = ep13) à la fin, est terminée avec **au
+moins 4 étoiles** (`RodStars` : au moins 90 % de bonnes réponses du premier
+coup) ; l'écran de fin le fête une fois (`rod_won`). Rien n'est stocké : la
+canne se déduit des meilleures étoiles (`HasRod`), donc un épisode remis à
+zéro dans l'admin peut la reprendre.
+
+**Pêcher** : avec la canne, toucher l'eau sur la carte — le partenaire marche
+jusqu'à la rive, puis l'écran de pêche : le flotteur attend, plonge (« Ça mord
+! Touche vite ! »), et un toucher dans les 3,5 s sort un Pokémon de l'eau ; trop
+tard, il repart et le flotteur se relance. Ensuite, la même lecture que dans les
+hautes herbes (remettre les syllabes du nom, lancer la Poké Ball). Sans canne,
+toucher l'eau dit où la trouver. Pas de pêche dans la lave du volcan, le vide
+des Failles Ultra ni la fontaine de l'Académie (`OW_NO_FISH`).
+
+**Les Pokémon de l'eau** : les entrées d'`arcade.json` marquées `"water": true`
+ne vivent **que dans l'eau** — jamais dans les herbes. Seize Pokémon d'eau des
+générations 1–2 qui étaient dans les herbes (Stari, Loupio, Kabuto, Démanta…)
+et six nouveaux, pêche seulement : Barpau, Sancoki, Flotajou, Bargantua,
+Obalie, Mateloutre. Mêmes règles de lecture que les herbes (`validateWild`,
+`WildUnlock`) — Tritosor (`s` entre voyelles), Luminéon (`in` glouton),
+Mamanbo et Clamiral (`am` glouton) ont été refusés par le validateur. Ils
+apparaissent dans le Pokédex sauvage avec un 🎣. Le serveur refuse d'attraper
+un Pokémon de l'eau sans la canne.
+
 ### Qui vit dans les hautes herbes
 
 Les Pokémon d'`arcade.json` qui ont un champ `syllables`. Un nom n'entre dans

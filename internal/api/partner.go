@@ -220,6 +220,7 @@ type wildView struct {
 	Caught        bool     `json:"caught"`
 	Shiny         bool     `json:"shiny,omitempty"` // caught in shiny form
 	Available     bool     `json:"available"`       // readable at the child's level
+	Water         bool     `json:"water,omitempty"` // fished, not met in the grass
 }
 
 type wildPoolView struct {
@@ -247,7 +248,7 @@ func (s *Server) wildViews(st progress.State) []wildView {
 	shiny := toSet(st.WildShiny)
 	var out []wildView
 	for _, p := range s.cur.Arcade {
-		if !p.Wild() {
+		if !p.Wild() && !p.Fish() {
 			continue
 		}
 		at := s.cur.WildUnlock(p)
@@ -260,6 +261,7 @@ func (s *Server) wildViews(st progress.State) []wildView {
 			Sprite:    fmt.Sprintf("sprites/art/%d.png", p.ID),
 			Caught:    caught[p.ID], Shiny: shiny[p.ID],
 			Available: at <= last,
+			Water:     p.Water,
 		}
 		for _, syl := range p.Syllables {
 			v.SyllableAudio = append(v.SyllableAudio, speech.URL(curriculum.SpokenSyllable(syl), speech.StyleSyllable))
@@ -327,7 +329,7 @@ func (s *Server) handleWildCatch(w http.ResponseWriter, r *http.Request) {
 	st := s.store.Snapshot()
 	allowed := false
 	for _, v := range s.wildViews(st) {
-		if v.ID == req.ID && v.Available {
+		if v.ID == req.ID && v.Available && (!v.Water || s.cur.HasRod(st)) {
 			allowed = true
 		}
 	}

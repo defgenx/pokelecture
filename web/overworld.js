@@ -77,7 +77,7 @@ const OW_REGIONS = {
     map: [
       'TTTTTTTTTTTTT',
       'TOgg2gTX4gFAT',
-      'T.gT=PT.=T..T',
+      'T.gT=PTK=T..T',
       '<===========>',
       'TW=DWW=WWE=WT',
       'TW1WWW3WWW5WT',
@@ -186,6 +186,8 @@ const OW_REGIONS = {
   },
 };
 const OW_DEFAULT = OW_REGIONS['Forêt Émeraude'];
+// Water you can fish in: not lava, the Ultra void or the Académie fountain.
+const OW_NO_FISH = new Set(['volcan', 'failles', 'academie']);
 const owRegion = (name) => OW_REGIONS[name] || OW_DEFAULT;
 
 // spoken() marks a literal as a voice line: speech_coverage_test.go finds
@@ -440,6 +442,10 @@ const Overworld = {
           put(t, el('span', {}, '🎓'), el('i', { class: 'ow-bang' }, '!'));
         }
         break;
+      case 'K':
+        t.classList.add('ow-trainer', 'ow-fisher');
+        put(t, el('span', {}, '👴'), App.state.rod ? null : el('i', { class: 'ow-bang' }, '🎣'));
+        break;
       case 'D': case 'E': {
         const n = ch === 'D' ? 0 : 1;
         const beaten = (App.state.beaten || []).includes(`${this.region}:${n}`);
@@ -465,7 +471,7 @@ const Overworld = {
         }
     }
     if (this.spots && this.spots.has(`${x},${y}`)) t.append(el('i', { class: 'ow-sparkle' }, '✨'));
-    t.addEventListener('click', () => this.walkTo(x, y));
+    t.addEventListener('click', () => (ch === 'W' ? this.waterTap(x, y) : this.walkTo(x, y)));
     return t;
   },
 
@@ -558,6 +564,11 @@ const Overworld = {
     const ch = this.grid[this.pos.y][this.pos.x];
     const s = App.state;
     const reg = this.regions()[this.region];
+    if (this.fishAt && !this.path.length) {
+      const f = this.fishAt;
+      this.fishAt = null;
+      if (Math.abs(this.pos.x - f.x) + Math.abs(this.pos.y - f.y) === 1) return this.goFish();
+    }
     if (this.path.length && !'<>^v'.includes(ch)) {
       // Walking through: only the grass can stop him on the way.
       if (ch === 'g') this.grassRoll();
@@ -569,6 +580,7 @@ const Overworld = {
     if (trainer !== null && !/[1-5OAP]/.test(ch)) return this.trainerDialog(trainer);
     if (/[1-5]/.test(ch)) return this.stopDialog(reg.eps[Number(ch) - 1], first);
     if (ch === 'X' && s.event) return this.examDialog(s.event);
+    if (ch === 'K') return this.fisherDialog();
     switch (ch) {
       case 'O': return s.tower
         ? this.show('🗼 La Tour de Combat', [el('span', {}, `Étage ${s.tower_floor + 1}`),
@@ -705,7 +717,39 @@ const Overworld = {
     setTimeout(() => {
       document.removeEventListener('keydown', this.keyHandler);
       this.keyHandler = null;
+      Wild.mode = 'grass';
       Wild.encounter();
     }, 700);
+  },
+
+  /* A tap on water: with the rod, walk to the bank and fish; without it,
+     the fisherman's hint. README « La pêche ». */
+  waterTap(x, y) {
+    const reg = this.regions()[this.region];
+    if (OW_NO_FISH.has(owRegion(reg.name).look)) return this.walkTo(x, y);
+    if (!App.state.rod) {
+      this.walkTo(x, y);
+      return this.show('🎣 La pêche', '🔒', null, null,
+        spoken('Il te faut une canne à pêche. Le Pêcheur de la Côte Saphir en a une !'));
+    }
+    if (!this.walking && Math.abs(this.pos.x - x) + Math.abs(this.pos.y - y) === 1) return this.goFish();
+    this.fishAt = { x, y };
+    this.walkTo(x, y);
+  },
+
+  goFish() {
+    this.fishAt = null;
+    this.stopWalking();
+    document.removeEventListener('keydown', this.keyHandler);
+    this.keyHandler = null;
+    Wild.fish();
+  },
+
+  fisherDialog() {
+    if (App.state.rod) {
+      return this.show('👴 Le Pêcheur', '🎣', null, null, spoken('Bonne pêche ! Touche l\'eau pour pêcher.'));
+    }
+    return this.show('👴 Le Pêcheur', [el('span', {}, '🎣 = '), el('span', {}, '⭐'.repeat(4))], null, null,
+      spoken('Je suis le Pêcheur ! Lis une route presque sans faute, et ma canne à pêche est à toi !'));
   },
 };
