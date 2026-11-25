@@ -2,6 +2,7 @@
   "_comment": "Respellings for the SYLLABLE voice only (ce que la voix dit, jamais ce que l'enfant voit). Un chunk nu comme « ny » est épelé lettre à lettre par la synthèse, et un homographe comme « cher » est lu comme le mot /chair/ au lieu du son /ché/ visé. Ajoute une entrée, relance `make content`, c'est corrigé partout.",
   "_method": "Chaque entrée a été choisie au banc d'essai : la voix est générée pour plusieurs graphies, on garde celle qui n'est ni épelée (durée), ni lue comme un sigle ou un mot anglais (transcription). Voir README, « La voix ».",
   "ny": "ni",
+  "vol": "vole",
   "py": "pi",
   "ty": "ti",
   "my": "mi",
