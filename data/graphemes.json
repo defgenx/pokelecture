@@ -72,6 +72,6 @@
   {"id": "ç", "display": "ç", "say_as": "se", "kind": "consonne", "example": "Leçon", "emoji": "📖", "mnemo": "Le c avec une petite queue fait toujours le son du s, comme dans Leçon."},
   {"id": "ette", "display": "ette", "say_as": "êtes", "kind": "trigraphe", "example": "Floette", "pokemon": 670, "mnemo": "Devant deux t, le e fait le son è : ette, comme dans Floette."},
   {"id": "elle", "display": "elle", "say_as": "elle", "kind": "trigraphe", "example": "Poubelle", "emoji": "🗑️", "mnemo": "Devant deux l, le e fait le son è : elle, comme dans Poubelle."},
-  {"id": "esse", "display": "esse", "say_as": "esse", "kind": "trigraphe", "example": "Vitesse", "icon": "speed", "mnemo": "Devant deux s, le e fait le son è : esse, comme dans Vitesse."},
+  {"id": "esse", "display": "esse", "say_as": "èsse", "kind": "trigraphe", "example": "Vitesse", "icon": "speed", "mnemo": "Devant deux s, le e fait le son è : esse, comme dans Vitesse."},
   {"id": "enne", "display": "enne", "say_as": "haine", "kind": "trigraphe", "example": "Antenne", "emoji": "📡", "mnemo": "Devant deux n, le e fait le son è : enne, comme dans Antenne."}
 ]

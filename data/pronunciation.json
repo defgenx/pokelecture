@@ -3,6 +3,8 @@
   "_method": "Chaque entrée a été choisie au banc d'essai : la voix est générée pour plusieurs graphies, on garde celle qui n'est ni épelée (durée), ni lue comme un sigle ou un mot anglais (transcription). Voir README, « La voix ».",
   "ny": "ni",
   "vol": "vole",
+  "quo": "ko",
+  "turn": "teurne",
   "py": "pi",
   "ty": "ti",
   "my": "mi",
