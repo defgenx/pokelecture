@@ -276,8 +276,16 @@ const Overworld = {
     this.stopWalking();
     const regs = this.regions();
     const s = App.state;
+    const back = this.region;  // the region shown before (a battle, a game…)
+    const backPos = this.pos;
     if (regionIdx === undefined) {
-      regionIdx = Math.max(0, regs.findIndex((r) => r.eps.some((e) => e.id === s.next_episode)));
+      const nextReg = Math.max(0, regs.findIndex((r) => r.eps.some((e) => e.id === s.next_episode)));
+      // Coming back from a session: the same region (in free play the next
+      // route is route 1, and every return used to land in the first region).
+      // Only moving on by itself when that region's routes are now all done
+      // and the next route waits in the region right after.
+      const finished = back !== null && regs[back] && regs[back].eps.every((e) => e.done > 0);
+      regionIdx = back === null || !regs[back] || (finished && nextReg === back + 1) ? nextReg : back;
     }
     this.region = regionIdx;
     this.grid = this.layout();
@@ -301,7 +309,9 @@ const Overworld = {
     this.spots = new Set(this.sparkles(regionIdx).map((sp) => { const p = this.toScreen(sp); return `${p.x},${p.y}`; }));
     const nextIdx = reg.eps.findIndex((e) => e.id === s.next_episode);
     const stop = this.find(String(nextIdx >= 0 ? nextIdx + 1 : 1)) || this.find('1');
-    this.pos = arrival && this.free(arrival.x, arrival.y) ? arrival : stop || { x: 1, y: 2 };
+    // Back in the same region with no next route here: where he stood.
+    const stay = !spawn && regionIdx === back && nextIdx < 0 && backPos && this.free(backPos.x, backPos.y) ? backPos : null;
+    this.pos = arrival && this.free(arrival.x, arrival.y) ? arrival : stay || stop || { x: 1, y: 2 };
     if (!Wild.pool && s.tower) Wild.load();
     this.render(reg);
     this.arrive(true);

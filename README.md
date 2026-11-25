@@ -948,7 +948,12 @@ joué** : la fin du parcours devient une rotation de révision, pas une impasse.
 ## L'écran d'accueil est une carte où l'on se déplace
 
 Au lancement, le partenaire est **posé sur la prochaine route**, sur la carte
-de sa région : JOUER est déjà là. On se déplace :
+de sa région : JOUER est déjà là. **Au retour d'une séance** (route, combat,
+Tour, mini-jeu, rencontre), la carte reste sur la région d'où il est parti — et
+à sa case s'il n'y a pas de route à faire ici. Elle ne passe d'elle-même à la
+région suivante que lorsque toutes les routes de celle-ci sont faites et que
+la suivante attend juste après (en mode libre, la « prochaine route » est la
+route 1 : chaque retour renvoyait à la première région). On se déplace :
 
 - au **clavier** : flèches, ZQSD ou WASD ; Entrée ou Espace = le bouton ;
 - au **doigt** : toucher une case, le partenaire y marche tout seul (chemin le
