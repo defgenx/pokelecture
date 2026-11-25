@@ -378,41 +378,63 @@ function dangerTab(list) {
         return o;
       }),
   );
-  // The daily limit (README « La limite du jour »): yes/no and the day's objective.
+  // The daily limit (README « La limite du jour »): yes/no, the number of
+  // objectives of the day (the lessons included) and the lessons to do.
   const dailyOn = el('input', { type: 'checkbox' });
   dailyOn.checked = !!set.daily_limit;
+  const plural = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
+  const dailyGoals = el('select', {},
+    [1, 2, 3, 4, 5, 6, 7].map((n) => {
+      const o = el('option', { value: String(n) }, n === 1 ? '1 objectif (les leçons seulement)' : `${n} objectifs`);
+      if (n === (set.daily_missions || 3)) o.selected = true;
+      return o;
+    }),
+  );
   const dailyN = el('select', {},
     [1, 2, 3, 4, 5].map((n) => {
-      const o = el('option', { value: String(n) }, `${n} leçon${n > 1 ? 's' : ''} par jour`);
+      const o = el('option', { value: String(n) }, plural(n, 'leçon'));
       if (n === (set.daily_lessons || 2)) o.selected = true;
       return o;
     }),
   );
-  dailyN.disabled = !dailyOn.checked;
+  const dailySay = el('p', { style: 'font-weight:700;margin-top:8px' });
+  const paintDaily = () => {
+    dailyGoals.disabled = dailyN.disabled = !dailyOn.checked;
+    const goals = Number(dailyGoals.value);
+    const others = goals - 1;
+    dailySay.textContent = !dailyOn.checked
+      ? 'Pas de limite : il joue autant qu\'il veut.'
+      : `Chaque jour, ${plural(goals, 'objectif')} : ${plural(Number(dailyN.value), 'leçon')}` +
+        (others ? ` + ${plural(others, 'mission')} au hasard` : '') +
+        '. Leçons faites : plus de routes. Tous les objectifs faits : plus rien jusqu\'au lendemain.';
+  };
+  paintDaily();
   const apply = () => act('api/admin/settings', {
     min_stars: Number(minStars.value),
     free_play: freePlay.checked,
     battle_lives: Number(lives.value),
     daily_limit: dailyOn.checked,
     daily_lessons: Number(dailyN.value),
+    daily_missions: Number(dailyGoals.value),
   });
   minStars.addEventListener('change', apply);
   freePlay.addEventListener('change', apply);
   lives.addEventListener('change', apply);
-  dailyOn.addEventListener('change', () => { dailyN.disabled = !dailyOn.checked; apply(); });
-  dailyN.addEventListener('change', apply);
+  [dailyOn, dailyGoals, dailyN].forEach((c) => c.addEventListener('change', () => { paintDaily(); apply(); }));
   const today = s.today || {};
   list.append(el('div', { class: 'section' },
     el('h2', {}, 'Limite du jour'),
     el('div', { class: 'namebox' },
-      el('label', { style: 'display:flex;align-items:center;gap:8px' }, dailyOn, 'Limiter les leçons par jour'),
+      el('label', { style: 'display:flex;align-items:center;gap:8px' }, dailyOn, 'Limiter la journée'),
     ),
-    el('div', { class: 'namebox', style: 'margin-top:8px' }, el('label', {}, 'Objectif du jour : '), dailyN),
-    el('p', { style: 'color:#6a7180;font-size:13px;margin-top:8px' },
-      'Les leçons deviennent une mission du jour (📜), à côté des autres. Une leçon = une route ' +
-      'terminée (rejouée ou non) ou un examen. Leçons faites : plus de routes ni d\'examens, mais il ' +
-      'peut finir ses missions. Toutes les missions faites : plus rien jusqu\'au lendemain. ' +
-      `Aujourd'hui : ${today.lessons || 0} leçon${(today.lessons || 0) > 1 ? 's' : ''} faite${(today.lessons || 0) > 1 ? 's' : ''}.`),
+    el('div', { class: 'namebox', style: 'margin-top:8px' }, el('label', {}, 'Objectifs du jour : '), dailyGoals),
+    el('div', { class: 'namebox', style: 'margin-top:8px' }, el('label', {}, 'Dont les leçons : '), dailyN),
+    dailySay,
+    el('p', { style: 'color:#6a7180;font-size:13px;margin-top:4px' },
+      'Les objectifs sont les missions du jour (📜) : la première est toujours les leçons, les autres ' +
+      'sont tirées au hasard (attraper des Pokémon, battre un Dresseur, jouer à un mini-jeu…). Une leçon ' +
+      '= une route terminée (rejouée ou non) ou un examen. ' +
+      `Aujourd'hui : ${plural(today.lessons || 0, 'leçon')} faite${(today.lessons || 0) > 1 ? 's' : ''}.`),
   ));
   list.append(el('div', { class: 'section' },
     el('h2', {}, 'Déblocage des épisodes'),

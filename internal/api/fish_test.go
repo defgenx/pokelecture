@@ -122,7 +122,7 @@ func TestFreePlayOpensEveryPlace(t *testing.T) {
 // The daily limit: once the objective is reached, nothing more starts today.
 func TestDailyLimitStopsTheDay(t *testing.T) {
 	srv, store := serverAt(t, "ep05")
-	store.SetDailyLimit(true, 1)
+	store.SetDailyLimit(true, 1, 0)
 	var st stateView
 	getJSON(t, srv.URL+"/api/state", &st)
 	if st.Daily == nil || st.Daily.Over || st.Daily.Goal != 1 {
@@ -179,7 +179,7 @@ func TestDailyLimitStopsTheDay(t *testing.T) {
 			t.Errorf("%s after every mission: %d", path, code)
 		}
 	}
-	store.SetDailyLimit(false, 1)
+	store.SetDailyLimit(false, 1, 0)
 	if code := getJSON(t, srv.URL+"/api/session/ep07", nil); code != http.StatusOK {
 		t.Fatalf("limit off: %d", code)
 	}

@@ -350,3 +350,24 @@ func TestDayOverIsToday(t *testing.T) {
 		t.Fatal("limit off but the day is closed")
 	}
 }
+
+// The number of objectives decides the day: the lessons plus N−1 missions,
+// never the route mission under the limit.
+func TestDailyObjectives(t *testing.T) {
+	now := time.Date(2026, 11, 25, 18, 0, 0, 0, time.Local)
+	st := State{
+		Settings: Settings{DailyLimit: true, DailyLessons: 1, DailyMissions: 3},
+		Today:    Today{Day: "2026-11-25", Lessons: 1, Quests: []string{"route", "catch", "feed", "find"}},
+	}
+	if got := st.ActiveQuests(); len(got) != 2 || got[0] != "catch" || got[1] != "feed" {
+		t.Fatalf("3 objectives: %v, want the lessons + catch, feed", got)
+	}
+	st.Settings.DailyMissions = 1
+	if len(st.ActiveQuests()) != 0 || !st.DayOver(now) {
+		t.Fatal("1 objective = the lessons alone: the day must end with them")
+	}
+	st.Settings.DailyLimit = false
+	if got := st.ActiveQuests(); len(got) != 3 || got[0] != "route" {
+		t.Fatalf("no limit: the usual three missions, got %v", got)
+	}
+}

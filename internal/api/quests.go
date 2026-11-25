@@ -39,7 +39,8 @@ var questDefs = []questDef{
 // lessonQuest is the daily limit's mission id; its progress is Today.Lessons.
 const lessonQuest = "lessons"
 
-// questsFor picks the day's three missions, the same for the whole day.
+// questsFor shuffles every mission for the day, the same all day: the ones on
+// screen are a prefix of it (progress.State.ActiveQuests).
 func questsFor(day string) []string {
 	h := fnv.New64a()
 	h.Write([]byte(day))
@@ -49,7 +50,7 @@ func questsFor(day string) []string {
 		ids[i] = q.ID
 	}
 	rng.Shuffle(len(ids), func(i, j int) { ids[i], ids[j] = ids[j], ids[i] })
-	return ids[:3]
+	return ids
 }
 
 func questDefOf(id string) (questDef, bool) {
@@ -90,7 +91,7 @@ func (s *Server) questViews() []questView {
 			Done: claimed[lessonQuest] || st.LessonsToday(time.Now()) >= goal, Reward: "balls",
 		})
 	}
-	for _, id := range st.Today.Quests {
+	for _, id := range st.ActiveQuests() {
 		q, ok := questDefOf(id)
 		if !ok {
 			continue

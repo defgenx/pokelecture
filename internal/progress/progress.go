@@ -72,6 +72,45 @@ type Settings struct {
 	// default). README « La limite du jour ».
 	DailyLimit   bool `json:"daily_limit,omitempty"`
 	DailyLessons int  `json:"daily_lessons,omitempty"`
+	// DailyMissions is the day's number of objectives under the limit, the
+	// lessons included (1–6, 0 = DefaultDailyMissions).
+	DailyMissions int `json:"daily_missions,omitempty"`
+}
+
+// DefaultDailyMissions: the lessons and two other missions.
+const DefaultDailyMissions = 3
+
+// DailyObjectives is the number of missions of the day under the limit.
+func (st Settings) DailyObjectives() int {
+	if st.DailyMissions <= 0 {
+		return DefaultDailyMissions
+	}
+	return st.DailyMissions
+}
+
+// RouteQuest is the "finish a route" mission (internal/api quests.go): under
+// the daily limit it is never drawn, the lessons mission covers it.
+const RouteQuest = "route"
+
+// ActiveQuests are the day's missions on screen, in Today.Quests order (the
+// day's shuffle): three without the limit; under it, DailyObjectives − 1 next
+// to the lessons, the route mission left out.
+func (st State) ActiveQuests() []string {
+	n := 3
+	if st.Settings.DailyLimit {
+		n = st.Settings.DailyObjectives() - 1
+	}
+	var out []string
+	for _, q := range st.Today.Quests {
+		if len(out) >= n {
+			break
+		}
+		if st.Settings.DailyLimit && q == RouteQuest {
+			continue
+		}
+		out = append(out, q)
+	}
+	return out
 }
 
 // DefaultDailyLessons is the day's objective when the parent set none.
@@ -109,7 +148,7 @@ func (st State) DayOver(now time.Time) bool {
 	for _, c := range st.Today.Claimed {
 		claimed[c] = true
 	}
-	for _, q := range st.Today.Quests {
+	for _, q := range st.ActiveQuests() {
 		if !claimed[q] {
 			return false
 		}
@@ -928,15 +967,23 @@ func (s *Store) AddLesson(now time.Time, quests func(day string) []string) {
 	s.state.Today.Lessons++
 }
 
-// SetDailyLimit turns the daily limit on or off, with its number of lessons (1–5).
-func (s *Store) SetDailyLimit(on bool, lessons int) {
+// SetDailyLimit turns the daily limit on or off, with its number of lessons
+// (1–5) and of objectives of the day (1–6, the lessons included); an out of
+// range value leaves that setting as it was.
+func (s *Store) SetDailyLimit(on bool, lessons, missions int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.state.Settings.DailyLimit = on
 	if lessons >= 1 && lessons <= 5 {
 		s.state.Settings.DailyLessons = lessons
 	}
+	if missions >= 1 && missions <= MaxDailyMissions {
+		s.state.Settings.DailyMissions = missions
+	}
 }
+
+// MaxDailyMissions: the lessons plus every other mission (internal/api questDefs minus the route one).
+const MaxDailyMissions = 7
 
 // Roll makes sure Today is today's, with its missions.
 func (s *Store) Roll(now time.Time, quests func(day string) []string) {

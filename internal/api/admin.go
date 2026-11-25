@@ -252,8 +252,9 @@ func (s *Server) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
 		FreePlay    bool `json:"free_play"`
 		BattleLives int  `json:"battle_lives"`
 		// The daily limit (README « La limite du jour »): left as is when absent.
-		DailyLimit   *bool `json:"daily_limit"`
-		DailyLessons int   `json:"daily_lessons"`
+		DailyLimit    *bool `json:"daily_limit"`
+		DailyLessons  int   `json:"daily_lessons"`
+		DailyMissions int   `json:"daily_missions"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	livesOK := req.BattleLives == -1 || (req.BattleLives >= 2 && req.BattleLives <= 5)
@@ -263,7 +264,7 @@ func (s *Server) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	s.store.UpdateSettings(req.MinStars, req.FreePlay, req.BattleLives)
 	if req.DailyLimit != nil {
-		s.store.SetDailyLimit(*req.DailyLimit, req.DailyLessons)
+		s.store.SetDailyLimit(*req.DailyLimit, req.DailyLessons, req.DailyMissions)
 	}
 	s.adminDone(w)
 }

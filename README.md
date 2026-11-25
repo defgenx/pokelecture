@@ -465,13 +465,19 @@ une) ; quatre onglets, tout agit immédiatement sur la sauvegarde de ce joueur :
 
 ### La limite du jour
 
-Réglage **« Limiter les leçons par jour »** (oui / non) et son **objectif** :
-1 à 5 leçons (2 par défaut). Une leçon = une route terminée, rejouée ou non, ou
-un examen (`Today.Lessons`, remis à zéro chaque jour).
+Réglage **« Limiter la journée »** (oui / non) — sans lui, il joue autant qu'il
+veut — puis deux nombres : **les objectifs du jour** (1 à 7, 3 par défaut :
+`DailyMissions`) et, **dont, les leçons** (1 à 5, 2 par défaut). L'admin le dit en
+une phrase : « Chaque jour, 3 objectifs : 2 leçons + 2 missions au hasard. ». Une
+leçon = une route terminée, rejouée ou non, ou un examen (`Today.Lessons`, remis
+à zéro chaque jour).
 
-**Les leçons sont une mission du jour** (📜), en tête de la liste, à côté des
-trois missions tirées au hasard : « Fais deux leçons aujourd'hui. », payée comme
-les autres. Deux étapes :
+**Les objectifs sont les missions du jour** (📜) : la première est toujours les
+leçons (« Fais deux leçons aujourd'hui. », payée comme les autres), les autres
+sont tirées au hasard, le même tirage toute la journée (`questsFor` mélange
+toutes les missions, `State.ActiveQuests` en prend le début) ; sous la limite,
+« Termine une route » n'est jamais tirée, les leçons la couvrent. 1 objectif =
+les leçons seules. Sans la limite : les trois missions habituelles. Deux étapes :
 
 1. **Leçons faites** (`LessonsOver`) : plus de routes ni d'examens — un écran 📚
    « Tes leçons du jour sont faites ! Termine tes missions pour finir la
