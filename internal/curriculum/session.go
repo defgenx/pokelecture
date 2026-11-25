@@ -3,6 +3,7 @@ package curriculum
 import (
 	"fmt"
 	"math/rand/v2"
+	"sort"
 	"strings"
 	"time"
 
@@ -927,17 +928,33 @@ const DicteeFrom = 10
 // dictateLast turns the last round fair for dictation into one: every tile
 // of its tray must sound different, or hearing the word could not tell
 // "ta" from "tta". It is moved to the end, the Gigamax finale.
-func dictateLast(rounds []Item) {
-	for i := len(rounds) - 1; i >= 0; i-- {
-		if !fairDictee(rounds[i].Tray) {
-			continue
+func dictateLast(rounds []Item) { dictateLastN(rounds, 1) }
+
+// dictateLastN does the same for the last n fair rounds, kept at the end.
+func dictateLastN(rounds []Item, n int) {
+	end := len(rounds) // rounds[end:] are dictations already
+	for ; n > 0 && end > 0; n-- {
+		i := end - 1
+		for i >= 0 && !fairDictee(rounds[i].Tray) {
+			i--
+		}
+		if i < 0 {
+			return
 		}
 		it := rounds[i]
 		it.Dictee = true
-		copy(rounds[i:], rounds[i+1:])
-		rounds[len(rounds)-1] = it
-		return
+		copy(rounds[i:end-1], rounds[i+1:end])
+		rounds[end-1] = it
+		end--
 	}
+}
+
+// towerDictees: one hidden word from DicteeFrom, one more every 10 floors, up to 3.
+func towerDictees(floor int) int {
+	if floor < DicteeFrom {
+		return 0
+	}
+	return min(1+(floor-DicteeFrom)/10, 3)
 }
 
 func fairDictee(tray []string) bool {
@@ -1135,19 +1152,11 @@ func (c *Curriculum) BuildTower(st progress.State, floor int, now time.Time) (Se
 	if len(words) < 3 {
 		return Session{}, false
 	}
-	rand.Shuffle(len(words), func(i, j int) { words[i], words[j] = words[j], words[i] })
-	// Higher floors prefer longer words; the shuffle above breaks ties.
-	target := 2 + min(floor/3, 2)
-	sortStable(words, func(a, b Word) bool {
-		return abs(len(a.Syllables)-target) < abs(len(b.Syllables)-target)
-	})
 	rounds := towerRounds(floor)
 	if floor%GuardianEvery == 0 {
 		rounds = min(rounds+2, 10) // the guardian fights longer
 	}
-	if len(words) > rounds {
-		words = words[:rounds]
-	}
+	words = towerWords(words, floor, rounds, st.Items)
 
 	boss, guardian := c.TowerOpponent(floor, st)
 	taunt := TowerTaunt
@@ -1191,9 +1200,7 @@ func (c *Curriculum) BuildTower(st progress.State, floor int, now time.Time) (Se
 		})
 	}
 
-	if floor >= DicteeFrom {
-		dictateLast(f.Rounds)
-	}
+	dictateLastN(f.Rounds, towerDictees(floor))
 	return Session{
 		EpisodeID: TowerID,
 		Title:     fmt.Sprintf("Tour de Combat — Étage %d", floor),
@@ -1210,11 +1217,37 @@ func (c *Curriculum) BuildTower(st progress.State, floor int, now time.Time) (Se
 	}, true
 }
 
-func abs(n int) int {
-	if n < 0 {
-		return -n
+// TowerClimb is the floor from which the Tower draws from the hardest words.
+const TowerClimb = 30
+
+// towerWords draws a floor's words from a difficulty band that climbs with the
+// floor (README « La Tour de Combat »). words is in course order; difficulty
+// is syllable count plus up to 3 for coming late in the course. Inside the
+// band, the words read longest ago (st.Items) go first, so floors rotate
+// through it instead of replaying the same words.
+func towerWords(words []Word, floor, rounds int, items map[string]progress.Item) []Word {
+	n := len(words)
+	diff := make(map[string]float64, n)
+	for i, w := range words {
+		diff[w.Text] = float64(len(w.Syllables)) + 3*float64(i)/float64(n)
 	}
-	return n
+	sorted := append([]Word(nil), words...)
+	sort.SliceStable(sorted, func(a, b int) bool { return diff[sorted[a].Text] < diff[sorted[b].Text] })
+
+	width := min(n, max(3*rounds, 12))
+	climb := float64(min(floor-1, TowerClimb)) / TowerClimb
+	lo := int(climb * float64(n-width))
+	band := append([]Word(nil), sorted[lo:lo+width]...)
+	rand.Shuffle(len(band), func(i, j int) { band[i], band[j] = band[j], band[i] })
+	sort.SliceStable(band, func(a, b int) bool {
+		return items["mot:"+band[a].Text].LastSeen.Before(items["mot:"+band[b].Text].LastSeen)
+	})
+	if len(band) > rounds {
+		band = band[:rounds]
+	}
+	// Easiest first inside the floor: the fight builds up to its hardest word.
+	sort.SliceStable(band, func(a, b int) bool { return diff[band[a].Text] < diff[band[b].Text] })
+	return band
 }
 
 // sortStable is insertion sort: tiny inputs, and it keeps the shuffle as the

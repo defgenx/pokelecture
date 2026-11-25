@@ -808,7 +808,7 @@ la vitesse d'un enfant de 5 ans.
   compare les sons, pas les lettres, pour l'écoute, les examens et les
   syllabes intruses du combat.
 - **La dictée du combat** : le dernier mot d'une arène (le coup GIGAMAX) et
-  celui des étages de la Tour à partir du 10ᵉ est **caché** — on l'entend, on
+  ceux des étages de la Tour (1 dès le 10ᵉ, 2 au 20ᵉ, 3 au 30ᵉ) sont **cachés** — on l'entend, on
   le reconstruit. Écrire n'est plus recopier. Seulement si aucune tuile ne se
   dit comme une autre (« Rattata », `ta`/`tta`, n'est jamais dicté).
 - **L'oreille fine** : un tour sur deux, la syllabe est mise à côté de sa
@@ -883,7 +883,15 @@ réguliers, phrases sujet-verbe-complément, aucune notion de CE1 (pas de
   étage est un combat noté — 2 points par mot construit sans une seule erreur,
   1 sinon — et il faut **au moins la moitié des mots du premier coup** pour
   monter. Les combats s'allongent (4 → 8 mots) et se piègent (1 → 3 syllabes
-  intruses) avec les étages, les mots deviennent plus longs, et **un étage sur
+  intruses) avec les étages, et **les mots durcissent** : ils sont rangés par
+  difficulté (nombre de syllabes, plus jusqu'à 3 points pour un mot appris tard
+  dans le cours) et chaque étage tire dans une **bande** de ce classement qui
+  monte jusqu'aux mots les plus durs à l'étage 30 (`TowerClimb`). Dans la
+  bande passent d'abord les mots lus il y a le plus longtemps (`last_seen` de
+  la répétition espacée) : d'un étage à l'autre, les mots tournent au lieu de
+  revenir (avant, un tri par longueur ressortait toujours les mêmes mots de 4
+  syllabes). Dans l'étage, du plus simple au plus dur. Les mots cachés
+  (dictée) passent de 1 à l'étage 10 à 2 au 20ᵉ et 3 au 30ᵉ. Et **un étage sur
   deux libère un Pokémon exclusif à la Tour** : vingt Pokémon (Psykokwak,
   Onix, Ectoplasma, Lokhlass… jusqu'à Dracolosse à l'étage 40) qu'on ne peut
   obtenir nulle part ailleurs. **Au-delà de l'étage 40, chaque étage** en
