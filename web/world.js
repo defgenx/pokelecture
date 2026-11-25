@@ -363,7 +363,7 @@ const Wild = {
     const known = this.pool.traps || [];
     const trapAudio = this.pool.trap_audio || [];
 
-    const sprite = el('img', { class: `wild-sprite ${shiny ? 'shiny' : ''}`, src: p.sprite, alt: '' });
+    const sprite = asShiny(el('img', { class: 'wild-sprite', src: p.sprite, alt: '' }), shiny);
     const ballSlot = el('div', { class: 'throw-zone' });
     const slots = el('div', { class: 'slot-row' });
     p.syllables.forEach(() => slots.append(el('div', { class: 'slot' }, '')));
@@ -552,7 +552,7 @@ async function wildDex(grid) {
         say(p.water ? 'Il vit dans l\'eau ! Pêche-le avec ta canne.' : 'Il se cache dans les hautes herbes !');
       },
     },
-      el('img', { class: p.shiny ? 'shiny' : '', src: p.sprite, alt: '', loading: 'lazy' }),
+      asShiny(el('img', { src: p.sprite, alt: '', loading: 'lazy' }), p.shiny),
       p.shiny ? el('span', { class: 'shinymark' }, '✨') : null,
       !p.available && !p.caught ? el('span', { class: 'lockmark' }, '🔒') : null,
       p.water ? el('span', { class: 'watermark' }, '🎣') : null,

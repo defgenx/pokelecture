@@ -979,10 +979,16 @@ réguliers, phrases sujet-verbe-complément, aucune notion de CE1 (pas de
 
 ### Rejouable : chromatiques et Tour de Combat
 
-- **Pokémon chromatiques ✨** : rejouer un épisode déjà terminé donne 1 chance
-  sur 6 d'attraper la version chromatique (recolorée) de sa récompense — une
-  seconde collection, plus lente, par-dessus le Pokédex. Compteur ✨ sur
-  l'accueil.
+- **Pokémon chromatiques ✨** (« Les chromatiques ») : rejouer un épisode déjà
+  terminé donne 1 chance sur 6 d'attraper la version chromatique de sa
+  récompense — une seconde collection, plus lente, par-dessus le Pokédex.
+  Compteur ✨ sur l'accueil. Un chromatique s'affiche avec **son artwork
+  chromatique officiel** (`sprites/art/shiny/`, que `pokecontent sprites`
+  télécharge pour tous les Pokémon du cours et d'`arcade.json`) et un halo
+  doré, partout : la rencontre dans les herbes ou à la pêche, la capture, la
+  récompense, le gardien de la Tour, les deux Pokédex, le Pokémon doré de la
+  chasse (`asShiny` dans `web/app.js`). Si le fichier manque, l'image normale
+  revient avec l'ancienne teinte (`shiny-tint`).
 - **🗼 Tour de Combat, par étages** : dès le premier épisode terminé. Chaque
   étage est un combat noté — 2 points par mot construit sans une seule erreur,
   1 sinon — et il faut **au moins la moitié des mots du premier coup** pour

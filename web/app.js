@@ -292,6 +292,21 @@ function companionId() {
   return caught.length ? caught[caught.length - 1].id : 25;
 }
 
+/* Les chromatiques (README): the official shiny artwork, sprites/art/shiny/
+   (pokecontent sprites). asShiny(img) swaps a picture to it; if that file is
+   missing, the normal picture comes back with the old tint. */
+function shinySrc(src) {
+  return String(src).replace(/sprites\/art\/(\d+)\.png$/, 'sprites/art/shiny/$1.png');
+}
+function asShiny(img, on = true) {
+  if (!on || !img) return img;
+  const normal = img.getAttribute('src');
+  img.classList.add('shiny');
+  img.addEventListener('error', () => { img.src = normal; img.classList.add('shiny-tint'); }, { once: true });
+  img.src = shinySrc(normal);
+  return img;
+}
+
 function companion(cls) {
   return el('img', { class: cls || 'mascot', src: `sprites/art/${companionId()}.png`, alt: '' });
 }
@@ -679,7 +694,7 @@ const App = {
             onclick: () => (p.caught ? this.pokemonDetail(p)
               : p.where ? Voice.play(p.where.audio, p.where.text) : say('Celui-là, tu ne l\'as pas encore attrapé !')),
           },
-            el('img', { class: p.shiny ? 'shiny' : '', src: p.sprite, alt: '', loading: 'lazy' }),
+            asShiny(el('img', { src: p.sprite, alt: '', loading: 'lazy' }), p.shiny),
             p.shiny ? el('span', { class: 'shinymark' }, '✨') : null,
             el('b', {}, p.name),
             !p.caught && p.where ? el('small', { class: 'dex-where' }, p.where.text.replace(/^Il t'attend /, '').replace(/ !$/, '')) : null,
@@ -694,7 +709,7 @@ const App = {
       this.topbar(el('button', { class: 'btn-icon', onclick: () => this.pokedex() }, '✕')),
       el('div', { class: 'page' },
         el('div', { class: 'act reveal' },
-          el('img', { class: `art ${p.shiny ? 'shiny' : ''}`, src: p.art, alt: '' }),
+          asShiny(el('img', { class: 'art', src: p.art, alt: '' }), p.shiny),
           p.shiny ? el('span', { class: 'shinymark' }, '✨ chromatique') : null,
           syllableWord(p.syllables, p.name, p.syllable_audio),
           el('div', { class: 'types' }, (p.types || []).map((t) => el('span', { 'data-type': t }, t))),
@@ -1238,7 +1253,7 @@ const Session = {
             ) : null,
             res.new_shiny ? el('div', { class: 'newcatch' },
               el('span', { class: 'score' }, '✨ Ton légendaire devient chromatique !'),
-              el('div', { class: 'catchrow' }, el('img', { class: 'shiny', src: `sprites/art/${res.new_shiny}.png`, alt: '' })),
+              el('div', { class: 'catchrow' }, asShiny(el('img', { src: `sprites/art/${res.new_shiny}.png`, alt: '' }))),
             ) : null,
             ballsWon(res.balls_won),
             ticketsWon(res.tickets_won),
@@ -2203,7 +2218,7 @@ function renderReward(a, body, done) {
   setTimeout(async () => {
     stage.innerHTML = '';
     put(stage,
-      el('img', { class: `art ${r.shiny ? 'shiny' : ''}`, src: `sprites/art/${r.pokemon}.png`, alt: '' }),
+      asShiny(el('img', { class: 'art', src: `sprites/art/${r.pokemon}.png`, alt: '' }), r.shiny),
       r.shiny ? el('span', { class: 'shinymark' }, '✨ chromatique ✨') : null,
       syllableWord(r.syllables, r.name, r.syllable_audio),
       el('div', { class: 'types' }, (r.types || []).map((t) => el('span', { 'data-type': t }, t))),
@@ -2596,8 +2611,9 @@ const Arcade = {
       const kind = roll < 0.125 ? 'gold' : roll < 0.27 + 0.045 * (this.level - 1) ? 'bomb' : 'normal';
       const id = kind === 'bomb' ? 100 : ids[Math.floor(Math.random() * ids.length)] || 25;
       const img = $('img', hole);
+      img.classList.remove('shiny', 'shiny-tint');
       img.src = `sprites/art/${id}.png`;
-      img.classList.toggle('shiny', kind === 'gold');
+      asShiny(img, kind === 'gold');
       hole.dataset.kind = kind;
       hole.classList.toggle('gold', kind === 'gold');
       hole.classList.toggle('bomb', kind === 'bomb');

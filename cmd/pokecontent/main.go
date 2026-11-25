@@ -350,6 +350,38 @@ func genSprites(cur *curriculum.Curriculum, root string, force bool) error {
 			got++
 		}
 	}
+	// The official shiny artwork, for every Pokémon that can turn up shiny
+	// (README « Les chromatiques »): full size for the course, arcade size for the rest.
+	shinyDir := filepath.Join(artDir, "shiny")
+	if err := os.MkdirAll(shinyDir, 0o755); err != nil {
+		return err
+	}
+	shinies := map[int]int{} // id → side (0 = as published)
+	for _, id := range ids {
+		shinies[id] = 0
+	}
+	for _, p := range cur.Arcade {
+		shinies[p.ID] = arcadeArt
+	}
+	for id, side := range shinies {
+		path := filepath.Join(shinyDir, fmt.Sprintf("%d.png", id))
+		if fi, err := os.Stat(path); err == nil && fi.Size() > 0 && !force {
+			skipped++
+			continue
+		}
+		url := fmt.Sprintf("%s/other/official-artwork/shiny/%d.png", spriteBase, id)
+		var err error
+		if side > 0 {
+			err = downloadScaled(client, url, path, side)
+		} else {
+			err = download(client, url, path)
+		}
+		if err != nil {
+			fmt.Printf("  ✗ chromatique #%d: %v\n", id, err)
+			continue
+		}
+		got++
+	}
 	// The real Gigamax forms: the bosses' last-hit-point pictures.
 	for _, g := range curriculum.Gigamax {
 		path := filepath.Join(artDir, fmt.Sprintf("%d.png", g))
