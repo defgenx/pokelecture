@@ -759,12 +759,14 @@ func lectureItem(w Word, allWords []Word, nChoices int) Item {
 	return it
 }
 
-// SpellPrompt is spoken when a « Quel mot est bien écrit ? » round opens.
-const SpellPrompt = "Quel mot est bien écrit ?"
+// SpellPrompt is spoken when a « Quel mot va avec l'image ? » round opens.
+const SpellPrompt = "Quel mot va avec l'image ?"
 
 // spellItem shows a word's picture and asks for its correct spelling among
 // copies with one syllable swapped for a look-alike one (Pikachu / Pitachu /
-// Pikacho), first letter kept. The copies are never voiced and never a real word. False when the
+// Pikacho), first letter kept. The copies are never voiced and never a course
+// word; one may be a French word, which is why the question asks for the
+// picture's word and not the well-spelled one. False when the
 // word has no picture or fewer than two copies can be made.
 func spellItem(w Word, allWords []Word, syllables []string, nChoices int) (Item, bool) {
 	pic := w.Pic()
@@ -1492,6 +1494,7 @@ var UIPhrases = []string{
 	"Bien joué !",
 	"Presque ! Écoute encore.",
 	"Presque ! Relis le mot.",
+	"Niveau suivant !",
 	SpellPrompt,
 	"Presque ! Relis la phrase.",
 	"Essaie encore, tu y es presque.",

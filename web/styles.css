@@ -406,7 +406,7 @@ body::after {
 .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 /* Four choices (the harder tier) go 2×2, so the targets stay finger-sized. */
 .grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 620px; }
-/* « Quel mot est bien écrit ? » : whole written words, one per row. */
+/* « Quel mot va avec l'image ? » : whole written words, one per row. */
 .grid.spell-grid { grid-template-columns: 1fr; max-width: 520px; gap: 10px; }
 .tile.spell-word { min-height: 76px; font-size: clamp(28px, 7vw, 44px); overflow-wrap: anywhere; }
 .tile.spell-pic { cursor: default; margin: 0 auto; }
@@ -1227,6 +1227,28 @@ body::after {
   transition: filter .5s ease;
 }
 .silhouette.revealed { filter: none; }
+.silhouette.small { width: min(24vw, 120px); height: min(24vw, 120px); }
+
+/* Mini-game levels (README « Mini-jeux : des niveaux »). */
+.chip.level-chip { background: var(--blue); color: #fff; font-weight: 800; }
+.chip.level-chip.pop { animation: pop .35s ease; }
+.level-banner {
+  position: fixed; left: 50%; top: 38%; z-index: 60; pointer-events: none;
+  transform: translate(-50%, -50%);
+  padding: 14px 30px; border-radius: 999px;
+  background: linear-gradient(180deg, #ffd36b, #ff9d2e); color: #5a2a00;
+  font-size: clamp(30px, 8vw, 56px); font-weight: 900; white-space: nowrap;
+  box-shadow: var(--lift-2);
+  animation: level-in 1.4s ease forwards;
+}
+@keyframes level-in {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+  30% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
+}
+.board-holder { width: 100%; display: flex; justify-content: center; }
 .tile.name-tile { font-size: clamp(22px, 4.6vw, 34px); min-height: 96px; }
 .memory-card .pair-word {
   font-size: clamp(16px, 3.4vw, 24px);

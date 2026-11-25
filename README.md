@@ -799,13 +799,15 @@ la vitesse d'un enfant de 5 ans.
   première syllabe, sinon même première lettre) : la première lettre ne suffit
   plus à deviner, il faut lire le mot jusqu'au bout. Même règle pour l'image de
   « Lis la phrase », « Lis et attrape » et les noms du « Pokémon mystère ».
-- **« Quel mot est bien écrit ? »** — un « Lis le mot » sur deux est
+- **« Quel mot va avec l'image ? »** — un « Lis le mot » sur deux est
   retourné : l'image est donnée (Pikachu), les réponses sont écrites — le vrai
   mot et des copies où une syllabe change pour une syllabe voisine déjà apprise
   (`Pikachu` / `Pitachu` / `Pikacho`, `spellItem`). L'image dit *quel* Pokémon,
   elle ne peut pas donner la réponse : seule la lecture de chaque syllabe la
   trouve. Les copies gardent la première lettre (sinon un coup d'œil suffit),
-  ne sont jamais un vrai mot et ne sont jamais dites ; la voix lit le bon mot
+  ne sont jamais un mot du cours et ne sont jamais dites (une copie peut être un
+  vrai mot, « Change » pour « Charge » : la question demande le mot de l'image,
+  pas un mot « bien écrit », donc il n'y a toujours qu'une bonne réponse) ; la voix lit le bon mot
   une fois trouvé. Repli sur la question normale quand un mot n'a pas deux
   copies possibles.
 - **Les syllabes en couleur** : partout où un mot écrit s'affiche et que ses
@@ -1062,7 +1064,8 @@ lecture déguisée :
   de Pokémon, le fantasme du jeu distillé.
 - **🔤 Les paires mot-image** : un memory où une carte sur deux est le mot
   ÉCRIT et l'autre son image — lire pour apparier, le record est le temps.
-- **🃏 Memory Pokémon** : six paires de Pokémon, le record est le temps.
+- **🃏 Memory Pokémon** : des plateaux de 3, 4, 6 puis 8 paires de Pokémon, le
+  record est le temps total.
 - **🌿 La chasse** : 45 secondes, les Pokémon surgissent des hautes herbes de
   plus en plus vite.
 
@@ -1081,6 +1084,39 @@ lecture déguisée :
 
 Les records se gèrent dans l'admin (effacer un record, ou tous). Chaque partie
 rapporte aussi de l'expérience au partenaire.
+
+### Mini-jeux : des niveaux
+
+Chaque partie commence au **niveau 1** et monte jusqu'au 5 : puce « Niveau N »
+en haut, bannière « NIVEAU 2 ! » et la voix dit « Niveau suivant ! ». Un point
+vaut le niveau (×2/×3 du combo en plus) : le score dit jusqu'où il est monté,
+et l'écran de fin affiche le niveau atteint. Mécanique commune dans `Arcade`
+(`levelUp`, `advance` = un niveau toutes les N bonnes réponses du premier
+coup, `reach` = le niveau imposé par la manche) ; chaque jeu décide ce qui
+durcit :
+
+| Jeu | Monte | Ce qui durcit |
+|---|---|---|
+| 📖 Lis et attrape | 4 bonnes réponses | 3 → 4 images ; mots de 2, puis 3 syllabes, puis 3 et plus. Mauvaises images toujours « qui se ressemblent » |
+| ❓ Pokémon mystère | 4 | 3 → 4 noms (toujours qui se ressemblent) ; ombre plus petite au niveau 4 |
+| 👂 L'oreille fine | 4 | 3 → 4 syllabes ; une voisine piège (ba/da) un tour sur deux au niveau 2, à chaque tour au 3, deux au 4 |
+| ⚒️ L'atelier | 3 mots | mots de 2 → 3 → 3+ syllabes ; 1 → 3 syllabes intruses, qui commencent comme celles du mot ; niveau 5 : mot caché, dicté |
+| 🌿 La chasse | toutes les 9 s | plus de Voltorbe (1/7 → 1/3), en plus de l'accélération |
+| 🃏 Memory | chaque plateau | 3, 4, 6, 8 paires |
+| 🔤 Les paires | chaque plateau | 3, 4, 5 mots ; dès le 2ᵉ, des mots qui commencent pareil |
+| 🥁 Le tambour | toutes les 2 manches | les 10 mots du moins au plus de syllabes ; dès le niveau 4, le mot n'est plus écrit (on compte à l'oreille) |
+| 🧩 Le son manquant | toutes les 2 manches | mots du plus court au plus long ; trou de consonne à 2 choix, puis 3, puis voyelle, puis son à deux lettres (ou, on, ch…), 4 choix au niveau 5 |
+| 📚 Mon livre | chaque page | pages de la plus courte à la plus longue |
+
+Memory et les paires comptaient un seul plateau : leurs anciens records (un
+temps sur 6 paires) sont effacés une fois à l'ouverture de la sauvegarde
+(`State.BoardGames`), sinon les 4 plateaux ne pourraient jamais les battre.
+Les autres records restent ; les points pondérés par le niveau les rendent
+plus faciles à battre une première fois.
+
+`Arcade.screen()` n'arrête plus le jeu précédent (c'est `play()` qui le
+fait) : les jeux chronométrés lancent leur compte à rebours *avant* de
+construire leur écran, et `screen()` l'arrêtait aussitôt.
 
 Le matériel vient de `GET /api/arcade` : les jeux de lecture n'utilisent que ce
 qui a été appris, mais les trois jeux Pokémon (mystère, memory, chasse) piochent

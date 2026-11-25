@@ -1337,13 +1337,13 @@ function renderQuiz(a, body, done) {
 
     let replay;
     if (item.spell) {
-      // « Quel mot est bien écrit ? » — the picture is the question, never the
+      // « Quel mot va avec l'image ? » — the picture is the question, never the
       // answer; it stays silent until he has picked the right spelling.
       const face = item.sprite ? el('img', { src: item.sprite, alt: '' })
         : item.icon ? iconEl(item.icon) : el('span', {}, item.emoji);
       replay = el('button', { class: 'btn btn-ghost', disabled: true, onclick: () => Voice.play(item.audio, item.prompt) }, '🔊 Vérifier');
       stage.append(el('div', { class: `tile big-pic spell-pic ${item.sprite ? 'sprite' : item.icon ? 'ico' : 'emoji'}` }, face), replay);
-      say('Quel mot est bien écrit ?');
+      say("Quel mot va avec l'image ?");
     } else if (isText) {
       const prompt = a.kind === 'phrase'
         ? el('div', { class: 'sentence' }, item.prompt)
@@ -2010,10 +2010,41 @@ const Arcade = {
   addTime: null,
   CHEERS: ['Trop fort !', 'Incroyable !', 'Tu es une fusée !', 'Continue comme ça !'],
 
+  /* In-play levels (README « Mini-jeux : des niveaux »): every game starts
+     at 1 and gets harder each time it calls levelUp(); a point is worth the
+     level, so the score says how far he climbed. */
+  MAX_LEVEL: 5,
+  level: 1,
+  rightCount: 0,
+  levelEl: null,
+  levelUp() {
+    if (this.level >= this.MAX_LEVEL) return;
+    this.level++;
+    if (this.levelEl) {
+      this.levelEl.textContent = `Niveau ${this.level}`;
+      this.levelEl.classList.remove('pop'); void this.levelEl.offsetWidth; this.levelEl.classList.add('pop');
+    }
+    const banner = el('div', { class: 'level-banner' }, `NIVEAU ${this.level} !`);
+    document.body.append(banner);
+    setTimeout(() => banner.remove(), 1400);
+    Sfx.fanfare();
+    confetti(40);
+    say('Niveau suivant !');
+  },
+  // advance counts a right answer; every `per` of them is a level up.
+  advance(per = 4) {
+    this.rightCount++;
+    if (this.rightCount % per === 0) this.levelUp();
+  },
+  // reach raises the level to n (round-based games: the round sets it).
+  reach(n) {
+    while (this.level < Math.min(n, this.MAX_LEVEL)) this.levelUp();
+  },
+
   gain(node, base = 1) {
     this.streak++;
     const mult = this.streak >= 6 ? 3 : this.streak >= 3 ? 2 : 1;
-    const pts = base * mult;
+    const pts = base * mult * this.level;
     this.popup(node, `+${pts}`, mult > 1 ? 'hot' : '');
     if (mult > 1 && this.addTime) {
       this.addTime(2);
@@ -2068,6 +2099,7 @@ const Arcade = {
   // play starts a game; a ticket game spends its ticket first (the server
   // refuses with 409 when there is none). The hub and REJOUER both go here.
   async play(g) {
+    this.stop();
     if (!g.ticket) return this[g.id]();
     try {
       const res = await api('api/ticket', { game: g.id });
@@ -2123,12 +2155,16 @@ const Arcade = {
     );
   },
 
+  // Not this.stop(): a timed game starts its countdown before building its
+  // screen. play() stops the previous game.
   screen(title, hintText, ...rest) {
-    this.stop();
     this.streak = 0;
+    this.level = 1;
+    this.rightCount = 0;
     this.comboEl = el('span', { class: 'chip combo arcade-combo', hidden: true });
+    this.levelEl = el('span', { class: 'chip level-chip' }, 'Niveau 1');
     App.screen(
-      App.topbar(this.comboEl, el('button', { class: 'btn-icon', onclick: () => { this.stop(); this.hub(); } }, '✕')),
+      App.topbar(this.levelEl, this.comboEl, el('button', { class: 'btn-icon', onclick: () => { this.stop(); this.hub(); } }, '✕')),
       el('div', { class: 'page' },
         el('div', { class: 'act' },
           el('h2', {}, title),
@@ -2184,6 +2220,7 @@ const Arcade = {
           el('h2', {}, title),
           el('div', { class: 'medal' }, medal),
           el('div', { class: 'bigscore' }, `${score}${g.unit}`),
+          el('div', { class: 'score' }, `⬆️ Niveau ${this.level} atteint`),
           beaten ? el('div', { class: 'score newrecord' }, '🏆 NOUVEAU RECORD !') : el('div', { class: 'score' }, `Record : ${this.record(game)}${g.unit}`),
           ballsWon(res.balls_won),
             ticketsWon(res.tickets_won),
@@ -2200,59 +2237,70 @@ const Arcade = {
     await celebrateAll(res);
   },
 
-  /* Memory: six pairs of Pokémon, the record is the time. */
+  /* Memory: boards of 3, 4, 6 then 8 pairs of Pokémon, one level each; the
+     record is the total time. */
   memory() {
-    const ids = this.roster().map((p) => p.id);
-    ids.sort(() => Math.random() - 0.5);
-    const picks = ids.slice(0, 6);
-    const pad = [25, 1, 4, 7, 133, 143];
-    while (picks.length < 6) picks.push(pad[picks.length]);
-    const cards = [...picks, ...picks].sort(() => Math.random() - 0.5);
-
-    let open = null;
-    let lock = false;
-    let matched = 0;
+    const ids = this.roster().map((p) => p.id).sort(() => Math.random() - 0.5);
+    for (const id of [25, 1, 4, 7, 133, 143, 39, 52]) if (ids.length < 8 && !ids.includes(id)) ids.push(id);
+    const BOARDS = [3, 4, 6, 8];
+    let board = 0;
     let seconds = 0;
-
     const clock = el('span', { class: 'chip' }, '⏱ 0s');
-    const grid = el('div', { class: 'memory-grid big' });
-    cards.forEach((id) => {
-      const card = el('button', { class: 'memory-card' },
-        el('span', { class: 'face back' }, pokeball('pokeball-sm')),
-        el('span', { class: 'face front' }, el('img', { src: `sprites/art/${id}.png`, alt: '' })),
-      );
-      card.dataset.id = id;
-      card.addEventListener('click', () => {
-        if (lock || card.classList.contains('up') || card.classList.contains('won')) return;
-        Sfx.flip();
-        card.classList.add('up');
-        if (!open) { open = card; return; }
-        if (open.dataset.id === card.dataset.id) {
-          open.classList.add('won');
-          card.classList.add('won');
-          open = null;
-          matched++;
-          Sfx.correct();
-          burst('✨');
-          this.gain(card);
-          if (matched === picks.length) this.gameOver('memory', seconds, true, '🃏 Memory Pokémon');
-        } else {
-          lock = true;
-          const other = open;
-          open = null;
-          Sfx.wrong(); this.miss();
-          setTimeout(() => {
-            other.classList.remove('up');
-            card.classList.remove('up');
-            lock = false;
-          }, 800);
-        }
-      });
-      grid.append(card);
-    });
-
-    this.screen('🃏 Memory Pokémon', 'Retrouve les paires !', clock, grid);
+    const holder = el('div', { class: 'board-holder' });
+    this.screen('🃏 Memory Pokémon', 'Retrouve les paires !', clock, holder);
     this.timer = setInterval(() => { seconds++; clock.textContent = `⏱ ${seconds}s`; }, 1000);
+
+    const nextBoard = () => {
+      board++;
+      if (board === BOARDS.length) return this.gameOver('memory', seconds, true, '🃏 Memory Pokémon');
+      this.levelUp();
+      setTimeout(deal, 900);
+    };
+    const deal = () => {
+      const picks = [...ids].sort(() => Math.random() - 0.5).slice(0, BOARDS[board]);
+      const cards = [...picks, ...picks].sort(() => Math.random() - 0.5);
+      let open = null;
+      let lock = false;
+      let matched = 0;
+      const grid = el('div', { class: `memory-grid${cards.length > 6 ? ' big' : ''}` });
+      cards.forEach((id) => {
+        const card = el('button', { class: 'memory-card' },
+          el('span', { class: 'face back' }, pokeball('pokeball-sm')),
+          el('span', { class: 'face front' }, el('img', { src: `sprites/art/${id}.png`, alt: '' })),
+        );
+        card.dataset.id = id;
+        card.addEventListener('click', () => {
+          if (lock || card.classList.contains('up') || card.classList.contains('won')) return;
+          Sfx.flip();
+          card.classList.add('up');
+          if (!open) { open = card; return; }
+          if (open.dataset.id === card.dataset.id) {
+            open.classList.add('won');
+            card.classList.add('won');
+            open = null;
+            matched++;
+            Sfx.correct();
+            burst('✨');
+            this.gain(card);
+            if (matched === picks.length) nextBoard();
+          } else {
+            lock = true;
+            const other = open;
+            open = null;
+            Sfx.wrong(); this.miss();
+            setTimeout(() => {
+              other.classList.remove('up');
+              card.classList.remove('up');
+              lock = false;
+            }, 800);
+          }
+        });
+        grid.append(card);
+      });
+      holder.innerHTML = '';
+      holder.append(grid);
+    };
+    deal();
   },
 
   /* La chasse : 45 seconds, the pop-ups speed up as the clock runs. */
@@ -2296,9 +2344,11 @@ const Arcade = {
     const pop = () => {
       if (active) { active.classList.remove('show'); active = null; }
       const hole = holes[Math.floor(Math.random() * holes.length)];
-      // 1 in 8: a golden shiny worth 5; 1 in 7: Voltorbe, which explodes.
+      // A level every 9 s. 1 in 8: a golden shiny worth 5; Voltorbe, which
+      // explodes, from 1 in 7 at level 1 to 1 in 3 at level 5.
+      this.reach(1 + Math.floor(elapsed / 9));
       const roll = Math.random();
-      const kind = roll < 0.125 ? 'gold' : roll < 0.27 ? 'bomb' : 'normal';
+      const kind = roll < 0.125 ? 'gold' : roll < 0.27 + 0.045 * (this.level - 1) ? 'bomb' : 'normal';
       const id = kind === 'bomb' ? 100 : ids[Math.floor(Math.random() * ids.length)] || 25;
       const img = $('img', hole);
       img.src = `sprites/art/${id}.png`;
@@ -2336,19 +2386,28 @@ const Arcade = {
     const scoreChip = el('span', { class: 'chip' }, 'Points : 0');
     const stage = el('div', { class: 'act', style: 'width:100%' });
 
+    // Level 1: words of up to 2 syllables, 3 pictures; 2: up to 3 syllables,
+    // 4 pictures; 4+: long words. Wrong pictures always look alike.
+    const nSyl = (w) => (w.syllables || []).length || 1;
     const ask = () => {
-      const shuffled = [...words].sort(() => Math.random() - 0.5);
-      const target = shuffled[0];
+      const L = this.level;
+      const maxSyl = L === 1 ? 2 : L === 2 ? 3 : 99;
+      let band = words.filter((w) => nSyl(w) <= maxSyl);
+      if (L >= 4 && band.filter((w) => nSyl(w) >= 3).length >= 4) band = band.filter((w) => nSyl(w) >= 3);
+      if (band.length < 4) band = words;
+      const target = band[Math.floor(Math.random() * band.length)];
+      const n = L === 1 ? 3 : 4;
+      const rest = [...words].sort(() => Math.random() - 0.5);
       const options = [target];
       const seen = new Set([faceKey(target)]);
-      for (const w of byLook(shuffled.slice(1), target.text, (x) => x.text)) {
-        if (options.length === 4) break;
+      for (const w of byLook(rest, target.text, (x) => x.text)) {
+        if (options.length === n) break;
         if (!seen.has(faceKey(w))) { seen.add(faceKey(w)); options.push(w); }
       }
       options.sort(() => Math.random() - 0.5);
 
       stage.innerHTML = '';
-      const grid = el('div', { class: 'grid four' });
+      const grid = el('div', { class: n === 4 ? 'grid four' : 'grid' });
       let answered = false;
       options.forEach((w) => {
         const face = w.sprite ? el('img', { src: w.sprite, alt: '' })
@@ -2358,7 +2417,7 @@ const Arcade = {
         tile.addEventListener('click', () => {
           if (tile.disabled) return;
           if (w === target) {
-            if (!answered) { this.items.push({ id: `mot:${target.text}`, correct: true }); score += this.gain(tile); }
+            if (!answered) { this.items.push({ id: `mot:${target.text}`, correct: true }); score += this.gain(tile); this.advance(); }
             answered = true;
             scoreChip.textContent = `Points : ${score}`;
             tile.classList.add('good');
@@ -2397,8 +2456,16 @@ const Arcade = {
     const scoreChip = el('span', { class: 'chip' }, 'Mots : 0');
     const stage = el('div', { class: 'act', style: 'width:100%' });
 
+    let saidHidden = false;
+    // Level 1–2: 2-syllable words, 1 trap; 3: up to 3 syllables, 2 traps;
+    // 4: 3+ syllables; 5: 3 traps and the word hidden — heard, not seen.
+    // Traps that start like a syllable of the word come first.
     const ask = () => {
-      const target = words[Math.floor(Math.random() * words.length)];
+      const L = this.level;
+      let band = words.filter((w) => (L >= 4 ? w.syllables.length >= 3 : w.syllables.length <= (L === 3 ? 3 : 2)));
+      if (band.length < 3) band = words;
+      const target = band[Math.floor(Math.random() * band.length)];
+      const hidden = L >= 5 && !!target.audio;
       let pos = 0;
       let missed = false;
       stage.innerHTML = '';
@@ -2407,9 +2474,10 @@ const Arcade = {
       target.syllables.forEach(() => slots.append(el('div', { class: 'slot' }, '')));
 
       const inWord = new Set(target.syllables.map((x) => x.toLowerCase()));
-      const traps = syllables.filter((x) => !inWord.has(x.toLowerCase()));
-      const tray = [...target.syllables];
-      if (traps.length) tray.push(traps[Math.floor(Math.random() * traps.length)]);
+      const traps = syllables.filter((x) => !inWord.has(x.toLowerCase())).sort(() => Math.random() - 0.5);
+      const starts = new Set(target.syllables.map((x) => x[0].toLowerCase()));
+      traps.sort((a, b) => (starts.has(b[0].toLowerCase()) ? 1 : 0) - (starts.has(a[0].toLowerCase()) ? 1 : 0));
+      const tray = [...target.syllables, ...traps.slice(0, [1, 1, 2, 2, 3][L - 1])];
       tray.sort(() => Math.random() - 0.5);
 
       const trayEl = el('div', { class: 'tray' });
@@ -2427,6 +2495,7 @@ const Arcade = {
             if (pos === target.syllables.length) {
               this.items.push({ id: `mot:${target.text}`, correct: !missed });
               score += this.gain(slots, missed ? 1 : 2);
+              this.advance(3);
               scoreChip.textContent = `Mots : ${score}`;
               Sfx.crit();
               burst('⚒️');
@@ -2443,7 +2512,17 @@ const Arcade = {
         trayEl.append(b);
       });
 
-      stage.append(el('div', { class: 'word arcade-word' }, sylColored(target.syllables, target.text)), slots, trayEl);
+      if (hidden) {
+        // The battle's dictation line, said once: the first hidden word.
+        const explain = !saidHidden ? hint('Le mot est caché ! Écoute-le, et remets ses syllabes dans l\'ordre.') : null;
+        saidHidden = true;
+        stage.append(el('div', { class: 'shout-sub' }, '🙈 MOT CACHÉ !'),
+          el('button', { class: 'btn btn-huge dictee', onclick: () => Voice.play(target.audio, target.text) }, '🔊 ÉCOUTE LE MOT'),
+          explain, slots, trayEl);
+        Voice.play(target.audio, target.text);
+      } else {
+        stage.append(el('div', { class: 'word arcade-word' }, sylColored(target.syllables, target.text)), slots, trayEl);
+      }
     };
 
     const bar = this.countdown(90, () => this.gameOver('atelier', score, false, '⚒️ L\'atelier des mots'));
@@ -2465,19 +2544,22 @@ const Arcade = {
     const ask = () => {
       const shuffled = [...roster].sort(() => Math.random() - 0.5);
       const target = shuffled[0];
-      const options = [target, ...byLook(shuffled.slice(1), target.name, (p) => p.name).slice(0, 3)]
-        .sort(() => Math.random() - 0.5);
+      // Level 1: 3 names; 2+: 4; 4+: the shadow shrinks. Names always look alike.
+      const L = this.level;
+      const n = L === 1 ? 3 : 4;
+      const others = byLook(shuffled.slice(1), target.name, (p) => p.name);
+      const options = [target, ...others.slice(0, n - 1)].sort(() => Math.random() - 0.5);
 
       stage.innerHTML = '';
-      const shadow = el('img', { class: 'silhouette', src: target.sprite, alt: '' });
-      const grid = el('div', { class: 'grid four name-grid' });
+      const shadow = el('img', { class: `silhouette${L >= 4 ? ' small' : ''}`, src: target.sprite, alt: '' });
+      const grid = el('div', { class: n === 4 ? 'grid four name-grid' : 'grid name-grid' });
       let answered = false;
       options.forEach((p) => {
         const tile = el('button', { class: 'tile name-tile' }, el('span', { class: 'sylcol' }, sylColored(p.syllables, p.name)));
         tile.addEventListener('click', () => {
           if (tile.disabled) return;
           if (p === target) {
-            if (!answered) score += this.gain(tile);
+            if (!answered) { score += this.gain(tile); this.advance(); }
             answered = true;
             scoreChip.textContent = `Points : ${score}`;
             tile.classList.add('good');
@@ -2504,79 +2586,96 @@ const Arcade = {
   },
 
   /* Les paires mot-image : memory where one card of each pair is the WRITTEN
-     word and the other its picture — reading as the matching key. */
+     word and the other its picture — reading as the matching key. Boards of
+     3, 4 then 5 words, one level each; from the second, words that start
+     alike. The record is the total time. */
   paires() {
     const words = (this.pool.words || []).filter((w) => w.sprite || w.emoji || w.icon);
     if (words.length < 4) return this.hub();
     this.items = [];
-    const seen = new Set();
-    const picks = [];
-    for (const w of [...words].sort(() => Math.random() - 0.5)) {
-      if (picks.length === 4) break;
-      if (!seen.has(faceKey(w))) { seen.add(faceKey(w)); picks.push(w); }
-    }
-    // One word card + one picture card per pick, all shuffled together.
-    const cards = [];
-    picks.forEach((w) => {
-      cards.push({ key: w.text, kind: 'text', w });
-      cards.push({ key: w.text, kind: 'pic', w });
-    });
-    cards.sort(() => Math.random() - 0.5);
-
-    let open = null;
-    let lock = false;
-    let matched = 0;
+    const BOARDS = [3, 4, 5];
+    let board = 0;
     let seconds = 0;
-
     const clock = el('span', { class: 'chip' }, '⏱ 0s');
-    const grid = el('div', { class: 'memory-grid big' });
-    cards.forEach((c) => {
-      const front = c.kind === 'text'
-        ? el('span', { class: 'pair-word sylcol' }, sylColored(c.w.syllables, c.w.text))
-        : c.w.sprite ? el('img', { src: c.w.sprite, alt: '' })
-        : c.w.icon ? iconEl(c.w.icon)
-        : el('span', { class: 'pair-emoji' }, c.w.emoji);
-      const card = el('button', { class: 'memory-card' },
-        el('span', { class: 'face back' }, pokeball('pokeball-sm')),
-        el('span', { class: 'face front' }, front),
-      );
-      card.dataset.key = c.key;
-      card.dataset.kind = c.kind;
-      card.addEventListener('click', () => {
-        if (lock || card.classList.contains('up') || card.classList.contains('won')) return;
-        Sfx.flip();
-        card.classList.add('up');
-        if (!open) { open = card; return; }
-        // A pair is a word card AND its picture card — two identical kinds don't match.
-        if (open.dataset.key === card.dataset.key && open.dataset.kind !== card.dataset.kind) {
-          open.classList.add('won');
-          card.classList.add('won');
-          open = null;
-          matched++;
-          this.items.push({ id: `mot:${c.key}`, correct: true });
-          Sfx.correct();
-          burst('✨');
-          this.gain(card);
-          const w = picks.find((x) => x.text === c.key);
-          if (w) Voice.play(w.audio, w.text);
-          if (matched === picks.length) this.gameOver('paires', seconds, true, '🔤 Les paires mot-image');
-        } else {
-          lock = true;
-          const other = open;
-          open = null;
-          Sfx.wrong(); this.miss();
-          setTimeout(() => {
-            other.classList.remove('up');
-            card.classList.remove('up');
-            lock = false;
-          }, 800);
-        }
-      });
-      grid.append(card);
-    });
-
-    this.screen('🔤 Les paires mot-image', 'Associe chaque mot à son image !', clock, grid);
+    const holder = el('div', { class: 'board-holder' });
+    this.screen('🔤 Les paires mot-image', 'Associe chaque mot à son image !', clock, holder);
     this.timer = setInterval(() => { seconds++; clock.textContent = `⏱ ${seconds}s`; }, 1000);
+
+    const nextBoard = () => {
+      board++;
+      if (board === BOARDS.length) return this.gameOver('paires', seconds, true, '🔤 Les paires mot-image');
+      this.levelUp();
+      setTimeout(deal, 1400);
+    };
+    const deal = () => {
+      const shuffled = [...words].sort(() => Math.random() - 0.5);
+      const pool = board === 0 ? shuffled : [shuffled[0], ...byLook(shuffled.slice(1), shuffled[0].text, (x) => x.text)];
+      const seen = new Set();
+      const picks = [];
+      for (const w of pool) {
+        if (picks.length === BOARDS[board]) break;
+        if (!seen.has(faceKey(w)) && !picks.some((p) => p.text === w.text)) { seen.add(faceKey(w)); picks.push(w); }
+      }
+      // One word card + one picture card per pick, all shuffled together.
+      const cards = [];
+      picks.forEach((w) => {
+        cards.push({ key: w.text, kind: 'text', w });
+        cards.push({ key: w.text, kind: 'pic', w });
+      });
+      cards.sort(() => Math.random() - 0.5);
+
+      let open = null;
+      let lock = false;
+      let matched = 0;
+      const grid = el('div', { class: `memory-grid${cards.length > 6 ? ' big' : ''}` });
+      cards.forEach((c) => {
+        const front = c.kind === 'text'
+          ? el('span', { class: 'pair-word sylcol' }, sylColored(c.w.syllables, c.w.text))
+          : c.w.sprite ? el('img', { src: c.w.sprite, alt: '' })
+          : c.w.icon ? iconEl(c.w.icon)
+          : el('span', { class: 'pair-emoji' }, c.w.emoji);
+        const card = el('button', { class: 'memory-card' },
+          el('span', { class: 'face back' }, pokeball('pokeball-sm')),
+          el('span', { class: 'face front' }, front),
+        );
+        card.dataset.key = c.key;
+        card.dataset.kind = c.kind;
+        card.addEventListener('click', () => {
+          if (lock || card.classList.contains('up') || card.classList.contains('won')) return;
+          Sfx.flip();
+          card.classList.add('up');
+          if (!open) { open = card; return; }
+          // A pair is a word card AND its picture card — two identical kinds don't match.
+          if (open.dataset.key === card.dataset.key && open.dataset.kind !== card.dataset.kind) {
+            open.classList.add('won');
+            card.classList.add('won');
+            open = null;
+            matched++;
+            this.items.push({ id: `mot:${c.key}`, correct: true });
+            Sfx.correct();
+            burst('✨');
+            this.gain(card);
+            const w = picks.find((x) => x.text === c.key);
+            if (w) Voice.play(w.audio, w.text);
+            if (matched === picks.length) nextBoard();
+          } else {
+            lock = true;
+            const other = open;
+            open = null;
+            Sfx.wrong(); this.miss();
+            setTimeout(() => {
+              other.classList.remove('up');
+              card.classList.remove('up');
+              lock = false;
+            }, 800);
+          }
+        });
+        grid.append(card);
+      });
+      holder.innerHTML = '';
+      holder.append(grid);
+    };
+    deal();
   },
 
   /* L'oreille fine : hear the syllable, tap it — 60 s of phoneme work. */
@@ -2593,30 +2692,38 @@ const Arcade = {
     let round = 0;
     const ask = () => {
       const shuffled = [...syllables].sort(() => Math.random() - 0.5);
-      // Every other round, a target with a confusable neighbour (ba/da,
-      // fa/va…) and that neighbour among the choices: the ear's real work.
-      const pairable = shuffled.filter((x) => (x.near || []).some((n) => byText.has(n)));
-      const target = (round++ % 2 === 0 && pairable[0]) || shuffled[0];
+      // A target with a confusable neighbour (ba/da, fa/va…) and that
+      // neighbour among the choices is the ear's real work. Level 1: 3
+      // syllables, no neighbour; 2: 4, a neighbour every other round; 3: every
+      // round; 4+: two neighbours when there are.
+      const L = this.level;
+      const n = L === 1 ? 3 : 4;
+      const pairable = shuffled.filter((x) => (x.near || []).some((k) => byText.has(k)));
+      const paired = L >= 3 || (L === 2 && round % 2 === 0);
+      round++;
+      const target = (paired && pairable[0]) || shuffled[0];
       const options = [target];
-      const near = (target.near || []).map((n) => byText.get(n)).filter(Boolean);
-      if (near.length) options.push(near[Math.floor(Math.random() * near.length)]);
+      const near = L === 1 ? [] : (target.near || []).map((k) => byText.get(k)).filter(Boolean).sort(() => Math.random() - 0.5);
+      for (const x of near.slice(0, L >= 4 ? 2 : 1)) {
+        if (!options.some((o) => o.sound && o.sound === x.sound)) options.push(x);
+      }
       // Never two syllables that sound the same: he would be right and told no.
       for (const x of shuffled) {
-        if (options.length >= 4) break;
+        if (options.length >= n) break;
         if (!options.some((o) => o === x || (o.sound && o.sound === x.sound))) options.push(x);
       }
       options.sort(() => Math.random() - 0.5);
 
       stage.innerHTML = '';
       const listen = el('button', { class: 'btn', onclick: () => Voice.play(target.audio, target.text) }, '🔊 ÉCOUTE');
-      const grid = el('div', { class: 'grid four' });
+      const grid = el('div', { class: options.length >= 4 ? 'grid four' : 'grid' });
       let answered = false;
       options.forEach((s) => {
         const tile = el('button', { class: 'tile' }, s.text);
         tile.addEventListener('click', () => {
           if (tile.disabled) return;
           if (s === target) {
-            if (!answered) { this.items.push({ id: `syl:${target.text}`, correct: true }); score += this.gain(tile); }
+            if (!answered) { this.items.push({ id: `syl:${target.text}`, correct: true }); score += this.gain(tile); this.advance(); }
             answered = true;
             scoreChip.textContent = `Points : ${score}`;
             tile.classList.add('good');

@@ -300,3 +300,32 @@ func TestThreeStarSaveBecomesFiveStars(t *testing.T) {
 		t.Fatal("converted twice")
 	}
 }
+
+// Single-board memory/paires times cannot be compared with the 4-board games:
+// dropped once, the other records kept, and a new record survives a reopen.
+func TestBoardGameRecordsDroppedOnce(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "p.json")
+	old := `{"name":"Nino","star_scale":5,"episodes":{},"items":{},"records":{"memory":30,"paires":25,"lecture":12}}`
+	if err := os.WriteFile(path, []byte(old), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	s, err := Open(path, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := s.Snapshot().Records
+	if _, ok := r["memory"]; ok || r["lecture"] != 12 {
+		t.Fatalf("records after migration: %v", r)
+	}
+	if _, ok := r["paires"]; ok {
+		t.Fatal("paires record kept")
+	}
+	s.Record("memory", 80, true)
+	if err := s.Save(); err != nil {
+		t.Fatal(err)
+	}
+	s2, _ := Open(path, "")
+	if s2.Snapshot().Records["memory"] != 80 {
+		t.Fatal("dropped again on reopen")
+	}
+}

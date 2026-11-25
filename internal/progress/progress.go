@@ -116,8 +116,12 @@ type State struct {
 	Stars int    `json:"stars"`
 	// StarScale is the rating scale of BestStars and the star settings: 0 for
 	// a save from the 3-star days, MaxStars once converted.
-	StarScale int   `json:"star_scale,omitempty"`
-	Pokedex   []int `json:"pokedex"`
+	StarScale int `json:"star_scale,omitempty"`
+	// BoardGames is 0 for a save whose memory/paires records were set on the
+	// old single board; Open drops those two records once (README « Mini-jeux :
+	// des niveaux »).
+	BoardGames int   `json:"board_games,omitempty"`
+	Pokedex    []int `json:"pokedex"`
 	// Shiny lists Pokémon caught in their rare recolored form on a replay —
 	// a second, slower collection layered over the Pokédex.
 	Shiny    []int                  `json:"shiny,omitempty"`
@@ -359,6 +363,7 @@ func Open(path string, name string) (*Store, error) {
 		// Only a brand-new save starts on the 5-star scale: a file without the
 		// field is a 3-star save, converted below.
 		s.state.StarScale = MaxStars
+		s.state.BoardGames = 1
 		if s.state.Name == "" {
 			s.state.Name = DefaultName
 		}
@@ -386,6 +391,14 @@ func Open(path string, name string) (*Store, error) {
 	}
 	if s.state.StarScale != MaxStars {
 		s.toFiveStars()
+		if err := s.flush(); err != nil {
+			return nil, err
+		}
+	}
+	if s.state.BoardGames != 1 {
+		delete(s.state.Records, "memory")
+		delete(s.state.Records, "paires")
+		s.state.BoardGames = 1
 		if err := s.flush(); err != nil {
 			return nil, err
 		}
@@ -1026,13 +1039,14 @@ func (s *Store) Reset() {
 
 	name, settings, created, lock := s.state.Name, s.state.Settings, s.state.Created, s.state.Lock
 	s.state = State{
-		Name:      name,
-		Settings:  settings,
-		Created:   created,
-		Lock:      lock,
-		Episodes:  map[string]EpisodeStat{},
-		Items:     map[string]Item{},
-		StarScale: MaxStars,
+		Name:       name,
+		Settings:   settings,
+		Created:    created,
+		Lock:       lock,
+		Episodes:   map[string]EpisodeStat{},
+		Items:      map[string]Item{},
+		StarScale:  MaxStars,
+		BoardGames: 1,
 	}
 }
 

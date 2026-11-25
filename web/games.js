@@ -44,7 +44,9 @@ Object.assign(Arcade, {
     const all = this.pool.sentences || [];
     if (!all.length) return this.hub();
     // The latest pages first: what he learned most recently needs it most.
-    const pages = all.slice(-12).sort(() => Math.random() - 0.5).slice(0, 5);
+    // Shortest page first: each page is a level, a little longer than the last.
+    const pages = all.slice(-12).sort(() => Math.random() - 0.5).slice(0, 5)
+      .sort((a, b) => a.words.length - b.words.length);
     let page = 0;
     let words = 0;
     const stage = el('div', { class: 'act', style: 'width:100%' });
@@ -59,6 +61,7 @@ Object.assign(Arcade, {
         say('Bravo ! Tu as lu tout le livre !');
         return this.gameOver('livre', words, false, '📚 Mon livre');
       }
+      this.reach(page + 1);
       const p = pages[page];
       const chips = p.words.map((w, k) => el('button', { class: 'read-word', onclick: () => Voice.play(p.word_audio[k], w) }, w));
       const pic = p.sprite ? el('img', { class: 'book-pic', src: p.sprite, alt: '' })
@@ -91,7 +94,10 @@ Object.assign(Arcade, {
     let score = 0;
     let round = 0;
     const ROUNDS = 10;
-    const deck = [...words].sort(() => Math.random() - 0.5);
+    // Fewest syllables first; a level every two words; from level 4 the
+    // word is not written: counted by ear only.
+    const deck = [...words].sort(() => Math.random() - 0.5).slice(0, ROUNDS)
+      .sort((a, b) => a.syllables.length - b.syllables.length);
 
     const scoreChip = el('span', { class: 'chip' }, '🥁 0');
     let pips = el('div');
@@ -102,13 +108,14 @@ Object.assign(Arcade, {
       if (round >= ROUNDS) return this.gameOver('tambour', score, false, '🥁 Le tambour des syllabes');
       const w = deck[round % deck.length];
       pips.replaceWith(pips = progressPips(round, ROUNDS));
+      this.reach(1 + Math.floor(round / 2));
       round++;
       let first = true;
       stage.innerHTML = '';
       const face = w.sprite ? el('img', { src: w.sprite, alt: '' })
         : w.icon ? iconEl(w.icon) : el('span', {}, w.emoji);
       const pic = el('button', { class: `tile big-pic ${w.sprite ? 'sprite' : w.icon ? 'ico' : 'emoji'}`, onclick: () => Voice.play(w.audio, w.text) }, face);
-      const wordEl = el('div', { class: 'word arcade-word' }, w.text);
+      const wordEl = el('div', { class: 'word arcade-word' }, this.level >= 4 ? '👂' : w.text);
       const drums = el('div', { class: 'drum-row' });
       [1, 2, 3, 4].forEach((n) => {
         const b = el('button', { class: 'drum-btn' }, el('span', { class: 'drum-dots' }, '●'.repeat(n)), el('b', {}, String(n)));
@@ -160,7 +167,10 @@ Object.assign(Arcade, {
     let score = 0;
     let round = 0;
     const ROUNDS = 10;
-    const deck = [...words].sort(() => Math.random() - 0.5);
+    // Shortest words first. Level 1: a consonant gap, 2 choices; 2: 3
+    // choices; 3: a vowel gap; 4: a two-letter sound (ou, on, ch…); 5: 4 choices.
+    const deck = [...words].sort(() => Math.random() - 0.5).slice(0, ROUNDS)
+      .sort((a, b) => a.graphemes.length - b.graphemes.length);
 
     const scoreChip = el('span', { class: 'chip' }, '🧩 0');
     let pips = el('div');
@@ -171,10 +181,17 @@ Object.assign(Arcade, {
       if (round >= ROUNDS) return this.gameOver('trou', score, false, '🧩 Le son manquant');
       const w = deck[round % deck.length];
       pips.replaceWith(pips = progressPips(round, ROUNDS));
+      this.reach(1 + Math.floor(round / 2));
       round++;
+      const L = this.level;
+      const nChoices = [2, 3, 3, 3, 4][L - 1];
       const chunks = displayChunks(w.text, w.graphemes);
       const holes = chunks.map((c, i) => i).filter((i) => holeable(chunks[i].g, sounds));
-      const hole = holes[Math.floor(Math.random() * holes.length)];
+      const kindAt = (i) => sounds.get(chunks[i].g).kind;
+      const wanted = L <= 2 ? ['consonne'] : L === 3 ? ['voyelle'] : ['digraphe', 'trigraphe'];
+      const preferred = holes.filter((i) => wanted.includes(kindAt(i)));
+      const from = preferred.length ? preferred : holes;
+      const hole = from[Math.floor(Math.random() * from.length)];
       const answer = chunks[hole].g;
 
       // Distractors: other taught graphemes of the same family (vowel sound
@@ -185,7 +202,7 @@ Object.assign(Arcade, {
       pool.sort(() => Math.random() - 0.5);
       const choices = [answer];
       for (const s of pool) {
-        if (choices.length === 3) break;
+        if (choices.length === nChoices) break;
         if (!choices.some((c) => sameSound(c, s.id))) choices.push(s.id);
       }
       choices.sort(() => Math.random() - 0.5);
@@ -198,7 +215,7 @@ Object.assign(Arcade, {
       const gap = el('span', { class: 'gap' }, '?');
       const wordEl = el('div', { class: 'word arcade-word gap-word' },
         chunks.map((c, i) => (i === hole ? gap : c.sep + c.text)));
-      const grid = el('div', { class: 'grid three' });
+      const grid = el('div', { class: `grid ${['', '', 'two', 'three', 'four'][choices.length]}` });
       choices.forEach((id) => {
         const t = el('button', { class: 'tile grapheme-tile' }, id);
         t.addEventListener('click', async () => {
