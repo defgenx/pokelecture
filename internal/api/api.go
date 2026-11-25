@@ -132,6 +132,11 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /api/admin/lock", s.guard(s.adminPlay((*Server).handleAdminLock)))
 
 	// Parent-side voice recording — behind the Google sign-in when it is on.
+	// The studio calls the /api/admin/ spellings: a proxy that guarded the old
+	// ones with its own password (deploy/delvecch.io.md) cannot ask for it again.
+	mux.HandleFunc("GET /api/admin/texts", s.guard(s.handleTexts))
+	mux.HandleFunc("PUT /api/admin/record/{key}", s.guard(s.handleRecordPut))
+	mux.HandleFunc("DELETE /api/admin/record/{key}", s.guard(s.handleRecordDelete))
 	mux.HandleFunc("GET /api/texts", s.guard(s.handleTexts))
 	mux.HandleFunc("PUT /api/record/{key}", s.guard(s.handleRecordPut))
 	mux.HandleFunc("DELETE /api/record/{key}", s.guard(s.handleRecordDelete))

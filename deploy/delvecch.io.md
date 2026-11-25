@@ -136,10 +136,12 @@ configuration tout le côté parent est **fermé**.
    exacte et aucun en-tête `X-Forwarded-*` n'est cru.
 4. Pas d'`auth_basic` en plus : delvecch.io n'en a plus (les garder imposait
    deux connexions — Google, puis le mot de passe « Studio voix » dès que le
-   studio appelait `api/texts` et `api/record/`). Seul reste
-   `location ^~ /pokelecture/api/record/`, sans mot de passe, pour son
-   `client_max_body_size 12m` : sans lui les enregistrements (~8 Mo) prennent
-   un 413.
+   studio appelait `api/texts` et `api/record/`). Le studio appelle désormais
+   `api/admin/texts` et `api/admin/record/`, qu'aucun ancien `auth_basic` ne
+   couvre : même un nginx pas encore rechargé ne redemande plus de mot de
+   passe. Seul reste `location ~ ^/pokelecture/api/(admin/)?record/`, sans mot de
+   passe, pour son `client_max_body_size 12m` : sans lui les enregistrements
+   (~8 Mo) prennent un 413.
 
 Vérifier après `docker compose up -d pokelecture` :
 

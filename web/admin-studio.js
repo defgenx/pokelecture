@@ -86,13 +86,13 @@ function runMeter(bar) {
 /* ------------------------------------------------------------------ api --- */
 
 async function loadTexts() {
-  const res = await fetch('api/texts');
+  const res = await fetch('api/admin/texts');
   if (!res.ok) throw new Error(await res.text());
   state.texts = await res.json();
 }
 
 async function uploadTake(key, blob) {
-  const res = await fetch(`api/record/${key}`, {
+  const res = await fetch(`api/admin/record/${key}`, {
     method: 'PUT',
     headers: { 'Content-Type': blob.type || 'application/octet-stream' },
     body: blob,
@@ -102,7 +102,7 @@ async function uploadTake(key, blob) {
 }
 
 async function revertTake(key) {
-  const res = await fetch(`api/record/${key}`, { method: 'DELETE' });
+  const res = await fetch(`api/admin/record/${key}`, { method: 'DELETE' });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }

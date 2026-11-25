@@ -108,7 +108,7 @@ func status(t *testing.T, c *http.Client, u string) int {
 // allowlist, so the parent side is closed — and the game still open.
 func TestAuthOffClosesTheParentSide(t *testing.T) {
 	app, c := newAuthApp(t, nil)
-	for _, u := range []string{"/api/admin/summary", "/api/texts", "/admin", "/admin/studio"} {
+	for _, u := range []string{"/api/admin/summary", "/api/texts", "/api/admin/texts", "/admin", "/admin/studio"} {
 		if got := status(t, c, app.URL+u); got == http.StatusOK {
 			t.Errorf("sans configuration, %s doit être fermé : %d", u, got)
 		}
@@ -409,5 +409,9 @@ func TestStudioLivesUnderTheAdmin(t *testing.T) {
 	signIn(t, app, c, g)
 	if got := status(t, c, app.URL+"/admin/studio"); got != http.StatusOK {
 		t.Fatalf("connecté, /admin/studio : %d", got)
+	}
+	// The studio's own calls need nothing more than the admin's sign-in.
+	if got := status(t, c, app.URL+"/api/admin/texts"); got != http.StatusOK {
+		t.Fatalf("connecté, /api/admin/texts : %d", got)
 	}
 }
