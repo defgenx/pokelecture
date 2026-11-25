@@ -337,9 +337,13 @@ func TestDayOverIsToday(t *testing.T) {
 	if st.DayOver(now) {
 		t.Fatal("yesterday's lessons closed today")
 	}
-	st.Today = Today{Day: "2026-11-25", Lessons: 2}
+	st.Today = Today{Day: "2026-11-25", Lessons: 2, Quests: []string{"catch", "feed"}, Claimed: []string{"catch"}}
+	if !st.LessonsOver(now) || st.DayOver(now) {
+		t.Fatal("lessons done, a mission left: routes close, the day stays open")
+	}
+	st.Today.Claimed = append(st.Today.Claimed, "feed")
 	if !st.DayOver(now) {
-		t.Fatal("objective reached but the day is open")
+		t.Fatal("every mission done but the day is open")
 	}
 	st.Settings.DailyLimit = false
 	if st.DayOver(now) {

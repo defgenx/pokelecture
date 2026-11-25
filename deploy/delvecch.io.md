@@ -134,9 +134,12 @@ configuration tout le côté parent est **fermé**.
 3. Le service passe ces variables (étape 3) et fixe
    `POKELECTURE_URL=https://delvecch.io/pokelecture/` : l'URL de rappel est alors
    exacte et aucun en-tête `X-Forwarded-*` n'est cru.
-4. Les `location` `auth_basic` ci-dessous deviennent inutiles : retire-les une
-   fois la connexion Google vérifiée (les garder impose deux connexions, et
-   `/pokelecture/auth/` ne doit **pas** être derrière l'`auth_basic`).
+4. Pas d'`auth_basic` en plus : delvecch.io n'en a plus (les garder imposait
+   deux connexions — Google, puis le mot de passe « Studio voix » dès que le
+   studio appelait `api/texts` et `api/record/`). Seul reste
+   `location ^~ /pokelecture/api/record/`, sans mot de passe, pour son
+   `client_max_body_size 12m` : sans lui les enregistrements (~8 Mo) prennent
+   un 413.
 
 Vérifier après `docker compose up -d pokelecture` :
 
@@ -150,7 +153,7 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST https://delvecch.io/pokelecture
 Puis ouvrir `https://delvecch.io/pokelecture/admin` : le bouton, Google, puis l'admin
 (le studio voix : `/pokelecture/admin/studio`).
 
-**Variante sans Google : `auth_basic` dans nginx.** Le jeu reste ouvert (pas de mot de passe devant un enfant de cinq ans), mais le
+**Variante sans Google (pas celle de delvecch.io) : `auth_basic` dans nginx.** Le jeu reste ouvert (pas de mot de passe devant un enfant de cinq ans), mais le
 studio et l'administration sont publics sinon : n'importe qui pourrait écraser
 ta voix — ou **effacer la sauvegarde** via `api/admin/reset`. Protéger les pages
 seules ne suffirait pas — elles écrivent via `api/record/` et `api/admin/`,

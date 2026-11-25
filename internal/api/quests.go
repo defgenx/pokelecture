@@ -36,6 +36,9 @@ var questDefs = []questDef{
 	{"arcade", "Joue à un mini-jeu.", 1, "berry"},
 }
 
+// lessonQuest is the daily limit's mission id; its progress is Today.Lessons.
+const lessonQuest = "lessons"
+
 // questsFor picks the day's three missions, the same for the whole day.
 func questsFor(day string) []string {
 	h := fnv.New64a()
@@ -76,6 +79,17 @@ func (s *Server) questViews() []questView {
 		claimed[c] = true
 	}
 	var out []questView
+	// The daily limit's lessons come first: the parent's objective of the day.
+	if st.Settings.DailyLimit {
+		goal := st.Settings.DailyGoal()
+		text := curriculum.LessonQuestPhrases[min(goal, len(curriculum.LessonQuestPhrases))-1]
+		out = append(out, questView{
+			ID: lessonQuest, Text: text, Audio: speech.URL(text, speech.StyleNormal),
+			// Done also without the claim: lessons counted before the limit was on.
+			Goal: goal, Progress: min(goal, st.LessonsToday(time.Now())),
+			Done: claimed[lessonQuest] || st.LessonsToday(time.Now()) >= goal, Reward: "balls",
+		})
+	}
 	for _, id := range st.Today.Quests {
 		q, ok := questDefOf(id)
 		if !ok {
@@ -98,7 +112,9 @@ func (s *Server) progress(kind string, n int) []questView {
 	s.store.Count(kind, n, time.Now(), questsFor)
 	var done []questView
 	for _, q := range s.questViews() {
-		if q.ID != kind || q.Done || q.Progress < q.Goal {
+		// Claim, not Done, says whether it was paid: the lessons mission shows
+		// done as soon as the count is reached.
+		if q.ID != kind || q.Progress < q.Goal {
 			continue
 		}
 		if !s.store.Claim(q.ID) {

@@ -136,14 +136,47 @@ func TestDailyLimitStopsTheDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	var res resultResponse
+	json.NewDecoder(resp.Body).Decode(&res)
 	resp.Body.Close()
+	paid := false
+	for _, q := range res.QuestsDone {
+		paid = paid || q.ID == lessonQuest
+	}
+	if !paid {
+		t.Fatalf("the lessons mission was not paid: %+v", res.QuestsDone)
+	}
 	getJSON(t, srv.URL+"/api/state", &st)
-	if st.Daily == nil || !st.Daily.Over || st.Daily.Done != 1 {
-		t.Fatalf("after the objective: %+v", st.Daily)
+	if st.Daily == nil || !st.Daily.LessonsOver || st.Daily.Over || st.Daily.Done != 1 {
+		t.Fatalf("after the lessons: %+v", st.Daily)
+	}
+	lessonMission := false
+	for _, q := range st.Quests {
+		if q.ID == lessonQuest && q.Done && q.Goal == 1 {
+			lessonMission = true
+		}
+	}
+	if !lessonMission {
+		t.Fatalf("the lessons are not a done mission: %+v", st.Quests)
+	}
+	// Lessons done: no more routes, but the other missions stay open.
+	if code := getJSON(t, srv.URL+"/api/session/ep07", nil); code != http.StatusForbidden {
+		t.Errorf("a route after the lessons: %d", code)
+	}
+	if code := getJSON(t, srv.URL+"/api/session/tour", nil); code != http.StatusOK {
+		t.Errorf("the Tower before the missions are done: %d", code)
+	}
+	// Every mission done: nothing more at all.
+	for _, q := range store.Snapshot().Today.Quests {
+		store.Claim(q)
+	}
+	getJSON(t, srv.URL+"/api/state", &st)
+	if !st.Daily.Over {
+		t.Fatalf("every mission done: %+v", st.Daily)
 	}
 	for _, path := range []string{"/api/session/ep07", "/api/session/tour", "/api/session/dresseur-0-0"} {
 		if code := getJSON(t, srv.URL+path, nil); code != http.StatusForbidden {
-			t.Errorf("%s after the objective: %d", path, code)
+			t.Errorf("%s after every mission: %d", path, code)
 		}
 	}
 	store.SetDailyLimit(false, 1)

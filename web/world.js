@@ -630,10 +630,18 @@ Object.assign(Partner, {
 
 /* Every celebration an answer can carry, in order: the partner's level or
    evolution, finished missions, a trainer level, a Pokédex milestone. */
+let dayOverSaid = false;
+
 async function celebrateAll(res) {
   if (!res) return;
   await Partner.celebrate(res.partner_event);
   await Quests.celebrate(res.quests_done);
+  // The daily limit: the mission that closed the day says so, once.
+  if (dayOver() && !dayOverSaid) {
+    dayOverSaid = true;
+    Sfx.fanfare();
+    await say('Bravo, toutes tes missions du jour sont faites ! Reviens demain.');
+  }
   await Trainer.celebrate(res.trainer_event);
   if (res.milestone) {
     const toast = el('div', { class: 'levelup quest-toast' },

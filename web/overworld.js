@@ -383,7 +383,7 @@ const Overworld = {
           Trainer.chip(),
           // The day's objective, when the parent set a daily limit.
           s.daily ? el('span', { class: `chip daily-chip ${s.daily.over ? 'over' : ''}` },
-            s.daily.over ? '🌙' : `📅 ${s.daily.done}/${s.daily.goal}`) : null,
+            s.daily.over ? '🌙' : s.daily.lessons_over ? '📅 ✓' : `📅 ${s.daily.done}/${s.daily.goal}`) : null,
         ].filter(Boolean)),
         s.event ? el('button', { class: 'btn-icon exam-btn', title: 'Examen surprise', onclick: () => this.examDialog(s.event) }, '🎓') : null,
         el('button', { class: 'btn-icon', title: 'Mon équipe', onclick: () => Team.open() }, '👥'),

@@ -319,7 +319,8 @@ func (s *Server) state() stateView {
 	out.Rod = s.cur.HasRod(st)
 	if st.Settings.DailyLimit {
 		now := time.Now()
-		out.Daily = &dailyView{Goal: st.Settings.DailyGoal(), Done: st.LessonsToday(now), Over: st.DayOver(now)}
+		out.Daily = &dailyView{Goal: st.Settings.DailyGoal(), Done: st.LessonsToday(now),
+			LessonsOver: st.LessonsOver(now), Over: st.DayOver(now)}
 	}
 	out.Games = s.cur.GamesOpen(st)
 	if out.Games == nil {
@@ -473,6 +474,9 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if evID, ok := isExam(id); ok {
+		if s.lessonsOver(w) {
+			return
+		}
 		ev, known := s.cur.Event(evID)
 		if !known {
 			http.Error(w, "examen inconnu", http.StatusNotFound)
@@ -500,6 +504,9 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	ep, ok := s.cur.Episode(id)
 	if !ok {
 		http.Error(w, "épisode inconnu", http.StatusNotFound)
+		return
+	}
+	if s.lessonsOver(w) {
 		return
 	}
 	// A closed door plays its entry exam.
@@ -669,6 +676,7 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 	res.QuestsDone = append(res.QuestsDone, s.progress("words", words)...)
 	if req.Completed && (ep != nil || isExamID) {
 		s.store.AddLesson(now, questsFor)
+		res.QuestsDone = append(res.QuestsDone, s.progress(lessonQuest, 1)...)
 	}
 	if req.Completed && ep != nil {
 		res.QuestsDone = append(res.QuestsDone, s.progress("route", 1)...)
@@ -811,19 +819,31 @@ func contains(xs []int, x int) bool {
 	return false
 }
 
-// dailyView is the day's objective: Done of Goal lessons, Over once reached.
+// dailyView is the day under the daily limit: Done of Goal lessons;
+// LessonsOver once they are done (no more routes or exams), Over once every
+// mission is done too (nothing more at all).
 type dailyView struct {
-	Goal int  `json:"goal"`
-	Done int  `json:"done"`
-	Over bool `json:"over"`
+	Goal        int  `json:"goal"`
+	Done        int  `json:"done"`
+	LessonsOver bool `json:"lessons_over"`
+	Over        bool `json:"over"`
 }
 
-// dayOver refuses with 403 once today's objective is reached under the daily
-// limit (README « La limite du jour »); the client shows the same message.
+// dayOver refuses with 403 once every mission of the day is done under the
+// daily limit (README « La limite du jour »); the client says the same.
 func (s *Server) dayOver(w http.ResponseWriter) bool {
 	if !s.store.Snapshot().DayOver(time.Now()) {
 		return false
 	}
-	http.Error(w, "les leçons du jour sont finies : à demain", http.StatusForbidden)
+	http.Error(w, "les missions du jour sont faites : à demain", http.StatusForbidden)
+	return true
+}
+
+// lessonsOver refuses a route or an exam once today's lessons are done.
+func (s *Server) lessonsOver(w http.ResponseWriter) bool {
+	if !s.store.Snapshot().LessonsOver(time.Now()) {
+		return false
+	}
+	http.Error(w, "les leçons du jour sont faites : termine tes missions", http.StatusForbidden)
 	return true
 }

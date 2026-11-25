@@ -993,25 +993,49 @@ function syllableWord(syllables, fallbackText, audio) {
   return box;
 }
 
-/* The daily limit (README « La limite du jour »): once the parent's objective
-   is reached, nothing more today — routes, Tower, trainers, games, grass,
-   fishing. dayOver() is checked at every way in; the server refuses too. */
+/* The daily limit (README « La limite du jour »). The parent's lessons are
+   one of the day's missions: once they are done, no more routes or exams
+   (lessonsOver); once EVERY mission is done, nothing more at all (dayOver) —
+   Tower, trainers, games, grass, fishing. Checked at every way in; the
+   server refuses too. */
 function dayOver() {
   return !!(App.state && App.state.daily && App.state.daily.over);
 }
+function lessonsOver() {
+  return !!(App.state && App.state.daily && App.state.daily.lessons_over);
+}
+// A session that is a lesson: a route or an exam (not the Tower or a trainer).
+const isLesson = (id) => id !== 'tour' && !String(id).startsWith('dresseur-');
 
 function dayDone() {
   Voice.stop();
-  const d = App.state.daily;
   App.screen(
     App.topbar(),
     el('div', { class: 'page' },
       el('div', { class: 'act day-done' },
         el('div', { class: 'day-moon' }, '🌙'),
         el('h2', {}, 'C\'est fini pour aujourd\'hui !'),
-        el('div', { class: 'score' }, `📅 ${d.done} / ${d.goal} leçons`),
-        hint('Bravo, tu as fini tes leçons du jour ! Reviens demain.'),
+        el('div', { class: 'score' }, '📜 Toutes les missions sont faites'),
+        hint('Bravo, toutes tes missions du jour sont faites ! Reviens demain.'),
         el('button', { class: 'btn btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
+      ),
+    ),
+  );
+}
+
+function lessonsDone() {
+  Voice.stop();
+  const d = App.state.daily;
+  App.screen(
+    App.topbar(),
+    el('div', { class: 'page' },
+      el('div', { class: 'act day-done' },
+        el('div', { class: 'day-moon' }, '📚'),
+        el('h2', {}, 'Leçons du jour faites !'),
+        el('div', { class: 'score' }, `📅 ${d.done} / ${d.goal} leçons`),
+        hint('Tes leçons du jour sont faites ! Termine tes missions pour finir la journée.'),
+        el('button', { class: 'btn btn-huge btn-go', onclick: () => Quests.panel() }, '📜 MES MISSIONS'),
+        el('button', { class: 'btn btn-ghost', onclick: () => App.home() }, 'CARTE 🗺️'),
       ),
     ),
   );
@@ -1034,6 +1058,7 @@ const Session = {
   async start(id) {
     Voice.stop();
     if (dayOver()) return dayDone();
+    if (lessonsOver() && isLesson(id)) return lessonsDone();
     App.screen(el('div', { class: 'loading' }, pokeball('spin-fast')));
     try {
       this.data = await api(`api/session/${id}`);
@@ -1254,7 +1279,8 @@ const Session = {
           ballsWon(res.balls_won),
             ticketsWon(res.tickets_won),
           Partner.gainRow(res.partner_event),
-          dayOver() ? el('div', { class: 'newcatch' }, el('span', { class: 'score' }, '🌙 Leçons du jour finies !')) : null,
+          dayOver() ? el('div', { class: 'newcatch' }, el('span', { class: 'score' }, '🌙 Toutes les missions du jour sont faites !'))
+            : lessonsOver() ? el('div', { class: 'newcatch' }, el('span', { class: 'score' }, '📚 Leçons du jour faites !')) : null,
           el('button', { class: 'btn btn-huge btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
           dayOver() ? null : el('button', { class: 'btn', onclick: () => Arcade.hub() }, '🎮 MINI-JEUX'),
         ),
@@ -1270,8 +1296,8 @@ const Session = {
     if (res.balls_won) await say('Tu gagnes des Poké Balls !');
     if (res.tickets_won) await say('Tu gagnes un ticket de jeu !');
     await celebrateAll(res);
-    if (dayOver()) await say('Bravo, tu as fini tes leçons du jour ! Reviens demain.');
-    else await say('À demain !');
+    if (!dayOver() && lessonsOver()) await say('Tes leçons du jour sont faites ! Termine tes missions pour finir la journée.');
+    else if (!dayOver()) await say('À demain !');
   },
 };
 

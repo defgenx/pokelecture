@@ -465,17 +465,29 @@ une) ; quatre onglets, tout agit immédiatement sur la sauvegarde de ce joueur :
 
 ### La limite du jour
 
-Réglage **« Limiter les leçons par jour »** (oui / non) et son **objectif du
-jour** : 1 à 5 leçons (2 par défaut). Une leçon = une route terminée, rejouée ou
-non, ou un examen (`Today.Lessons`, remis à zéro chaque jour). Sur la carte, une
-puce 📅 1/2 montre où il en est. **Objectif atteint, plus rien ne s'ouvre
-jusqu'au lendemain** : routes, Tour, Dresseurs, mini-jeux, hautes herbes, pêche,
-examens — un écran 🌙 « C'est fini pour aujourd'hui ! » et la voix : « Bravo, tu
-as fini tes leçons du jour ! Reviens demain. ». La carte reste visitable. La
-séance en cours se termine normalement ; c'est la suivante qui ne démarre pas.
-Le serveur refuse aussi (403) les séances, les tickets et les captures : la
-limite ne se contourne pas en rechargeant la page. L'onglet Réglages montre
-les leçons faites aujourd'hui. Indépendant du mode libre.
+Réglage **« Limiter les leçons par jour »** (oui / non) et son **objectif** :
+1 à 5 leçons (2 par défaut). Une leçon = une route terminée, rejouée ou non, ou
+un examen (`Today.Lessons`, remis à zéro chaque jour).
+
+**Les leçons sont une mission du jour** (📜), en tête de la liste, à côté des
+trois missions tirées au hasard : « Fais deux leçons aujourd'hui. », payée comme
+les autres. Deux étapes :
+
+1. **Leçons faites** (`LessonsOver`) : plus de routes ni d'examens — un écran 📚
+   « Tes leçons du jour sont faites ! Termine tes missions pour finir la
+   journée. » avec le bouton des missions. La Tour, les Dresseurs, les
+   mini-jeux, les herbes et la pêche restent ouverts pour finir les missions.
+2. **Toutes les missions faites** (`DayOver`) : plus rien jusqu'au lendemain —
+   écran 🌙 et la voix « Bravo, toutes tes missions du jour sont faites !
+   Reviens demain. », dite une fois par la mission qui ferme la journée.
+
+Sur la carte, la puce 📅 1/2 devient 📅 ✓ puis 🌙. La séance en cours se
+termine normalement ; c'est la suivante qui ne démarre pas. Le serveur refuse
+aussi (403) : routes et examens dès les leçons faites ; tout (séances, tickets,
+captures) une fois la journée finie. L'onglet Réglages montre les leçons faites
+aujourd'hui. Une mission impossible ce jour-là (plus de Poké Balls pour
+« Attrape deux Pokémon ») garde la journée ouverte : les routes, elles, restent
+fermées. Indépendant du mode libre.
 
 ### Se connecter avec Google
 

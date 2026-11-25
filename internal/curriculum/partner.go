@@ -219,6 +219,16 @@ var QuestPhrases = []string{
 	"Joue à un mini-jeu.",
 }
 
+// LessonQuestPhrases is the daily limit's mission, one per objective (1–5
+// lessons): QuestPhrases' sibling, read out the same way.
+var LessonQuestPhrases = []string{
+	"Fais une leçon aujourd'hui.",
+	"Fais deux leçons aujourd'hui.",
+	"Fais trois leçons aujourd'hui.",
+	"Fais quatre leçons aujourd'hui.",
+	"Fais cinq leçons aujourd'hui.",
+}
+
 // Trainer levels: the child's own, fed by everything he does.
 
 // TrainerLevel converts trainer XP to a level (from 1) and the progress in it.

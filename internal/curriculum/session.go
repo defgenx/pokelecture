@@ -1477,7 +1477,7 @@ func (c *Curriculum) SpeechTexts() []SpeechItem {
 	for _, phrase := range c.progressionSpeech() {
 		add(phrase, speech.StyleNormal)
 	}
-	for _, phrase := range append([]string{FoundBalls, FoundSuperBall, FoundCandy, FoundBerry}, QuestPhrases...) {
+	for _, phrase := range append(append([]string{FoundBalls, FoundSuperBall, FoundCandy, FoundBerry}, QuestPhrases...), LessonQuestPhrases...) {
 		add(phrase, speech.StyleNormal)
 	}
 	return out
@@ -1494,7 +1494,8 @@ var UIPhrases = []string{
 	"Presque ! Relis le mot.",
 	"Niveau suivant !",
 	// La limite du jour (README « La limite du jour »)
-	"Bravo, tu as fini tes leçons du jour ! Reviens demain.",
+	"Bravo, toutes tes missions du jour sont faites ! Reviens demain.",
+	"Tes leçons du jour sont faites ! Termine tes missions pour finir la journée.",
 	// Téracristal (README « Gigamax et Téracristal »)
 	"Fais un coup critique pour remplir ton joyau Téracristal !",
 	"Ton joyau Téracristal brille ! Touche-le pour téracristalliser !",

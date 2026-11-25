@@ -93,10 +93,28 @@ func (st State) LessonsToday(now time.Time) int {
 	return st.Today.Lessons
 }
 
-// DayOver reports that the daily limit is on and today's objective reached:
-// nothing more until tomorrow.
-func (st State) DayOver(now time.Time) bool {
+// LessonsOver reports that the daily limit is on and today's lessons are
+// done: no more routes or exams today (the other missions stay open).
+func (st State) LessonsOver(now time.Time) bool {
 	return st.Settings.DailyLimit && st.LessonsToday(now) >= st.Settings.DailyGoal()
+}
+
+// DayOver reports that the lessons AND every other mission of the day are
+// done: nothing more until tomorrow. README « La limite du jour ».
+func (st State) DayOver(now time.Time) bool {
+	if !st.LessonsOver(now) {
+		return false
+	}
+	claimed := map[string]bool{}
+	for _, c := range st.Today.Claimed {
+		claimed[c] = true
+	}
+	for _, q := range st.Today.Quests {
+		if !claimed[q] {
+			return false
+		}
+	}
+	return true
 }
 
 // Fonts the reading text can use (web/styles.css, .font-*).

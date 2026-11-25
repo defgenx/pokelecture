@@ -409,8 +409,9 @@ function dangerTab(list) {
     ),
     el('div', { class: 'namebox', style: 'margin-top:8px' }, el('label', {}, 'Objectif du jour : '), dailyN),
     el('p', { style: 'color:#6a7180;font-size:13px;margin-top:8px' },
-      'Une leçon = une route terminée (rejouée ou non) ou un examen. L\'objectif atteint, plus rien ' +
-      'ne s\'ouvre jusqu\'au lendemain : routes, Tour, Dresseurs, mini-jeux, herbes, pêche. ' +
+      'Les leçons deviennent une mission du jour (📜), à côté des autres. Une leçon = une route ' +
+      'terminée (rejouée ou non) ou un examen. Leçons faites : plus de routes ni d\'examens, mais il ' +
+      'peut finir ses missions. Toutes les missions faites : plus rien jusqu\'au lendemain. ' +
       `Aujourd'hui : ${today.lessons || 0} leçon${(today.lessons || 0) > 1 ? 's' : ''} faite${(today.lessons || 0) > 1 ? 's' : ''}.`),
   ));
   list.append(el('div', { class: 'section' },
