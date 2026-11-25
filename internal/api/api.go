@@ -537,6 +537,10 @@ type resultRequest struct {
 	Floor  int `json:"floor"`
 	Rounds int `json:"rounds"`
 	Points int `json:"points"`
+	// Fight facts for the day's missions: the Téracristal was used, every
+	// word was built without a wrong tap.
+	Tera     bool `json:"tera"`
+	Flawless bool `json:"flawless"`
 }
 
 type resultResponse struct {
@@ -625,7 +629,7 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		res.PartnerEvent = s.award(min(maxSessionXP, right+sessionBonusXP))
 	} else if isTrainer {
 		// A won battle comes back completed; a lost one does not.
-		if req.Completed && s.store.Beat(fmt.Sprintf("%d:%d", tRegion, tN), now, questsFor) {
+		if req.Completed && s.store.Beat(fmt.Sprintf("%d:%d", tRegion, tN), now, s.questsFor) {
 			res.TrainerWon = true
 			res.Balls = trainerBalls
 			res.PartnerEvent = s.award(trainerXP + right)
@@ -638,6 +642,7 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		st0 := s.store.Snapshot()
 		if req.Rounds > 0 && req.Points >= res.TowerNeed && req.Floor == s.store.Snapshot().TowerFloor+1 {
 			res.TowerPassed = true
+			res.QuestsDone = append(res.QuestsDone, s.progress("tower", 1)...)
 			s.store.ClearFloor(req.Floor)
 			if id := s.cur.TowerRewardFor(req.Floor); id != 0 && s.store.Catch(id) {
 				res.NewCatches = append(res.NewCatches, id)
@@ -675,8 +680,17 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 	}
 	res.QuestsDone = append(res.QuestsDone, s.progress("words", words)...)
 	if req.Completed && (ep != nil || isExamID) {
-		s.store.AddLesson(now, questsFor)
+		s.store.AddLesson(now, s.questsFor)
 		res.QuestsDone = append(res.QuestsDone, s.progress(lessonQuest, 1)...)
+	}
+	if req.Tera {
+		res.QuestsDone = append(res.QuestsDone, s.progress("tera", 1)...)
+	}
+	if req.Flawless && (req.Completed || res.TowerPassed) {
+		res.QuestsDone = append(res.QuestsDone, s.progress("flawless", 1)...)
+	}
+	if req.Completed && ep != nil && req.Stars >= progress.MaxStars {
+		res.QuestsDone = append(res.QuestsDone, s.progress("stars5", 1)...)
 	}
 	if req.Completed && ep != nil {
 		res.QuestsDone = append(res.QuestsDone, s.progress("route", 1)...)

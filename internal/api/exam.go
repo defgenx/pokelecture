@@ -162,7 +162,7 @@ func (s *Server) handleAdminEventToday(w http.ResponseWriter, r *http.Request) {
 	} else {
 		id = ""
 	}
-	s.store.CallEvent(id, time.Now(), questsFor)
+	s.store.CallEvent(id, time.Now(), s.questsFor)
 	if err := s.store.Save(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

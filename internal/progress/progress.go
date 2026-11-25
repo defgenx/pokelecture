@@ -88,9 +88,10 @@ func (st Settings) DailyObjectives() int {
 	return st.DailyMissions
 }
 
-// RouteQuest is the "finish a route" mission (internal/api quests.go): under
-// the daily limit it is never drawn, the lessons mission covers it.
-const RouteQuest = "route"
+// RouteQuests are the missions only a route can complete (internal/api
+// quests.go): under the daily limit they are never drawn — routes close once
+// the lessons are done, and the lessons mission covers them anyway.
+var RouteQuests = map[string]bool{"route": true, "stars5": true}
 
 // ActiveQuests are the day's missions on screen, in Today.Quests order (the
 // day's shuffle): three without the limit; under it, DailyObjectives − 1 next
@@ -105,7 +106,7 @@ func (st State) ActiveQuests() []string {
 		if len(out) >= n {
 			break
 		}
-		if st.Settings.DailyLimit && q == RouteQuest {
+		if st.Settings.DailyLimit && RouteQuests[q] {
 			continue
 		}
 		out = append(out, q)
@@ -768,7 +769,7 @@ func (s *Store) RecordExam(id string, percent int, passed bool, sections map[str
 }
 
 // CallEvent puts an exam on today's map (from the admin); "" clears it.
-func (s *Store) CallEvent(id string, now time.Time, quests func(day string) []string) {
+func (s *Store) CallEvent(id string, now time.Time, quests func(day string, st State) []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.dayLocked(now, quests)
@@ -948,19 +949,19 @@ func (s *Store) OpenGift(now time.Time, balls int) bool {
 
 // day rolls Today over when the date changed; quests picks the new day's
 // missions. Callers hold the lock.
-func (s *Store) dayLocked(now time.Time, quests func(day string) []string) {
+func (s *Store) dayLocked(now time.Time, quests func(day string, st State) []string) {
 	day := now.Format("2006-01-02")
 	if s.state.Today.Day == day {
 		return
 	}
 	s.state.Today = Today{Day: day, Progress: map[string]int{}}
 	if quests != nil {
-		s.state.Today.Quests = quests(day)
+		s.state.Today.Quests = quests(day, s.state)
 	}
 }
 
 // AddLesson counts one finished lesson today (the daily limit's counter).
-func (s *Store) AddLesson(now time.Time, quests func(day string) []string) {
+func (s *Store) AddLesson(now time.Time, quests func(day string, st State) []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.dayLocked(now, quests)
@@ -982,18 +983,18 @@ func (s *Store) SetDailyLimit(on bool, lessons, missions int) {
 	}
 }
 
-// MaxDailyMissions: the lessons plus every other mission (internal/api questDefs minus the route one).
+// MaxDailyMissions caps the day's objectives (the lessons included).
 const MaxDailyMissions = 7
 
 // Roll makes sure Today is today's, with its missions.
-func (s *Store) Roll(now time.Time, quests func(day string) []string) {
+func (s *Store) Roll(now time.Time, quests func(day string, st State) []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.dayLocked(now, quests)
 }
 
 // Count adds n to a mission kind's progress for today.
-func (s *Store) Count(kind string, n int, now time.Time, quests func(day string) []string) {
+func (s *Store) Count(kind string, n int, now time.Time, quests func(day string, st State) []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.dayLocked(now, quests)
@@ -1017,7 +1018,7 @@ func (s *Store) Claim(id string) bool {
 }
 
 // Pick records a hidden object picked up today; false if it already was.
-func (s *Store) Pick(spot string, now time.Time, quests func(day string) []string) bool {
+func (s *Store) Pick(spot string, now time.Time, quests func(day string, st State) []string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.dayLocked(now, quests)
@@ -1031,7 +1032,7 @@ func (s *Store) Pick(spot string, now time.Time, quests func(day string) []strin
 }
 
 // Beat records a trainer beaten today; false if already beaten.
-func (s *Store) Beat(trainer string, now time.Time, quests func(day string) []string) bool {
+func (s *Store) Beat(trainer string, now time.Time, quests func(day string, st State) []string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.dayLocked(now, quests)
@@ -1076,7 +1077,7 @@ func (s *Store) AddItem(item string, n int) bool {
 }
 
 // Feed spends a berry on the partner, once a day.
-func (s *Store) Feed(now time.Time, quests func(day string) []string) bool {
+func (s *Store) Feed(now time.Time, quests func(day string, st State) []string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.dayLocked(now, quests)

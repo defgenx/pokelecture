@@ -184,3 +184,36 @@ func TestDailyLimitStopsTheDay(t *testing.T) {
 		t.Fatalf("limit off: %d", code)
 	}
 }
+
+// A mission is only drawn when it can be done: no fishing mission without the
+// rod, no book before Mon livre opens; the rod makes fishing possible.
+func TestMissionsOnlyWhatIsPossible(t *testing.T) {
+	srv, store := serverAt(t, "ep20") // 3 stars everywhere: no rod
+	_ = srv
+	s := New(mustCur(t), store, "../../web", "/")
+	st := store.Snapshot()
+	if s.questPossible("fish", st) {
+		t.Fatal("fishing mission without the rod")
+	}
+	if !s.questPossible("book", st) || !s.questPossible("tower", st) {
+		t.Fatal("book and Tower are open at ep20")
+	}
+	for _, id := range s.questsFor("2026-11-25", st) {
+		if id == "fish" {
+			t.Fatal("fish drawn without the rod")
+		}
+	}
+	store.CompleteEpisode("ep14", 4, time.Now())
+	if !s.questPossible("fish", store.Snapshot()) {
+		t.Fatal("no fishing mission with the rod")
+	}
+}
+
+func mustCur(t *testing.T) *curriculum.Curriculum {
+	t.Helper()
+	cur, err := curriculum.Load(filepath.Join("../..", "data"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return cur
+}

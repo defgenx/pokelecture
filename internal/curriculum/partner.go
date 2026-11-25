@@ -217,6 +217,14 @@ var QuestPhrases = []string{
 	"Trouve un objet caché sur la carte.",
 	"Donne une baie à ton partenaire.",
 	"Joue à un mini-jeu.",
+	"Monte un étage de la Tour de Combat.",
+	"Pêche un Pokémon avec ta canne.",
+	"Lis ton livre jusqu'au bout.",
+	"Bats un record dans un mini-jeu.",
+	"Atteins le niveau trois dans un mini-jeu.",
+	"Téracristallise ton partenaire contre un Dresseur.",
+	"Gagne cinq étoiles sur une route.",
+	"Gagne un combat sans une seule erreur.",
 }
 
 // LessonQuestPhrases is the daily limit's mission, one per objective (1–5

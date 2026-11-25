@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/adelvecchio/pokelecture/internal/curriculum"
+	"github.com/adelvecchio/pokelecture/internal/progress"
 	"github.com/adelvecchio/pokelecture/internal/speech"
 )
 
@@ -34,14 +35,49 @@ var questDefs = []questDef{
 	{"find", "Trouve un objet caché sur la carte.", 1, "balls"},
 	{"feed", "Donne une baie à ton partenaire.", 1, "superball"},
 	{"arcade", "Joue à un mini-jeu.", 1, "berry"},
+	{"tower", "Monte un étage de la Tour de Combat.", 1, "balls"},
+	{"fish", "Pêche un Pokémon avec ta canne.", 1, "superball"},
+	{"book", "Lis ton livre jusqu'au bout.", 1, "berry"},
+	{"record", "Bats un record dans un mini-jeu.", 1, "balls"},
+	{"level", "Atteins le niveau trois dans un mini-jeu.", 1, "berry"},
+	{"tera", "Téracristallise ton partenaire contre un Dresseur.", 1, "superball"},
+	{"stars5", "Gagne cinq étoiles sur une route.", 1, "superball"},
+	{"flawless", "Gagne un combat sans une seule erreur.", 1, "balls"},
+}
+
+// questLevel is the mini-game level the "level" mission asks for.
+const questLevel = 3
+
+// questPossible reports whether a mission can be done with this save today,
+// so the day is never held open by one that cannot (fishing without the rod).
+// Called under the store's lock: st and s.cur only, never s.store.
+func (s *Server) questPossible(id string, st progress.State) bool {
+	open := s.cur.LastDone(st) >= 0 // Tower, trainers, grass, games
+	games := map[string]bool{}
+	for _, g := range s.cur.GamesOpen(st) {
+		games[g] = true
+	}
+	switch id {
+	case "catch":
+		return open && len(s.cur.WildPool(s.cur.LastDone(st))) > 0
+	case "fish":
+		return s.cur.HasRod(st)
+	case "book":
+		return games["livre"]
+	case "arcade", "record", "level":
+		return open && len(games) > 0
+	case "trainer", "tera", "tower", "find":
+		return open
+	}
+	return true
 }
 
 // lessonQuest is the daily limit's mission id; its progress is Today.Lessons.
 const lessonQuest = "lessons"
 
-// questsFor shuffles every mission for the day, the same all day: the ones on
-// screen are a prefix of it (progress.State.ActiveQuests).
-func questsFor(day string) []string {
+// questsFor shuffles the missions possible today, the same all day: the ones
+// on screen are a prefix of it (progress.State.ActiveQuests).
+func (s *Server) questsFor(day string, st progress.State) []string {
 	h := fnv.New64a()
 	h.Write([]byte(day))
 	rng := rand.New(rand.NewPCG(h.Sum64(), 0x9e57))
@@ -50,7 +86,13 @@ func questsFor(day string) []string {
 		ids[i] = q.ID
 	}
 	rng.Shuffle(len(ids), func(i, j int) { ids[i], ids[j] = ids[j], ids[i] })
-	return ids
+	var out []string
+	for _, id := range ids {
+		if s.questPossible(id, st) {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 func questDefOf(id string) (questDef, bool) {
@@ -73,7 +115,7 @@ type questView struct {
 }
 
 func (s *Server) questViews() []questView {
-	s.store.Roll(time.Now(), questsFor)
+	s.store.Roll(time.Now(), s.questsFor)
 	st := s.store.Snapshot()
 	claimed := map[string]bool{}
 	for _, c := range st.Today.Claimed {
@@ -110,7 +152,7 @@ func (s *Server) progress(kind string, n int) []questView {
 	if n <= 0 || s.store.Snapshot().Partner == nil {
 		return nil
 	}
-	s.store.Count(kind, n, time.Now(), questsFor)
+	s.store.Count(kind, n, time.Now(), s.questsFor)
 	var done []questView
 	for _, q := range s.questViews() {
 		// Claim, not Done, says whether it was paid: the lessons mission shows
@@ -160,7 +202,7 @@ func (s *Server) handleFind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	s.store.Roll(now, questsFor)
+	s.store.Roll(now, s.questsFor)
 	st := s.store.Snapshot()
 	prefix := fmt.Sprintf("%d:", req.Region)
 	n := 0
@@ -169,7 +211,7 @@ func (s *Server) handleFind(w http.ResponseWriter, r *http.Request) {
 			n++
 		}
 	}
-	if n >= objectsPerRegion || !s.store.Pick(prefix+req.Spot, now, questsFor) {
+	if n >= objectsPerRegion || !s.store.Pick(prefix+req.Spot, now, s.questsFor) {
 		http.Error(w, "déjà ramassé", http.StatusConflict)
 		return
 	}
@@ -209,7 +251,7 @@ const (
 /* ---------------------------------------------------------------- feed --- */
 
 func (s *Server) handleFeed(w http.ResponseWriter, r *http.Request) {
-	if !s.store.Feed(time.Now(), questsFor) {
+	if !s.store.Feed(time.Now(), s.questsFor) {
 		http.Error(w, "pas de baie, ou déjà nourri aujourd'hui", http.StatusConflict)
 		return
 	}

@@ -463,6 +463,22 @@ une) ; quatre onglets, tout agit immédiatement sur la sauvegarde de ce joueur :
   épisode terminé ou la Tour les justifie) — tout se regagne en rejouant,
   jamais en double. Les **vies en combat** se règlent ici aussi.
 
+### Les missions du jour
+
+Chaque jour, des missions 📜 (bouton sur la carte, lues à voix haute), chacune
+payée d'une récompense (Poké Balls, baie, Super Ball). Quinze sortes
+(`questDefs` dans `internal/api/quests.go`, textes dans `curriculum.QuestPhrases`) :
+attraper deux Pokémon dans les herbes, lire dix mots sans faute, terminer une
+route, battre un Dresseur, trouver un objet caché, donner une baie, jouer à un
+mini-jeu, **monter un étage de la Tour, pêcher un Pokémon, lire son livre
+jusqu'au bout, battre un record, atteindre le niveau 3 dans un mini-jeu,
+téracristalliser son partenaire, gagner cinq étoiles sur une route, gagner un
+combat sans une seule erreur**. Le tirage du jour (`questsFor`) ne garde que
+**les missions possibles pour cette sauvegarde** (`questPossible`) : pas de
+pêche sans la canne, pas de livre avant « Mon livre », pas de Tour ni de
+Dresseur avant la première route — sinon une mission impossible tiendrait la
+journée ouverte sous la limite. Sans limite : les trois premières du tirage.
+
 ### La limite du jour
 
 Réglage **« Limiter la journée »** (oui / non) — sans lui, il joue autant qu'il
@@ -476,7 +492,9 @@ leçon = une route terminée, rejouée ou non, ou un examen (`Today.Lessons`, re
 leçons (« Fais deux leçons aujourd'hui. », payée comme les autres), les autres
 sont tirées au hasard, le même tirage toute la journée (`questsFor` mélange
 toutes les missions, `State.ActiveQuests` en prend le début) ; sous la limite,
-« Termine une route » n'est jamais tirée, les leçons la couvrent. 1 objectif =
+les missions qui demandent une route (« Termine une route », « Gagne cinq
+étoiles… » : `RouteQuests`) ne sont jamais tirées — les routes ferment une fois
+les leçons faites, et les leçons les couvrent. 1 objectif =
 les leçons seules. Sans la limite : les trois missions habituelles. Deux étapes :
 
 1. **Leçons faites** (`LessonsOver`) : plus de routes ni d'examens — un écran 📚

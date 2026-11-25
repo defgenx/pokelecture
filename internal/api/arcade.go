@@ -154,6 +154,8 @@ type recordRequest struct {
 	Score int    `json:"score"`
 	// Lower flips the comparison for time-based games (memory: fastest wins).
 	Lower bool `json:"lower"`
+	// Level is the mini-game level reached (the "level" mission).
+	Level int `json:"level"`
 	// Items lets the comprehension games feed the spaced repetition.
 	Items []struct {
 		ID      string `json:"id"`
@@ -202,6 +204,15 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request) {
 		tickets = s.payTicket()
 	}
 	done := append(s.progress("arcade", 1), s.progress("words", words)...)
+	if beaten {
+		done = append(done, s.progress("record", 1)...)
+	}
+	if req.Level >= questLevel {
+		done = append(done, s.progress("level", 1)...)
+	}
+	if req.Game == "livre" {
+		done = append(done, s.progress("book", 1)...)
+	}
 	tev, m := s.settle()
 	if err := s.store.Save(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -564,7 +564,7 @@ async function wildDex(grid) {
 /* -------------------------------------------------- missions & partner --- */
 
 const Quests = {
-  /* The day's three missions, read out one by one; tapping a row reads it
+  /* The day's missions (README « Les missions du jour »), read out one by one; tapping a row reads it
      again. Opened from the 📜 button on the map. */
   panel() {
     const qs = (App.state && App.state.quests) || [];

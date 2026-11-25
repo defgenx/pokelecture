@@ -322,10 +322,10 @@ func (s *Server) handleWildCatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	st := s.store.Snapshot()
-	allowed := false
+	allowed, water := false, false
 	for _, v := range s.wildViews(st) {
 		if v.ID == req.ID && v.Available && (!v.Water || s.cur.HasRod(st)) {
-			allowed = true
+			allowed, water = true, v.Water
 		}
 	}
 	if !allowed {
@@ -357,7 +357,12 @@ func (s *Server) handleWildCatch(w http.ResponseWriter, r *http.Request) {
 	}
 	ev := s.award(xp)
 	s.store.TrainerGain(catchTrainerXP)
-	done := s.progress("catch", 1)
+	// The grass mission says « dans les hautes herbes »: a fished one is the fishing mission.
+	mission := "catch"
+	if water {
+		mission = "fish"
+	}
+	done := s.progress(mission, 1)
 	tev, m := s.settle()
 	s.save()
 	writeJSON(w, http.StatusOK, map[string]any{"caught": true, "new": isNew, "chance": chance, "partner_event": ev,

@@ -1192,6 +1192,9 @@ const Session = {
       floor: towerInfo ? towerInfo.floor : 0,
       rounds: stats.rounds,
       points,
+      // For the day's missions (README « La limite du jour »).
+      tera: !!stats.tera,
+      flawless: stats.rounds > 0 && stats.perfect === stats.rounds,
     });
     App.state = res.state;
 
@@ -2030,7 +2033,7 @@ function renderCombat(a, body, done) {
 
   const victory = async () => {
     // finish() needs the fight's tally to score a tower floor.
-    Session.fightStats = { perfect, rounds: round };
+    Session.fightStats = { perfect, rounds: round, tera: tera === 'on' };
     music.stop();
     // K.O.: the foe spins away, the arena flashes, a giant K.O.
     arena.classList.add('ko-flash');
@@ -2355,7 +2358,7 @@ const Arcade = {
     let beaten = false;
     let res = {};
     try {
-      res = await api('api/records', { game, score, lower, items: this.items });
+      res = await api('api/records', { game, score, lower, items: this.items, level: this.level });
       App.state = res.state;
       beaten = res.beaten;
     } catch (_) {}
