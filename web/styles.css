@@ -386,6 +386,8 @@ body::after {
 }
 .word .syl:nth-child(odd), .sylcol > .syl:nth-child(odd) { color: var(--blue); }
 .word .syl:nth-child(even), .sylcol > .syl:nth-child(even) { color: var(--red); }
+/* Silent letters (README « Les lettres muettes »): written, not said. */
+.mute { color: #b4b9c3; }
 
 .sentence {
   font-size: clamp(27px, 6vw, 46px);

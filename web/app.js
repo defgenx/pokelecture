@@ -919,21 +919,76 @@ function byLook(list, target, name) {
   return [...list].sort((a, b) => rank(a) - rank(b));
 }
 
-/* A written word as blue/red syllables (README « Les syllabes en couleur »);
-   the plain text when its syllables are unknown. Put it in a .word or .sylcol box. */
+/* Letters written but not said, for greying (README « Les lettres muettes »):
+   an h that does not make ch, ph, sh or th; a final e or es with a sounded
+   vowel before it (Rage, Fée, ailes — but le, de, que, les keep theirs). */
+function muteMask(word) {
+  const s = word.toLowerCase();
+  const mask = new Array(s.length).fill(false);
+  const letter = /[a-zàâäéèêëîïôöùûüçœæ]/;
+  const vowel = /[aeiouyàâäéèêëîïôöùûüœæ]/;
+  for (let i = 0; i < s.length;) {
+    if (!letter.test(s[i])) { i++; continue; }
+    let j = i;
+    while (j < s.length && letter.test(s[j])) j++;
+    const w = s.slice(i, j);
+    for (let k = 0; k < w.length; k++) {
+      if (w[k] === 'h' && !(k > 0 && 'cpst'.includes(w[k - 1]))) mask[i + k] = true;
+    }
+    const end = w.length > 2 && w.endsWith('es') ? w.length - 2 : w.endsWith('e') ? w.length - 1 : -1;
+    if (end > 0) {
+      const before = w.slice(0, end).replace(/qu|gu/g, 'k');
+      const prev = before[before.length - 1];
+      if (vowel.test(before) && !'aeoàâêô'.includes(prev)) for (let k = end; k < w.length; k++) mask[i + k] = true;
+    }
+    i = j;
+  }
+  return mask;
+}
+
+// muted renders text[from, from+len) of a word whose mask is muteMask(word):
+// the silent letters wrapped in span.mute.
+function muted(word, mask, from = 0, len = word.length - from) {
+  const out = [];
+  let run = '';
+  let runMute = false;
+  for (let k = from; k < from + len; k++) {
+    if (run && mask[k] !== runMute) { out.push(runMute ? el('span', { class: 'mute' }, run) : run); run = ''; }
+    runMute = mask[k];
+    run += word[k];
+  }
+  if (run) out.push(runMute ? el('span', { class: 'mute' }, run) : run);
+  return out;
+}
+
+// A word with its silent letters greyed.
+function muteWord(text) { return muted(text, muteMask(text)); }
+
+// Each syllable's piece of the whole word, silent letters greyed.
+function sylPieces(syllables) {
+  const word = syllables.join('');
+  const mask = muteMask(word);
+  let at = 0;
+  return syllables.map((syl) => { const nodes = muted(word, mask, at, syl.length); at += syl.length; return nodes; });
+}
+
+/* A written word as blue/red syllables (README « Les syllabes en couleur »),
+   silent letters greyed (« Les lettres muettes »); the plain word when its
+   syllables are unknown. Put it in a .word or .sylcol box. */
 function sylColored(syllables, text) {
-  if (!syllables || !syllables.length) return text;
-  return syllables.map((syl) => el('span', { class: 'syl' }, syl));
+  if (!syllables || !syllables.length) return muteWord(text);
+  return sylPieces(syllables).map((nodes) => el('span', { class: 'syl' }, nodes));
 }
 
 function syllableWord(syllables, fallbackText, audio) {
   const parts = (syllables && syllables.length) ? syllables : [fallbackText];
   const box = el('div', { class: 'word' });
+  const pieces = sylPieces(parts);
   parts.forEach((syl, n) => {
     box.append(el('span', {
       class: 'syl',
       onclick: (ev) => { ev.stopPropagation(); Voice.play(audio ? audio[n] : null, syl); },
-    }, syl));
+    }, pieces[n]));
   });
   return box;
 }
@@ -1346,7 +1401,7 @@ function renderQuiz(a, body, done) {
       say("Quel mot va avec l'image ?");
     } else if (isText) {
       const prompt = a.kind === 'phrase'
-        ? el('div', { class: 'sentence' }, item.prompt)
+        ? el('div', { class: 'sentence' }, muteWord(item.prompt))
         : syllableWord(item.syllables, item.prompt, item.syllable_audio);
       replay = el('button', { class: 'btn btn-ghost', disabled: true, onclick: () => Voice.play(item.audio, item.prompt) }, '🔊 Vérifier');
       stage.append(prompt, replay);
@@ -1434,7 +1489,7 @@ function renderPhrase(a, body, done) {
     const chips = words.map((w, k) => el('button', {
       class: 'read-word',
       onclick: () => Voice.play(item.syllable_audio ? item.syllable_audio[k] : null, w),
-    }, w));
+    }, muteWord(w)));
     const sentence = el('div', { class: 'read-sentence' }, chips);
     const readBtn = el('button', { class: 'btn btn-huge btn-go' }, 'J\'AI LU !');
     readBtn.addEventListener('click', () => {
@@ -1505,7 +1560,7 @@ function renderExam(a, body, done) {
       stage.append(el('button', { class: 'btn btn-huge', onclick: () => Voice.play(item.audio, item.prompt) }, '🔊 ÉCOUTE'));
       Promise.resolve(Voice.play(item.audio, item.prompt)).then(() => { if (!answered) t0 = performance.now(); });
     } else if (a.text === 'phrase') {
-      stage.append(el('div', { class: 'sentence exam-sentence' }, item.prompt));
+      stage.append(el('div', { class: 'sentence exam-sentence' }, muteWord(item.prompt)));
     } else {
       stage.append(el('div', { class: 'word exam-word' }, sylColored(item.syllables, item.prompt)));
     }

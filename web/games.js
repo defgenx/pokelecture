@@ -63,7 +63,7 @@ Object.assign(Arcade, {
       }
       this.reach(page + 1);
       const p = pages[page];
-      const chips = p.words.map((w, k) => el('button', { class: 'read-word', onclick: () => Voice.play(p.word_audio[k], w) }, w));
+      const chips = p.words.map((w, k) => el('button', { class: 'read-word', onclick: () => Voice.play(p.word_audio[k], w) }, muteWord(w)));
       const pic = p.sprite ? el('img', { class: 'book-pic', src: p.sprite, alt: '' })
         : p.icon ? iconEl(p.icon, 'book-pic') : el('span', { class: 'book-pic em' }, p.emoji || '📖');
       const read = el('button', { class: 'btn btn-huge btn-go' }, 'J\'AI LU ! 🔊');
@@ -115,7 +115,7 @@ Object.assign(Arcade, {
       const face = w.sprite ? el('img', { src: w.sprite, alt: '' })
         : w.icon ? iconEl(w.icon) : el('span', {}, w.emoji);
       const pic = el('button', { class: `tile big-pic ${w.sprite ? 'sprite' : w.icon ? 'ico' : 'emoji'}`, onclick: () => Voice.play(w.audio, w.text) }, face);
-      const wordEl = el('div', { class: 'word arcade-word' }, this.level >= 4 ? '👂' : w.text);
+      const wordEl = el('div', { class: 'word arcade-word' }, this.level >= 4 ? '👂' : muteWord(w.text));
       const drums = el('div', { class: 'drum-row' });
       [1, 2, 3, 4].forEach((n) => {
         const b = el('button', { class: 'drum-btn' }, el('span', { class: 'drum-dots' }, '●'.repeat(n)), el('b', {}, String(n)));
@@ -129,7 +129,7 @@ Object.assign(Arcade, {
             burst('🥁');
             // The answer, performed: each syllable on its own beat.
             wordEl.innerHTML = '';
-            w.syllables.forEach((syl) => wordEl.append(el('span', { class: 'syl' }, syl)));
+            sylPieces(w.syllables).forEach((nodes) => wordEl.append(el('span', { class: 'syl' }, nodes)));
             const spans = [...wordEl.children];
             for (let k = 0; k < spans.length; k++) {
               spans[k].classList.add('beat');
@@ -213,8 +213,9 @@ Object.assign(Arcade, {
         : w.icon ? iconEl(w.icon) : el('span', {}, w.emoji);
       const pic = el('button', { class: `tile big-pic ${w.sprite ? 'sprite' : w.icon ? 'ico' : 'emoji'}`, onclick: () => Voice.play(w.audio, w.text) }, face);
       const gap = el('span', { class: 'gap' }, '?');
+      const mask = muteMask(w.text);
       const wordEl = el('div', { class: 'word arcade-word gap-word' },
-        chunks.map((c, i) => (i === hole ? gap : c.sep + c.text)));
+        chunks.flatMap((c, i) => (i === hole ? [gap] : [c.sep, ...muted(w.text, mask, c.at, c.text.length)])));
       const grid = el('div', { class: `grid ${['', '', 'two', 'three', 'four'][choices.length]}` });
       choices.forEach((id) => {
         const t = el('button', { class: 'tile grapheme-tile' }, id);
@@ -261,7 +262,7 @@ function displayChunks(text, graphemes) {
   for (const g of graphemes) {
     let sep = '';
     while (i < text.length && " -'’".includes(text[i])) sep += text[i++];
-    out.push({ g, sep, text: text.slice(i, i + g.length) });
+    out.push({ g, sep, at: i, text: text.slice(i, i + g.length) });
     i += g.length;
   }
   if (i < text.length && out.length) out[out.length - 1].text += text.slice(i);

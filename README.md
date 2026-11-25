@@ -817,6 +817,14 @@ la vitesse d'un enfant de 5 ans.
   tambour, où les couleurs donneraient le nombre de syllabes demandé (il les
   colore après la réponse). Les mots des phrases restent d'un bloc : leurs
   syllabes ne sont pas décrites dans le contenu.
+- **Les lettres muettes en gris** : sur les mêmes mots, plus les phrases (« Lis
+  la phrase », « Mon livre », révisions, examens) et le son manquant, ce qui
+  s'écrit sans se dire est grisé, comme au CP : le **e final** (`Rag`e,
+  `Mélofé`e, `Ail`es — mais pas `le`, `de`, `que`, `les`, dont c'est la seule
+  voyelle) et le **h** qui ne fait pas `ch`/`ph`/`sh`/`th` (`H`uit,
+  `R`h`inocorne`, `Lok`h`lass`). Règle unique : `muteMask` (`web/app.js`).
+  Les autres lettres muettes (t, s, d finaux) n'ont pas de règle : les règles
+  de contenu les tiennent hors des mots à lire.
 - **Une mauvaise image ne fait pas dire le mot** : « Presque ! Relis le mot. »
   (ou « la phrase »). Avant, la voix lisait le mot après l'erreur : toucher une
   image au hasard, puis écouter, répondait sans lire. Les questions d'écoute
