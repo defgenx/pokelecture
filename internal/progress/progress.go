@@ -68,6 +68,35 @@ type Settings struct {
 	// Font is the reading font: "" (the game's), "andika" (print for early
 	// readers) or "cursive" (French school cursive).
 	Font string `json:"font,omitempty"`
+	// DailyLimit stops the day once DailyLessons lessons are done (0 = the
+	// default). README « La limite du jour ».
+	DailyLimit   bool `json:"daily_limit,omitempty"`
+	DailyLessons int  `json:"daily_lessons,omitempty"`
+}
+
+// DefaultDailyLessons is the day's objective when the parent set none.
+const DefaultDailyLessons = 2
+
+// DailyGoal is the number of lessons in the day's objective.
+func (st Settings) DailyGoal() int {
+	if st.DailyLessons <= 0 {
+		return DefaultDailyLessons
+	}
+	return st.DailyLessons
+}
+
+// LessonsToday counts the lessons finished today (0 when Today is an older day).
+func (st State) LessonsToday(now time.Time) int {
+	if st.Today.Day != now.Format("2006-01-02") {
+		return 0
+	}
+	return st.Today.Lessons
+}
+
+// DayOver reports that the daily limit is on and today's objective reached:
+// nothing more until tomorrow.
+func (st State) DayOver(now time.Time) bool {
+	return st.Settings.DailyLimit && st.LessonsToday(now) >= st.Settings.DailyGoal()
 }
 
 // Fonts the reading text can use (web/styles.css, .font-*).
@@ -195,6 +224,7 @@ type Today struct {
 	Progress map[string]int `json:"progress,omitempty"` // per mission kind
 	Claimed  []string       `json:"claimed,omitempty"`  // missions already rewarded
 	Event    string         `json:"event,omitempty"`    // exam a parent called up for today
+	Lessons  int            `json:"lessons,omitempty"`  // routes and exams finished today
 }
 
 // ExamRecord is the history of one surprise exam: what the parent reads in
@@ -869,6 +899,24 @@ func (s *Store) dayLocked(now time.Time, quests func(day string) []string) {
 	s.state.Today = Today{Day: day, Progress: map[string]int{}}
 	if quests != nil {
 		s.state.Today.Quests = quests(day)
+	}
+}
+
+// AddLesson counts one finished lesson today (the daily limit's counter).
+func (s *Store) AddLesson(now time.Time, quests func(day string) []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.dayLocked(now, quests)
+	s.state.Today.Lessons++
+}
+
+// SetDailyLimit turns the daily limit on or off, with its number of lessons (1–5).
+func (s *Store) SetDailyLimit(on bool, lessons int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.state.Settings.DailyLimit = on
+	if lessons >= 1 && lessons <= 5 {
+		s.state.Settings.DailyLessons = lessons
 	}
 }
 

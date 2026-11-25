@@ -2035,3 +2035,9 @@ body.font-cursive .exam-label {
 .watermark { position: absolute; top: 4px; left: 6px; font-size: 18px; }
 .ow-fisher .ow-bang { font-style: normal; }
 .rod-won .game-icon { font-size: 54px; }
+
+/* ------------------------------------------ la limite du jour (README) ----- */
+.day-done { gap: 14px; }
+.day-moon { font-size: 96px; line-height: 1; animation: gem-pulse 2.4s ease-in-out infinite; }
+.chip.daily-chip { font-weight: 800; }
+.chip.daily-chip.over { background: #2c2f4a; color: #fff; }

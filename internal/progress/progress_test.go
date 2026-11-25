@@ -329,3 +329,20 @@ func TestBoardGameRecordsDroppedOnce(t *testing.T) {
 		t.Fatal("dropped again on reopen")
 	}
 }
+
+// Yesterday's lessons do not count against today's objective.
+func TestDayOverIsToday(t *testing.T) {
+	now := time.Date(2026, 11, 25, 18, 0, 0, 0, time.Local)
+	st := State{Settings: Settings{DailyLimit: true, DailyLessons: 2}, Today: Today{Day: "2026-11-24", Lessons: 5}}
+	if st.DayOver(now) {
+		t.Fatal("yesterday's lessons closed today")
+	}
+	st.Today = Today{Day: "2026-11-25", Lessons: 2}
+	if !st.DayOver(now) {
+		t.Fatal("objective reached but the day is open")
+	}
+	st.Settings.DailyLimit = false
+	if st.DayOver(now) {
+		t.Fatal("limit off but the day is closed")
+	}
+}

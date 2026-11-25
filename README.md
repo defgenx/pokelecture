@@ -463,6 +463,20 @@ une) ; quatre onglets, tout agit immédiatement sur la sauvegarde de ce joueur :
   épisode terminé ou la Tour les justifie) — tout se regagne en rejouant,
   jamais en double. Les **vies en combat** se règlent ici aussi.
 
+### La limite du jour
+
+Réglage **« Limiter les leçons par jour »** (oui / non) et son **objectif du
+jour** : 1 à 5 leçons (2 par défaut). Une leçon = une route terminée, rejouée ou
+non, ou un examen (`Today.Lessons`, remis à zéro chaque jour). Sur la carte, une
+puce 📅 1/2 montre où il en est. **Objectif atteint, plus rien ne s'ouvre
+jusqu'au lendemain** : routes, Tour, Dresseurs, mini-jeux, hautes herbes, pêche,
+examens — un écran 🌙 « C'est fini pour aujourd'hui ! » et la voix : « Bravo, tu
+as fini tes leçons du jour ! Reviens demain. ». La carte reste visitable. La
+séance en cours se termine normalement ; c'est la suivante qui ne démarre pas.
+Le serveur refuse aussi (403) les séances, les tickets et les captures : la
+limite ne se contourne pas en rechargeant la page. L'onglet Réglages montre
+les leçons faites aujourd'hui. Indépendant du mode libre.
+
 ### Se connecter avec Google
 
 L'administration et le studio voix ne s'ouvrent **qu'aux adresses de

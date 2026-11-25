@@ -118,3 +118,36 @@ func TestFreePlayOpensEveryPlace(t *testing.T) {
 		t.Fatalf("wild pool under free play: %d", code)
 	}
 }
+
+// The daily limit: once the objective is reached, nothing more starts today.
+func TestDailyLimitStopsTheDay(t *testing.T) {
+	srv, store := serverAt(t, "ep05")
+	store.SetDailyLimit(true, 1)
+	var st stateView
+	getJSON(t, srv.URL+"/api/state", &st)
+	if st.Daily == nil || st.Daily.Over || st.Daily.Goal != 1 {
+		t.Fatalf("before any lesson: %+v", st.Daily)
+	}
+	if code := getJSON(t, srv.URL+"/api/session/ep06", nil); code != http.StatusOK {
+		t.Fatalf("a lesson before the objective: %d", code)
+	}
+	b, _ := json.Marshal(map[string]any{"items": []any{}, "stars": 3, "completed": true})
+	resp, err := http.Post(srv.URL+"/api/session/ep06/result", "application/json", bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	getJSON(t, srv.URL+"/api/state", &st)
+	if st.Daily == nil || !st.Daily.Over || st.Daily.Done != 1 {
+		t.Fatalf("after the objective: %+v", st.Daily)
+	}
+	for _, path := range []string{"/api/session/ep07", "/api/session/tour", "/api/session/dresseur-0-0"} {
+		if code := getJSON(t, srv.URL+path, nil); code != http.StatusForbidden {
+			t.Errorf("%s after the objective: %d", path, code)
+		}
+	}
+	store.SetDailyLimit(false, 1)
+	if code := getJSON(t, srv.URL+"/api/session/ep07", nil); code != http.StatusOK {
+		t.Fatalf("limit off: %d", code)
+	}
+}

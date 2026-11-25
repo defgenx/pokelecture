@@ -307,6 +307,9 @@ func catchChance(slips, attempt int, shiny bool) float64 {
 // handleWildCatch throws one Poké Ball. It is spent either way; the roll
 // lives here, so the odds are the server's.
 func (s *Server) handleWildCatch(w http.ResponseWriter, r *http.Request) {
+	if s.dayOver(w) {
+		return
+	}
 	var req struct {
 		ID      int  `json:"id"`
 		Shiny   bool `json:"shiny"`

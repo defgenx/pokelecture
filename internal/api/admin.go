@@ -47,23 +47,26 @@ type adminPokemonView struct {
 }
 
 type adminSummary struct {
-	Locked     bool                          `json:"locked"`      // private: a picture code guards it
-	LockFails  int                           `json:"lock_fails"`  // wrong codes since the last right one
-	LockClosed bool                          `json:"lock_closed"` // too many: closed until reopened
-	Name       string                        `json:"name"`
-	Stars      int                           `json:"stars"`
-	Streak     int                           `json:"streak"`
-	LastDay    string                        `json:"last_day"`
-	UpdatedAt  time.Time                     `json:"updated_at"`
-	TowerFloor int                           `json:"tower_floor"`
-	Records    map[string]int                `json:"records"`
-	Settings   progress.Settings             `json:"settings"`
-	Episodes   []adminEpisodeView            `json:"episodes"`
-	Items      []adminItemView               `json:"items"`
-	Pokedex    []adminPokemonView            `json:"pokedex"`
-	Exams      []adminExamView               `json:"exams"`
-	Fluency    []progress.FluencyRun         `json:"fluency"`
-	Speed      map[string]progress.SpeedStat `json:"speed"`
+	Locked     bool              `json:"locked"`      // private: a picture code guards it
+	LockFails  int               `json:"lock_fails"`  // wrong codes since the last right one
+	LockClosed bool              `json:"lock_closed"` // too many: closed until reopened
+	Name       string            `json:"name"`
+	Stars      int               `json:"stars"`
+	Streak     int               `json:"streak"`
+	LastDay    string            `json:"last_day"`
+	UpdatedAt  time.Time         `json:"updated_at"`
+	TowerFloor int               `json:"tower_floor"`
+	Records    map[string]int    `json:"records"`
+	Settings   progress.Settings `json:"settings"`
+	Today      struct {
+		Lessons int `json:"lessons"`
+	} `json:"today"` // the daily limit's counter
+	Episodes []adminEpisodeView            `json:"episodes"`
+	Items    []adminItemView               `json:"items"`
+	Pokedex  []adminPokemonView            `json:"pokedex"`
+	Exams    []adminExamView               `json:"exams"`
+	Fluency  []progress.FluencyRun         `json:"fluency"`
+	Speed    map[string]progress.SpeedStat `json:"speed"`
 }
 
 func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
@@ -86,6 +89,7 @@ func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
 		Fluency:    st.Fluency,
 		Speed:      st.Speed,
 	}
+	out.Today.Lessons = st.LessonsToday(time.Now())
 
 	unlocked := true
 	for _, ep := range s.cur.Episodes {
@@ -247,6 +251,9 @@ func (s *Server) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
 		MinStars    int  `json:"min_stars"`
 		FreePlay    bool `json:"free_play"`
 		BattleLives int  `json:"battle_lives"`
+		// The daily limit (README « La limite du jour »): left as is when absent.
+		DailyLimit   *bool `json:"daily_limit"`
+		DailyLessons int   `json:"daily_lessons"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	livesOK := req.BattleLives == -1 || (req.BattleLives >= 2 && req.BattleLives <= 5)
@@ -255,6 +262,9 @@ func (s *Server) handleAdminSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.store.UpdateSettings(req.MinStars, req.FreePlay, req.BattleLives)
+	if req.DailyLimit != nil {
+		s.store.SetDailyLimit(*req.DailyLimit, req.DailyLessons)
+	}
 	s.adminDone(w)
 }
 

@@ -224,6 +224,7 @@ const Wild = {
      rustles out. The bag shows the Poké Balls left. */
   async enter() {
     Voice.stop();
+    if (dayOver()) return dayDone();
     this.mode = 'grass';
     if (!(await this.load())) return App.home();
     const pool = this.pool;
@@ -274,6 +275,7 @@ const Wild = {
      the grass. Too slow and it swims off; the float goes back out. */
   async fish() {
     Voice.stop();
+    if (dayOver()) return dayDone();
     this.mode = 'fish';
     if (!(await this.load())) return App.home();
     const avail = this.available();

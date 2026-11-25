@@ -1493,6 +1493,8 @@ var UIPhrases = []string{
 	"Presque ! Écoute encore.",
 	"Presque ! Relis le mot.",
 	"Niveau suivant !",
+	// La limite du jour (README « La limite du jour »)
+	"Bravo, tu as fini tes leçons du jour ! Reviens demain.",
 	// Téracristal (README « Gigamax et Téracristal »)
 	"Fais un coup critique pour remplir ton joyau Téracristal !",
 	"Ton joyau Téracristal brille ! Touche-le pour téracristalliser !",

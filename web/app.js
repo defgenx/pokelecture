@@ -993,6 +993,30 @@ function syllableWord(syllables, fallbackText, audio) {
   return box;
 }
 
+/* The daily limit (README « La limite du jour »): once the parent's objective
+   is reached, nothing more today — routes, Tower, trainers, games, grass,
+   fishing. dayOver() is checked at every way in; the server refuses too. */
+function dayOver() {
+  return !!(App.state && App.state.daily && App.state.daily.over);
+}
+
+function dayDone() {
+  Voice.stop();
+  const d = App.state.daily;
+  App.screen(
+    App.topbar(),
+    el('div', { class: 'page' },
+      el('div', { class: 'act day-done' },
+        el('div', { class: 'day-moon' }, '🌙'),
+        el('h2', {}, 'C\'est fini pour aujourd\'hui !'),
+        el('div', { class: 'score' }, `📅 ${d.done} / ${d.goal} leçons`),
+        hint('Bravo, tu as fini tes leçons du jour ! Reviens demain.'),
+        el('button', { class: 'btn btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
+      ),
+    ),
+  );
+}
+
 /* ---------------------------------------------------------------- session --- */
 
 const Session = {
@@ -1009,6 +1033,7 @@ const Session = {
 
   async start(id) {
     Voice.stop();
+    if (dayOver()) return dayDone();
     App.screen(el('div', { class: 'loading' }, pokeball('spin-fast')));
     try {
       this.data = await api(`api/session/${id}`);
@@ -1229,8 +1254,9 @@ const Session = {
           ballsWon(res.balls_won),
             ticketsWon(res.tickets_won),
           Partner.gainRow(res.partner_event),
+          dayOver() ? el('div', { class: 'newcatch' }, el('span', { class: 'score' }, '🌙 Leçons du jour finies !')) : null,
           el('button', { class: 'btn btn-huge btn-go', onclick: () => App.home() }, 'CARTE 🗺️'),
-          el('button', { class: 'btn', onclick: () => Arcade.hub() }, '🎮 MINI-JEUX'),
+          dayOver() ? null : el('button', { class: 'btn', onclick: () => Arcade.hub() }, '🎮 MINI-JEUX'),
         ),
       ),
     );
@@ -1244,7 +1270,8 @@ const Session = {
     if (res.balls_won) await say('Tu gagnes des Poké Balls !');
     if (res.tickets_won) await say('Tu gagnes un ticket de jeu !');
     await celebrateAll(res);
-    await say('À demain !');
+    if (dayOver()) await say('Bravo, tu as fini tes leçons du jour ! Reviens demain.');
+    else await say('À demain !');
   },
 };
 
@@ -2193,6 +2220,7 @@ const Arcade = {
   // refuses with 409 when there is none). The hub and REJOUER both go here.
   async play(g) {
     this.stop();
+    if (dayOver()) return dayDone();
     if (!g.ticket) return this[g.id]();
     try {
       const res = await api('api/ticket', { game: g.id });
@@ -2212,6 +2240,7 @@ const Arcade = {
   async hub() {
     Voice.stop();
     this.stop();
+    if (dayOver()) return dayDone();
     if (!this.pool) {
       try { this.pool = await api('api/arcade'); } catch (_) { this.pool = { words: [], syllables: [], pokemon: [] }; }
     }

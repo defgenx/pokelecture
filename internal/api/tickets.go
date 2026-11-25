@@ -15,6 +15,9 @@ const ticketReward = 1
 
 // handleTicket spends one ticket on a ticket game: 409 when there is none.
 func (s *Server) handleTicket(w http.ResponseWriter, r *http.Request) {
+	if s.dayOver(w) {
+		return
+	}
 	var req struct {
 		Game string `json:"game"`
 	}

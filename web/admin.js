@@ -378,14 +378,41 @@ function dangerTab(list) {
         return o;
       }),
   );
+  // The daily limit (README « La limite du jour »): yes/no and the day's objective.
+  const dailyOn = el('input', { type: 'checkbox' });
+  dailyOn.checked = !!set.daily_limit;
+  const dailyN = el('select', {},
+    [1, 2, 3, 4, 5].map((n) => {
+      const o = el('option', { value: String(n) }, `${n} leçon${n > 1 ? 's' : ''} par jour`);
+      if (n === (set.daily_lessons || 2)) o.selected = true;
+      return o;
+    }),
+  );
+  dailyN.disabled = !dailyOn.checked;
   const apply = () => act('api/admin/settings', {
     min_stars: Number(minStars.value),
     free_play: freePlay.checked,
     battle_lives: Number(lives.value),
+    daily_limit: dailyOn.checked,
+    daily_lessons: Number(dailyN.value),
   });
   minStars.addEventListener('change', apply);
   freePlay.addEventListener('change', apply);
   lives.addEventListener('change', apply);
+  dailyOn.addEventListener('change', () => { dailyN.disabled = !dailyOn.checked; apply(); });
+  dailyN.addEventListener('change', apply);
+  const today = s.today || {};
+  list.append(el('div', { class: 'section' },
+    el('h2', {}, 'Limite du jour'),
+    el('div', { class: 'namebox' },
+      el('label', { style: 'display:flex;align-items:center;gap:8px' }, dailyOn, 'Limiter les leçons par jour'),
+    ),
+    el('div', { class: 'namebox', style: 'margin-top:8px' }, el('label', {}, 'Objectif du jour : '), dailyN),
+    el('p', { style: 'color:#6a7180;font-size:13px;margin-top:8px' },
+      'Une leçon = une route terminée (rejouée ou non) ou un examen. L\'objectif atteint, plus rien ' +
+      'ne s\'ouvre jusqu\'au lendemain : routes, Tour, Dresseurs, mini-jeux, herbes, pêche. ' +
+      `Aujourd'hui : ${today.lessons || 0} leçon${(today.lessons || 0) > 1 ? 's' : ''} faite${(today.lessons || 0) > 1 ? 's' : ''}.`),
+  ));
   list.append(el('div', { class: 'section' },
     el('h2', {}, 'Déblocage des épisodes'),
     el('div', { class: 'namebox' },

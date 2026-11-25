@@ -250,7 +250,9 @@ type stateView struct {
 	// Event is today's surprise exam on the map; Games the open mini-games.
 	Event *eventView `json:"event,omitempty"`
 	Games []string   `json:"games"`
-	Rod   bool       `json:"rod"`            // the fishing rod is earned (README « La pêche »)
+	Rod   bool       `json:"rod"` // the fishing rod is earned (README « La pêche »)
+	// Daily: the day's objective when the parent turned the limit on.
+	Daily *dailyView `json:"daily,omitempty"`
 	Font  string     `json:"font,omitempty"` // reading font (admin setting)
 	// Exams lists every surprise exam and where he stands (menu « Examens »).
 	Exams []examCard `json:"exams"`
@@ -315,6 +317,10 @@ func (s *Server) state() stateView {
 		}
 	}
 	out.Rod = s.cur.HasRod(st)
+	if st.Settings.DailyLimit {
+		now := time.Now()
+		out.Daily = &dailyView{Goal: st.Settings.DailyGoal(), Done: st.LessonsToday(now), Over: st.DayOver(now)}
+	}
 	out.Games = s.cur.GamesOpen(st)
 	if out.Games == nil {
 		out.Games = []string{}
@@ -450,6 +456,9 @@ func (s *Server) handleState(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
+	if s.dayOver(w) {
+		return
+	}
 	id := r.PathValue("id")
 	if id == "next" {
 		id = s.state().NextID
@@ -658,6 +667,9 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 		s.store.AddBalls(res.Balls)
 	}
 	res.QuestsDone = append(res.QuestsDone, s.progress("words", words)...)
+	if req.Completed && (ep != nil || isExamID) {
+		s.store.AddLesson(now, questsFor)
+	}
 	if req.Completed && ep != nil {
 		res.QuestsDone = append(res.QuestsDone, s.progress("route", 1)...)
 	}
@@ -797,4 +809,21 @@ func contains(xs []int, x int) bool {
 		}
 	}
 	return false
+}
+
+// dailyView is the day's objective: Done of Goal lessons, Over once reached.
+type dailyView struct {
+	Goal int  `json:"goal"`
+	Done int  `json:"done"`
+	Over bool `json:"over"`
+}
+
+// dayOver refuses with 403 once today's objective is reached under the daily
+// limit (README « La limite du jour »); the client shows the same message.
+func (s *Server) dayOver(w http.ResponseWriter) bool {
+	if !s.store.Snapshot().DayOver(time.Now()) {
+		return false
+	}
+	http.Error(w, "les leçons du jour sont finies : à demain", http.StatusForbidden)
+	return true
 }

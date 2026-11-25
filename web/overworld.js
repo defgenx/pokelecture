@@ -381,6 +381,9 @@ const Overworld = {
           (s.bag && s.bag.superball) ? el('span', { class: 'chip chip-extra' }, pokeball('pokeball-xs superball'), ` ${s.bag.superball}`) : null,
           (s.bag && s.bag.berry) ? el('span', { class: 'chip chip-extra' }, `🍓 ${s.bag.berry}`) : null,
           Trainer.chip(),
+          // The day's objective, when the parent set a daily limit.
+          s.daily ? el('span', { class: `chip daily-chip ${s.daily.over ? 'over' : ''}` },
+            s.daily.over ? '🌙' : `📅 ${s.daily.done}/${s.daily.goal}`) : null,
         ].filter(Boolean)),
         s.event ? el('button', { class: 'btn-icon exam-btn', title: 'Examen surprise', onclick: () => this.examDialog(s.event) }, '🎓') : null,
         el('button', { class: 'btn-icon', title: 'Mon équipe', onclick: () => Team.open() }, '👥'),
@@ -723,7 +726,7 @@ const Overworld = {
 
   grassRoll() {
     const s = App.state;
-    if (!s.tower || !Wild.pool || !Wild.available().length || (s.balls || 0) <= 0) return;
+    if (dayOver() || !s.tower || !Wild.pool || !Wild.available().length || (s.balls || 0) <= 0) return;
     if (Math.random() >= OW_ENCOUNTER) return;
     this.stopWalking();
     this.walker.classList.add('alert');
