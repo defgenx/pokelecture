@@ -1204,6 +1204,34 @@ body::after {
 /* Dynamax: no Gigamax form, so the same picture in a red storm. */
 .arena img.giga.dynamax { filter: drop-shadow(0 0 14px #ff2a2a) drop-shadow(0 0 34px rgba(255, 40, 40, .7)) saturate(1.4); }
 
+/* The red Dynamax clouds above a giant boss (Gigamax and Dynamax alike). */
+.dmax-clouds {
+  position: absolute; left: 50%; top: -78px; z-index: 2; width: 190px; height: 70px;
+  transform: translateX(-50%); pointer-events: none;
+}
+.dmax-clouds span {
+  position: absolute; font-size: 44px; opacity: .92;
+  filter: brightness(.55) sepia(1) saturate(9) hue-rotate(-38deg) drop-shadow(0 0 8px #ff2050);
+  animation: cloud-swirl 2.6s ease-in-out infinite;
+}
+.dmax-clouds span:nth-child(1) { left: 0; top: 18px; }
+.dmax-clouds span:nth-child(2) { left: 70px; top: 0; animation-delay: -.9s; font-size: 52px; }
+.dmax-clouds span:nth-child(3) { left: 140px; top: 20px; animation-delay: -1.7s; }
+@keyframes cloud-swirl { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(8px, -6px) scale(1.12); } }
+
+/* The Tera jewel crown above the crystallised partner, in its type's colour. */
+.tera-crown {
+  position: absolute; left: 50%; top: -34px; z-index: 2; width: 46px; height: 46px;
+  transform: translateX(-50%); display: grid; place-items: center; pointer-events: none;
+  clip-path: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%);
+  background: linear-gradient(160deg, #fff 0%, var(--tera) 60%);
+  background: linear-gradient(160deg, #fff 0%, var(--tera) 45%, color-mix(in srgb, var(--tera), #000 35%) 100%);
+  filter: drop-shadow(0 0 10px var(--tera));
+  animation: crown-shine 1.8s ease-in-out infinite;
+}
+.tera-crown span { font-size: 20px; margin-top: 6px; }
+@keyframes crown-shine { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-5px); } }
+
 /* Téracristal (README « Gigamax et Téracristal »). */
 .tera-gem {
   font-size: 30px; line-height: 1; border: 0; background: none; padding: 2px; cursor: pointer;

@@ -926,16 +926,23 @@ vies.
 **vraie forme Gigamax** (Florizarre, Dracaufeu, Tortank, Papilusion, Pikachu,
 Miaouss, Mackogneur, Ectoplasma, Krabboss, Lokhlass, Évoli, Ronflex —
 `curriculum.Gigamax`, les formes « -gmax » de PokeAPI que `pokecontent
-sprites` télécharge), c'est elle qui apparaît : « GIGAMAX ! ». Sinon — les
-légendaires n'en ont pas — il **Dynamaxe** : la même image, géante, dans un
-orage rouge (« DYNAMAX ! »). Ça vaut pour les arènes et la Tour, et pour tout
+sprites` télécharge), c'est **son artwork officiel** qui apparaît : « GIGAMAX ! ».
+Sinon — les légendaires n'en ont pas — il **Dynamaxe**, l'apparence officielle
+du Dynamax : la même image redessinée chargée d'énergie rouge-rose
+(`dynamaxArt`, un canvas), géante. Dans les deux cas, les **nuages rouges**
+tourbillonnent au-dessus de lui. Ça vaut pour les arènes et la Tour, et pour tout
 combat dont le boss a une forme Gigamax (les routes d'Évoli, Pikachu, Ronflex,
 Dracaufeu, Mackogneur, Florizarre ; un Dresseur qui l'envoie).
 
 **Le Téracristal, contre des personnes** — les Dresseurs de la carte, le
 Conseil des 4 et le Champion (`TeraRegion`) : un 💎 vide à côté du partenaire.
 Un **coup critique** (un mot construit sans une seule erreur) le remplit ; le
-bouton « 💎 TÉRACRISTAL ! » (ou le joyau lui-même) cristallise le partenaire,
+bouton « 💎 TÉRACRISTAL ! » (ou le joyau lui-même) cristallise le partenaire —
+l'apparence officielle, refaite sur son image faute d'artwork officiel
+disponible : corps en cristal à facettes teinté de la couleur officielle de son
+type Téra (son premier type, `TERA_COLORS` ; `crystalArt`, un canvas qui ne
+touche que ses pixels), et **le joyau Téra** au-dessus de sa tête, de la même
+couleur, avec le symbole du type —
 et **chaque attaque suivante enlève 2 PV** : le combat se gagne plus vite. Au
 premier mot, la voix l'explique ; c'est la récompense de la lecture parfaite.
 

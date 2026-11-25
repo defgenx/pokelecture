@@ -1752,6 +1752,91 @@ async function karaoke(url, text, chips) {
   chips.forEach((c) => { c.classList.remove('lit'); c.classList.add('read'); });
 }
 
+/* The official looks of the two battle transformations (README « Gigamax et
+   Téracristal »), drawn over the Pokémon's own picture in a canvas — so every
+   attack animation of the <img> keeps working on the new look. */
+// The official type colours: the Téracristal is tinted with the Tera type's.
+const TERA_COLORS = {
+  Normal: '#a8a77a', Feu: '#ee8130', Eau: '#6390f0', 'Électrik': '#f7d02c', Plante: '#7ac74c',
+  Glace: '#96d9d6', Combat: '#c22e28', Poison: '#a33ea1', Sol: '#e2bf65', Vol: '#a98ff3',
+  Psy: '#f95587', Insecte: '#a6b91a', Roche: '#b6a136', Spectre: '#735797', Dragon: '#6f35fc',
+  'Ténèbres': '#705746', Acier: '#b7b7ce', 'Fée': '#d685ad',
+};
+
+function loadImage(src) {
+  return new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = src; });
+}
+
+// Téracristal: the body turned to faceted crystal of the type's colour, a
+// sheen across it. Only the Pokémon's own pixels change (source-atop).
+async function crystalArt(src, color) {
+  const img = await loadImage(src);
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+  const c = el('canvas', { width: w, height: h });
+  const g = c.getContext('2d');
+  g.drawImage(img, 0, 0);
+  g.globalCompositeOperation = 'source-atop';
+  g.globalAlpha = 0.5;
+  g.fillStyle = color;
+  g.fillRect(0, 0, w, h);
+  // A jittered triangle mesh: the facets, alternately lit and in shade.
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const step = Math.max(24, Math.round(w / 8));
+  const pts = [];
+  for (let y = -step; y <= h + step; y += step) {
+    const row = [];
+    for (let x = -step; x <= w + step; x += step) row.push([x + (rnd() - 0.5) * step * 0.8, y + (rnd() - 0.5) * step * 0.8]);
+    pts.push(row);
+  }
+  for (let r = 0; r < pts.length - 1; r++) {
+    for (let k = 0; k < pts[r].length - 1; k++) {
+      const [a, b, d, e] = [pts[r][k], pts[r][k + 1], pts[r + 1][k], pts[r + 1][k + 1]];
+      for (const tri of [[a, b, d], [b, e, d]]) {
+        const lit = rnd();
+        g.beginPath();
+        g.moveTo(...tri[0]); g.lineTo(...tri[1]); g.lineTo(...tri[2]); g.closePath();
+        g.globalAlpha = 0.1 + lit * 0.35;
+        g.fillStyle = lit > 0.5 ? '#ffffff' : '#1c1646';
+        g.fill();
+        g.globalAlpha = 0.55;
+        g.strokeStyle = '#ffffff';
+        g.lineWidth = Math.max(1, w / 220);
+        g.stroke();
+      }
+    }
+  }
+  const sheen = g.createLinearGradient(0, 0, w, h);
+  sheen.addColorStop(0.3, 'rgba(255,255,255,0)');
+  sheen.addColorStop(0.48, 'rgba(255,255,255,.6)');
+  sheen.addColorStop(0.62, 'rgba(255,255,255,0)');
+  g.globalAlpha = 1;
+  g.fillStyle = sheen;
+  g.fillRect(0, 0, w, h);
+  return c.toDataURL('image/png');
+}
+
+// Dynamax: the same Pokémon charged with red-pink Dynamax energy.
+async function dynamaxArt(src) {
+  const img = await loadImage(src);
+  const c = el('canvas', { width: img.naturalWidth, height: img.naturalHeight });
+  const g = c.getContext('2d');
+  g.drawImage(img, 0, 0);
+  g.globalCompositeOperation = 'source-atop';
+  const glow = g.createRadialGradient(c.width / 2, c.height / 2, c.width * 0.1, c.width / 2, c.height / 2, c.width * 0.7);
+  glow.addColorStop(0, 'rgba(255, 70, 120, .25)');
+  glow.addColorStop(1, 'rgba(230, 0, 60, .6)');
+  g.fillStyle = glow;
+  g.fillRect(0, 0, c.width, c.height);
+  return c.toDataURL('image/png');
+}
+
+// The red Dynamax clouds swirling above a giant Pokémon (Gigamax ones too).
+function dynamaxClouds() {
+  return el('div', { class: 'dmax-clouds', 'aria-hidden': 'true' }, el('span', {}, '☁️'), el('span', {}, '☁️'), el('span', {}, '☁️'));
+}
+
 function renderCombat(a, body, done) {
   const f = a.fight;
   let hp = f.hp;
@@ -1791,6 +1876,11 @@ function renderCombat(a, body, done) {
     gem.classList.remove('full');
     gem.classList.add('used');
     allyImg.classList.add('tera');
+    const type = ((partner && partner.types) || [])[0] || 'Normal';
+    const color = TERA_COLORS[type] || TERA_COLORS.Normal;
+    crystalArt(allyImg.src, color).then((url) => { allyImg.src = url; }).catch(() => {});
+    allyImg.parentNode.append(el('div', { class: 'tera-crown', style: `--tera:${color}`, 'aria-hidden': 'true' },
+      el('span', {}, move.fx)));
     const btn = $('.tera-btn', stage);
     if (btn) btn.remove();
     Sfx.legendary();
@@ -1985,8 +2075,12 @@ function renderCombat(a, body, done) {
     // word — its real Gigamax form when it has one (f.gmax), else Dynamax.
     if ((f.legendary || f.gmax) && hp === 1 && round + 1 < f.rounds.length && !foeImg.classList.contains('giga')) {
       if (f.gmax) foeImg.src = f.gmax;
-      else foeImg.classList.add('dynamax');
+      else {
+        foeImg.classList.add('dynamax');
+        dynamaxArt(foeImg.src).then((url) => { foeImg.src = url; }).catch(() => {});
+      }
       foeImg.classList.add('giga');
+      foeImg.parentNode.append(dynamaxClouds());
       stage.innerHTML = '';
       stage.append(el('div', { class: 'shout crit' }, f.gmax ? 'GIGAMAX !' : 'DYNAMAX !'));
       Sfx.legendary();
