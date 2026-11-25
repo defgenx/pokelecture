@@ -7,30 +7,186 @@
    Tower, the mini-games and the Pokédex are places to walk into. Stepping on
    anything opens a spoken dialog box with one big button. */
 
-// One template for every region (landscape). Legend:
-//   T obstacle (the region's tree)  W water  . ground  = path  F flowers
-//   g tall grass  1–5 route stops  O Tour  A mini-jeux  P Pokédex
-//   < previous region  > next region  D E the region's two trainers
-//   X the professor of a surprise exam (only on a day one is waiting)
-const OW_MAP = [
-  'TTTTTTTTTTTTT',
-  'T..F...WWW.FT',
-  '<==1===2=..AT',
-  'T..=.D.=..X.T',
-  'Tgg=gT.=.TT.T',
-  'Tgggg..3==4=>',
-  'Tggg...=.ET.T',
-  'T.P..O.5...FT',
-  'TTTTTTTTTTTTT',
-];
-
-// The obstacle drawn per region: every one of these exists on old Android.
-const OW_TREE = {
-  'Forêt Émeraude': '🌲', 'Colline Azur': '🌳', 'Grotte Violette': '⛰️',
-  'Volcan Rougeoyant': '🌋', 'Côte Saphir': '🌴', 'Vallée Arc-en-ciel': '🌳',
-  'Îles du Levant': '🌴', 'Îles du Couchant': '🌴', 'Plateau de la Ligue': '🌳',
-  'Terres Nouvelles': '🌲', 'Failles Ultra': '🌌', 'Académie Pokémon': '🌳',
+// One map per region (landscape, 13×9), each its own shape, obstacle and
+// colours (styles.css .look-*). Legend:
+//   T obstacle (the region's tree)  W water (lava, the void…)  . ground
+//   = path  F flowers  g tall grass  1–5 route stops, in walking order
+//   O Tour  A mini-jeux  P Pokédex  < previous region  > next region
+//   D E the region's two trainers  X the professor of a surprise exam
+// curriculum/overworld_test.go checks every map: all reachable, the stops in
+// order from the entrance, no trainer next to an exit (README « Une carte par région »).
+const OW_REGIONS = {
+  'Forêt Émeraude': {
+    look: 'foret', tree: '🌲',
+    map: [
+      'TTTTTTTTTTTTT',
+      'TT1==XTT.ATTT',
+      'TT=T=T3==T5=T',
+      'TT=D=W=T=T==T',
+      '<==T=W=O=E==>',
+      'Tggg=W=T=T=FT',
+      'TggP=T=T4==FT',
+      'Tggg2==T.F.TT',
+      'TTTTTTTTTTTTT',
+    ],
+  },
+  'Colline Azur': {
+    look: 'colline', tree: '🌳',
+    map: [
+      'TTTTTTTTTTTTT',
+      'TT.F.TTTTWWWT',
+      'TT2===OT=4=AT',
+      'TT=DT=TT=T=WT',
+      'TT=gg=3==E=.T',
+      'TT=ggT.F.T=.T',
+      '<=1ggTFX.T5=>',
+      'TPggFT..FT.FT',
+      'TTTTTTTTTTTTT',
+    ],
+  },
+  'Grotte Violette': {
+    look: 'grotte', tree: '⛰️',
+    map: [
+      'TTTTTTTTTTTTT',
+      '<=1===TT=4==T',
+      'TTTDT=TT=TE=T',
+      'T2====T==OT=T',
+      'T=ggTTT=ggg=T',
+      'T===3===gTW=T',
+      'TT.T=PTWWWW5T',
+      'TX...ATWWWW=>',
+      'TTTTTTTTTTTTT',
+    ],
+  },
+  'Volcan Rougeoyant': {
+    look: 'volcan', tree: '🌋',
+    map: [
+      'TTTTTTTTTTTTT',
+      'T=2===3===4=T',
+      'T=TDTOTXTET=T',
+      'T=gWWWWWWWg=T',
+      'T=gWWWWWWWg=T',
+      'T1gWWWWWWWg5T',
+      'T=PTTTTTTTA=T',
+      '<=ggTTTTTgg=>',
+      'TTTTTTTTTTTTT',
+    ],
+  },
+  'Côte Saphir': {
+    look: 'cote', tree: '🌴',
+    map: [
+      'TTTTTTTTTTTTT',
+      'TOgg2gTX4gFAT',
+      'T.gT=PT.=T..T',
+      '<===========>',
+      'TW=DWW=WWE=WT',
+      'TW1WWW3WWW5WT',
+      'TWWWWWWWWWWWT',
+      'TWWWWWWWWWWWT',
+      'TTTTTTTTTTTTT',
+    ],
+  },
+  'Vallée Arc-en-ciel': {
+    look: 'vallee', tree: '🌸',
+    map: [
+      'TTTTTTTTTTTTT',
+      'TTFFTTWXFT5=>',
+      'TT===2W..T=FT',
+      'TF=DT=WF.T=TT',
+      'TT=.T====T=AT',
+      'TP1ggTWT3E4FT',
+      'TT=ggOWT===TT',
+      '<==gFFWTTFTTT',
+      'TTTTTTTTTTTTT',
+    ],
+  },
+  'Îles du Levant': {
+    look: 'levant', tree: '🎋',
+    map: [
+      'TTTTTTTTTTTTT',
+      'TWWWWPF.WWWWT',
+      'T.D==2==W.5=>',
+      'Tg.=WF.=W.=.T',
+      '<=1=WWW=W4=FT',
+      'Tgg.Wg.=W=EAT',
+      'TOggW..3==.FT',
+      'TWWWWXg.WWWWT',
+      'TTTTTTTTTTTTT',
+    ],
+  },
+  'Îles du Couchant': {
+    look: 'couchant', tree: '🌵',
+    map: [
+      'TTTTTTTTTTTTT',
+      'Tgg.D.OF.ggTT',
+      'Tg.===3===.TT',
+      'TA.2WWWWW4.PT',
+      'T.T=WWWWW=T.T',
+      'T.T=WWWWW=TTT',
+      '<=1=TTTTE=5=>',
+      'Tgg..XTTTFggT',
+      'TTTTTTTTTTTTT',
+    ],
+  },
+  'Plateau de la Ligue': {
+    look: 'ligue', tree: '🗿',
+    map: [
+      'TTTTTTTTTTTTT',
+      'TFTTTTTTTTTFT',
+      'TOT1TTT3TTTPT',
+      'T.T=DTT=TTT.T',
+      '<==========5>',
+      'TggTT=TTE4ggT',
+      'TgATT2TTTTgXT',
+      'TFTTTTTTTTTFT',
+      'TTTTTTTTTTTTT',
+    ],
+  },
+  'Terres Nouvelles': {
+    look: 'terres', tree: '🌻',
+    map: [
+      'TTTTTTTTTTTTT',
+      '<===FTTF.TTFT',
+      'T.T=TO=2==.PT',
+      'TAT=DT=TT=TTT',
+      'TTT1===TT3.FT',
+      'TggggTTTT=E.T',
+      'TggggggXT4.TT',
+      'TFggggFFT==5>',
+      'TTTTTTTTTTTTT',
+    ],
+  },
+  'Failles Ultra': {
+    look: 'failles', tree: '🌌',
+    map: [
+      'TTTTTTTTTTTTT',
+      'TWWWWWWW=4=WT',
+      'TWWWWg3==W=XT',
+      'TWWW===PWE=gT',
+      'TWWg2AWWWW=gT',
+      'TO===WWWWW5=>',
+      'Tg=DWWWWWWWWT',
+      '<=1WWWWWWWWWT',
+      'TTTTTTTTTTTTT',
+    ],
+  },
+  'Académie Pokémon': {
+    look: 'academie', tree: '🏫',
+    map: [
+      'TTTTTTTTTTTTT',
+      'TFFTTFTTFT.FT',
+      'TD===2==3==.T',
+      'T.=T.F.F.T=.T',
+      '<=1TXWWW.T4ET',
+      'TggT.WWW.T=.T',
+      'TggTA.O.PT5=>',
+      'TggTTTTTTTTTT',
+      'TTTTTTTTTTTTT',
+    ],
+  },
 };
+const OW_DEFAULT = OW_REGIONS['Forêt Émeraude'];
+const owRegion = (name) => OW_REGIONS[name] || OW_DEFAULT;
 
 // spoken() marks a literal as a voice line: speech_coverage_test.go finds
 // it and checks it is in UIPhrases.
@@ -62,14 +218,15 @@ const Overworld = {
 
   // Portrait screens get the map turned a quarter: same places, taller grid.
   layout() {
+    const m = owRegion(this.regions()[this.region].name).map;
     const portrait = window.innerHeight > window.innerWidth * 1.1;
-    if (!portrait) return OW_MAP.map((r) => r.split(''));
-    const rows = OW_MAP.length;
-    const cols = OW_MAP[0].length;
+    if (!portrait) return m.map((r) => r.split(''));
+    const rows = m.length;
+    const cols = m[0].length;
     const t = [];
     for (let x = 0; x < cols; x++) {
       const row = [];
-      for (let y = 0; y < rows; y++) row.push(OW_MAP[y][x]);
+      for (let y = 0; y < rows; y++) row.push(m[y][x]);
       t.push(row);
     }
     return t.map((row) => row.map((c) => ({ '<': '^', '>': 'v' }[c] || c)));
@@ -82,7 +239,8 @@ const Overworld = {
     for (const c of `${new Date().toDateString()}:${region}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
     const rnd = () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h ^= h >>> 13; return (h >>> 0) / 4294967296; };
     const ground = [];
-    OW_MAP.forEach((row, y) => row.split('').forEach((c, x) => { if (c === '.' || c === 'F') ground.push(`${x},${y}`); }));
+    owRegion(this.regions()[region].name).map
+      .forEach((row, y) => row.split('').forEach((c, x) => { if (c === '.' || c === 'F') ground.push(`${x},${y}`); }));
     const spots = [];
     while (spots.length < 2 && ground.length) spots.push(ground.splice(Math.floor(rnd() * ground.length), 1)[0]);
     const found = new Set(App.state.found || []);
@@ -145,9 +303,10 @@ const Overworld = {
     const s = App.state;
     const rows = this.grid.length;
     const cols = this.grid[0].length;
-    const tree = OW_TREE[reg.name] || '🌳';
+    const look = owRegion(reg.name);
+    const tree = look.tree;
 
-    const map = el('div', { class: `ow-map theme-${this.region % 6}` });
+    const map = el('div', { class: `ow-map look-${look.look}` });
     this.map = map;
     map.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
     map.style.aspectRatio = `${cols} / ${rows}`;

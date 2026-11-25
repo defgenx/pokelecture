@@ -1598,11 +1598,37 @@ img.shiny { filter: hue-rotate(300deg) saturate(1.3) brightness(1.06) drop-shado
   border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--lift-3);
   background: #9be07f;
 }
-.ow-map.theme-1 { background: #a8d8f0; }
-.ow-map.theme-2 { background: #c9b6e8; }
-.ow-map.theme-3 { background: #f2b88e; }
-.ow-map.theme-4 { background: #9fdcd6; }
-.ow-map.theme-5 { background: #f3d98a; }
+/* One look per region (README « Une carte par région »): ground, path, water. */
+.ow-map.look-foret { background: #8fd27a; }
+.ow-map.look-colline { background: #c4e9a2; }
+.ow-map.look-grotte { background: #8e7fae; }
+.look-grotte .ow-path { background: rgba(196, 180, 226, .9); }
+.look-grotte .ow-water { background: linear-gradient(180deg, #4b5ea8, #2c3a78); }
+.ow-map.look-volcan { background: #b98a74; }
+.look-volcan .ow-path { background: rgba(236, 196, 160, .92); }
+.look-volcan .ow-water { background: linear-gradient(180deg, #ffa13a, #e2380f); }
+.look-volcan .ow-grass { background: rgba(120, 140, 60, .4); }
+.ow-map.look-cote { background: #f3e0a6; }
+.look-cote .ow-path { background: rgba(255, 246, 214, .95); }
+.look-cote .ow-water { background: linear-gradient(180deg, #4fc3f0, #1f8fd6); }
+.ow-map.look-vallee { background: #d9f2c4; }
+.look-vallee .ow-path { background: rgba(255, 214, 234, .92); }
+.ow-map.look-levant { background: #f6e6bb; }
+.look-levant .ow-water { background: linear-gradient(180deg, #46d6cf, #1ba8b0); }
+.ow-map.look-couchant { background: #f2c48e; }
+.look-couchant .ow-path { background: rgba(255, 226, 180, .92); }
+.look-couchant .ow-water { background: linear-gradient(180deg, #a77fd6, #6a4bb0); }
+.ow-map.look-ligue { background: #cdd2dc; }
+.look-ligue .ow-path { background: rgba(244, 236, 214, .95); }
+.look-ligue .ow-water { background: linear-gradient(180deg, #7d9ccc, #5272a8); }
+.ow-map.look-terres { background: #dcea92; }
+.look-terres .ow-path { background: rgba(226, 196, 136, .92); }
+.ow-map.look-failles { background: #3b2b60; }
+.look-failles .ow-path { background: rgba(150, 132, 232, .9); }
+.look-failles .ow-water { background: radial-gradient(circle at 30% 30%, #fff 0 1px, transparent 2px), radial-gradient(circle at 70% 65%, #d9ccff 0 1px, transparent 2px), #120a2b; }
+.look-failles .ow-grass { background: rgba(170, 120, 255, .4); }
+.ow-map.look-academie { background: #a9d98e; }
+.look-academie .ow-path { background: rgba(240, 232, 214, .95); }
 .ow-tile {
   aspect-ratio: 1; display: grid; place-items: center; position: relative;
   font-size: calc(min(100vw, 1200px) / var(--ow-cols) * .62); line-height: 1; cursor: pointer;

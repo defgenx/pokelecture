@@ -952,8 +952,35 @@ de sa région : JOUER est déjà là. On se déplace :
   plus court) ; sur tablette, une croix directionnelle en plus (masquée sur
   téléphone, où l'on touche la carte).
 
-Chaque région a la même carte (`OW_MAP` dans `web/overworld.js`, tournée d'un
-quart de tour sur un écran en portrait) : ses routes sont des Poké Balls le
+### Une carte par région
+
+**Chaque région a sa propre carte** (`OW_REGIONS` dans `web/overworld.js`,
+13 × 9, tournée d'un quart de tour sur un écran en portrait), son obstacle et
+ses couleurs (`.look-*` dans `styles.css`) :
+
+| Région | Obstacle | La carte |
+|---|---|---|
+| Forêt Émeraude | 🌲 | sentier qui serpente dans une forêt dense, un ruisseau, herbes à gauche |
+| Colline Azur | 🌳 | prairie ouverte, un lac en haut à droite |
+| Grotte Violette | ⛰️ | galeries en zigzag, lac souterrain, mousse |
+| Volcan Rougeoyant | 🌋 | chemin en U autour d'un lac de **lave** |
+| Côte Saphir | 🌴 | promenade de plage, les routes au bout des pontons dans la mer |
+| Vallée Arc-en-ciel | 🌸 | rivière coupée par un pont, prés fleuris |
+| Îles du Levant | 🎋 | quatre îles reliées par des ponts |
+| Îles du Couchant | 🌵 | dunes autour d'un lagon violet |
+| Plateau de la Ligue | 🗿 | grande allée de pierre, les portes du Conseil de part et d'autre, le Champion au bout |
+| Terres Nouvelles | 🌻 | champs en S |
+| Failles Ultra | 🌌 | plateformes flottantes dans un **vide étoilé** |
+| Académie Pokémon | 🏫 | campus, cour carrée autour d'une fontaine |
+
+`internal/curriculum/overworld_test.go` lit ces cartes et vérifie chacune :
+taille, une seule fois chaque lieu, tout atteignable depuis l'entrée, **les
+routes rencontrées dans l'ordre** en marchant (1 avant 2…), aucun Dresseur à
+côté d'une sortie ou du professeur (sa boîte de dialogue passerait avant), au
+moins 4 cases d'herbes — et deux régions n'ont jamais la même carte ni le même
+obstacle. Les emplacements de route sans épisode deviennent du chemin.
+
+Sur chaque carte, les routes sont des Poké Balls le
 long du chemin (le Pokémon à gagner au-dessus), **les hautes herbes** font
 surgir un Pokémon sauvage en marchant (1 pas sur 7, s'il reste des Poké
 Balls), et trois lieux s'ouvrent quand on marche dessus : 🗼 la Tour, 🎮 les
