@@ -1072,6 +1072,7 @@ const Session = {
 
   async start(id) {
     Voice.stop();
+    this.startedAt = Date.now();
     if (dayOver()) return dayDone();
     if (lessonsOver() && isLesson(id)) return lessonsDone();
     App.screen(el('div', { class: 'loading' }, pokeball('spin-fast')));
@@ -1210,6 +1211,7 @@ const Session = {
       // For the day's missions (README « La limite du jour »).
       tera: !!stats.tera,
       flawless: stats.rounds > 0 && stats.perfect === stats.rounds,
+      elapsed_ms: Date.now() - (this.startedAt || Date.now()),
     });
     App.state = res.state;
 
@@ -2120,6 +2122,7 @@ function renderCombat(a, body, done) {
     try {
       await api(`api/session/${Session.data.episode_id}/result`, {
         items: Session.answers, stars: 0, completed: false,
+        elapsed_ms: Date.now() - (Session.startedAt || Date.now()),
       });
     } catch (_) {}
     await say('Oh non, tu as perdu ! Entraîne-toi et reviens plus fort !');
@@ -2418,6 +2421,7 @@ const Arcade = {
   // Not this.stop(): a timed game starts its countdown before building its
   // screen. play() stops the previous game.
   screen(title, hintText, ...rest) {
+    this.startedAt = Date.now();
     this.streak = 0;
     this.level = 1;
     this.rightCount = 0;
@@ -2467,7 +2471,10 @@ const Arcade = {
     let beaten = false;
     let res = {};
     try {
-      res = await api('api/records', { game, score, lower, items: this.items, level: this.level });
+      res = await api('api/records', {
+        game, score, lower, items: this.items, level: this.level,
+        elapsed_ms: Date.now() - (this.startedAt || Date.now()),
+      });
       App.state = res.state;
       beaten = res.beaten;
     } catch (_) {}

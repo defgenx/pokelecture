@@ -371,3 +371,38 @@ func TestDailyObjectives(t *testing.T) {
 		t.Fatalf("no limit: the usual three missions, got %v", got)
 	}
 }
+
+// The statistics log: answers by kind, the item's own time, play time capped
+// at an hour, stray taps and absent minutes ignored, old days dropped.
+func TestStatisticsLog(t *testing.T) {
+	s, err := Open(filepath.Join(t.TempDir(), "p.json"), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 11, 25, 18, 0, 0, 0, time.Local)
+	s.LogAnswer("mot:Pikachu", true, 2000, now)
+	s.LogAnswer("mot:Pikachu", true, 4000, now)
+	s.LogAnswer("mot:Pikachu", false, 9000, now)
+	s.LogAnswer("syl:ma", true, 100, now) // a stray tap: counted, not timed
+	s.LogSession(2*3600000, now)
+	old := now.AddDate(0, 0, -(DaysKept + 5))
+	s.LogSession(60000, old)
+	s.LogSession(60000, now) // prunes the old day
+	st := s.Snapshot()
+	d := st.Days["2026-11-25"]
+	if k := d.Kinds["mot"]; k.N != 3 || k.Right != 2 || k.Timed != 2 || k.MS != 6000 {
+		t.Fatalf("mot: %+v", k)
+	}
+	if k := d.Kinds["syl"]; k.N != 1 || k.Timed != 0 {
+		t.Fatalf("syl: %+v", k)
+	}
+	if d.Sessions != 2 || d.PlayMS != 3600000+60000 {
+		t.Fatalf("sessions %d play %d", d.Sessions, d.PlayMS)
+	}
+	if it := st.Items["mot:Pikachu"]; it.Timed != 2 || it.MS != 2500 {
+		t.Fatalf("item time: %+v", it)
+	}
+	if _, kept := st.Days[old.Format("2006-01-02")]; kept {
+		t.Fatal("a day older than DaysKept was kept")
+	}
+}

@@ -68,6 +68,10 @@ type adminSummary struct {
 	Exams    []adminExamView               `json:"exams"`
 	Fluency  []progress.FluencyRun         `json:"fluency"`
 	Speed    map[string]progress.SpeedStat `json:"speed"`
+	// Statistics (README « Statistiques »): the last DaysKept days, oldest
+	// first, empty days included; the items he is slowest on.
+	Days    []adminDayView  `json:"days"`
+	Slowest []adminSlowView `json:"slowest"`
 }
 
 func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
@@ -92,6 +96,7 @@ func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
 	}
 	out.Today.Lessons = st.LessonsToday(time.Now())
 	out.GamesOpen = s.cur.GamesOpen(st)
+	out.Days, out.Slowest = adminStats(st, time.Now())
 
 	unlocked := true
 	for _, ep := range s.cur.Episodes {
@@ -319,4 +324,70 @@ func lockFails(st progress.State) int {
 		return 0
 	}
 	return st.Lock.Fails
+}
+
+type adminDayView struct {
+	Day      string                   `json:"day"`
+	PlayMin  int                      `json:"play_min"`
+	Sessions int                      `json:"sessions"`
+	Answers  int                      `json:"answers"`
+	Right    int                      `json:"right"`
+	AvgMS    int                      `json:"avg_ms"` // over timed right answers; 0 = none
+	Kinds    map[string]adminKindView `json:"kinds"`
+}
+
+type adminKindView struct {
+	Answers int `json:"answers"`
+	Right   int `json:"right"`
+	AvgMS   int `json:"avg_ms"`
+}
+
+type adminSlowView struct {
+	ID      string `json:"id"`
+	Kind    string `json:"kind"`
+	Text    string `json:"text"`
+	AvgMS   int    `json:"avg_ms"`
+	Timed   int    `json:"timed"`
+	Seen    int    `json:"seen"`
+	Correct int    `json:"correct"`
+}
+
+// adminStats lays the day log out for the charts and picks the slowest items
+// (at least two timed answers, so one distracted moment does not count).
+func adminStats(st progress.State, now time.Time) ([]adminDayView, []adminSlowView) {
+	days := make([]adminDayView, 0, progress.DaysKept)
+	for i := progress.DaysKept - 1; i >= 0; i-- {
+		day := now.AddDate(0, 0, -i).Format("2006-01-02")
+		d := st.Days[day]
+		v := adminDayView{Day: day, PlayMin: (d.PlayMS + 30000) / 60000, Sessions: d.Sessions, Kinds: map[string]adminKindView{}}
+		timed, ms := 0, 0
+		for kind, k := range d.Kinds {
+			v.Answers += k.N
+			v.Right += k.Right
+			timed += k.Timed
+			ms += k.MS
+			kv := adminKindView{Answers: k.N, Right: k.Right}
+			if k.Timed > 0 {
+				kv.AvgMS = k.MS / k.Timed
+			}
+			v.Kinds[kind] = kv
+		}
+		if timed > 0 {
+			v.AvgMS = ms / timed
+		}
+		days = append(days, v)
+	}
+	var slow []adminSlowView
+	for id, it := range st.Items {
+		kind, text, ok := strings.Cut(id, ":")
+		if !ok || it.Timed < 2 {
+			continue
+		}
+		slow = append(slow, adminSlowView{ID: id, Kind: kind, Text: text, AvgMS: it.MS, Timed: it.Timed, Seen: it.Seen, Correct: it.Correct})
+	}
+	sort.Slice(slow, func(a, b int) bool { return slow[a].AvgMS > slow[b].AvgMS })
+	if len(slow) > 12 {
+		slow = slow[:12]
+	}
+	return days, slow
 }

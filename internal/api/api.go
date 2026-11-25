@@ -541,6 +541,8 @@ type resultRequest struct {
 	// word was built without a wrong tap.
 	Tera     bool `json:"tera"`
 	Flawless bool `json:"flawless"`
+	// ElapsedMS is how long the session lasted, for the statistics.
+	ElapsedMS int `json:"elapsed_ms"`
 }
 
 type resultResponse struct {
@@ -597,12 +599,14 @@ func (s *Server) handleResult(w http.ResponseWriter, r *http.Request) {
 	for _, it := range req.Items {
 		if it.ID != "" {
 			s.store.Answer(it.ID, it.Correct, now)
+			s.store.LogAnswer(it.ID, it.Correct, it.MS, now)
 		}
 		if kind, _, ok := strings.Cut(it.ID, ":"); ok && it.MS > 0 && it.Correct {
 			times[kind] = append(times[kind], it.MS)
 		}
 	}
 	s.store.AddTimes(times)
+	s.store.LogSession(req.ElapsedMS, now)
 
 	right := 0
 	for _, it := range req.Items {

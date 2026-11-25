@@ -156,6 +156,8 @@ type recordRequest struct {
 	Lower bool `json:"lower"`
 	// Level is the mini-game level reached (the "level" mission).
 	Level int `json:"level"`
+	// ElapsedMS is how long the game lasted, for the statistics.
+	ElapsedMS int `json:"elapsed_ms"`
 	// Items lets the comprehension games feed the spaced repetition.
 	Items []struct {
 		ID      string `json:"id"`
@@ -182,8 +184,10 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request) {
 	for _, it := range req.Items {
 		if it.ID != "" {
 			s.store.Answer(it.ID, it.Correct, now)
+			s.store.LogAnswer(it.ID, it.Correct, 0, now)
 		}
 	}
+	s.store.LogSession(req.ElapsedMS, now)
 	beaten := s.store.Record(req.Game, req.Score, req.Lower)
 	balls := 0
 	if beaten {

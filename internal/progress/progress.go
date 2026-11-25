@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -35,6 +36,10 @@ type Item struct {
 	Seen     int       `json:"seen"`
 	Correct  int       `json:"correct"`
 	LastSeen time.Time `json:"last_seen"`
+	// MS is his usual time on this item (a moving average over Timed right
+	// answers): the admin's slowest words. README « Statistiques ».
+	MS    int `json:"ms,omitempty"`
+	Timed int `json:"timed,omitempty"`
 }
 
 // Due reports whether the item should come back in this session.
@@ -167,6 +172,28 @@ type SpeedStat struct {
 	N  int `json:"n"`
 }
 
+// DayStat is one day of play for the admin's statistics (README « Statistiques »).
+type DayStat struct {
+	PlayMS   int                 `json:"play_ms,omitempty"` // in sessions and mini-games
+	Sessions int                 `json:"sessions,omitempty"`
+	Kinds    map[string]KindStat `json:"kinds,omitempty"` // son, syl, mot, phrase…
+}
+
+// KindStat counts one kind of question over a day.
+type KindStat struct {
+	N     int `json:"n"`     // answers
+	Right int `json:"right"` // right
+	Timed int `json:"timed"` // right answers with a time
+	MS    int `json:"ms"`    // their total time
+}
+
+// DaysKept: how much history the statistics keep.
+const DaysKept = 60
+
+// validMS is an answer time worth counting: shorter is a stray tap, longer
+// is a child who left the tablet.
+func validMS(ms int) bool { return ms >= 300 && ms <= 60000 }
+
 // FluencyRun is one timed reading a parent scored in the admin.
 type FluencyRun struct {
 	At      time.Time `json:"at"`
@@ -259,6 +286,8 @@ type State struct {
 	// trainers beaten, the partner fed, and the daily missions. It resets
 	// itself on the first event of a new day.
 	Today Today `json:"today"`
+	// Days is the statistics' history, one entry per played day (DaysKept).
+	Days map[string]DayStat `json:"days,omitempty"`
 
 	// Created dates the save (players are listed oldest first).
 	Created time.Time `json:"created,omitempty"`
@@ -731,6 +760,67 @@ func (s *Store) AddTimes(times map[string][]int) {
 			s.state.Speed[kind] = st
 		}
 	}
+}
+
+// LogAnswer counts one answer in today's statistics, and a right timed one in
+// the item's own usual time. id is "kind:text" (mot:Pikachu).
+func (s *Store) LogAnswer(id string, correct bool, ms int, now time.Time) {
+	kind, _, ok := strings.Cut(id, ":")
+	if !ok {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	d := s.dayStat(now)
+	k := d.Kinds[kind]
+	k.N++
+	if correct {
+		k.Right++
+		if validMS(ms) {
+			k.Timed++
+			k.MS += ms
+			it := s.state.Items[id]
+			if it.Timed == 0 {
+				it.MS = ms
+			} else {
+				it.MS += (ms - it.MS) / 4
+			}
+			it.Timed++
+			s.state.Items[id] = it
+		}
+	}
+	d.Kinds[kind] = k
+	s.state.Days[now.Format("2006-01-02")] = d
+}
+
+// LogSession counts one session or mini-game and its time in today's
+// statistics (an hour at most: a tablet left on is not play), and drops
+// days older than DaysKept.
+func (s *Store) LogSession(playMS int, now time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	d := s.dayStat(now)
+	d.Sessions++
+	d.PlayMS += max(0, min(playMS, 3600000))
+	s.state.Days[now.Format("2006-01-02")] = d
+	oldest := now.AddDate(0, 0, -DaysKept).Format("2006-01-02")
+	for day := range s.state.Days {
+		if day < oldest {
+			delete(s.state.Days, day)
+		}
+	}
+}
+
+// dayStat is today's entry, ready to write. Callers hold the lock.
+func (s *Store) dayStat(now time.Time) DayStat {
+	if s.state.Days == nil {
+		s.state.Days = map[string]DayStat{}
+	}
+	d := s.state.Days[now.Format("2006-01-02")]
+	if d.Kinds == nil {
+		d.Kinds = map[string]KindStat{}
+	}
+	return d
 }
 
 // AddFluency stores a timed reading.
