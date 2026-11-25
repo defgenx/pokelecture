@@ -59,10 +59,11 @@ type arcadeSentence struct {
 // arcadePokemon is one face of the mini-games' roster: the course's Pokémon,
 // caught or not, plus the arcade-only extras.
 type arcadePokemon struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	NameAudio string `json:"name_audio"`
-	Sprite    string `json:"sprite"`
+	ID        int      `json:"id"`
+	Name      string   `json:"name"`
+	NameAudio string   `json:"name_audio"`
+	Sprite    string   `json:"sprite"`
+	Syllables []string `json:"syllables,omitempty"`
 }
 
 type arcadeView struct {
@@ -101,6 +102,7 @@ func (s *Server) handleArcade(w http.ResponseWriter, r *http.Request) {
 			Name:      p.Name,
 			NameAudio: speech.URL(p.Spoken(), speech.StyleWord),
 			Sprite:    fmt.Sprintf("sprites/art/%d.png", p.ID),
+			Syllables: p.Syllables,
 		})
 	}
 	for _, wd := range words {

@@ -384,8 +384,8 @@ body::after {
   padding: 16px 36px;
   line-height: 1.18;
 }
-.word .syl:nth-child(odd) { color: var(--blue); }
-.word .syl:nth-child(even) { color: var(--red); }
+.word .syl:nth-child(odd), .sylcol > .syl:nth-child(odd) { color: var(--blue); }
+.word .syl:nth-child(even), .sylcol > .syl:nth-child(even) { color: var(--red); }
 
 .sentence {
   font-size: clamp(27px, 6vw, 46px);
@@ -406,6 +406,10 @@ body::after {
 .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 /* Four choices (the harder tier) go 2×2, so the targets stay finger-sized. */
 .grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 620px; }
+/* « Quel mot est bien écrit ? » : whole written words, one per row. */
+.grid.spell-grid { grid-template-columns: 1fr; max-width: 520px; gap: 10px; }
+.tile.spell-word { min-height: 76px; font-size: clamp(28px, 7vw, 44px); overflow-wrap: anywhere; }
+.tile.spell-pic { cursor: default; margin: 0 auto; }
 
 .tile {
   background: var(--glass-solid);

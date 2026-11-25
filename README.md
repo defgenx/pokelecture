@@ -799,6 +799,22 @@ la vitesse d'un enfant de 5 ans.
   première syllabe, sinon même première lettre) : la première lettre ne suffit
   plus à deviner, il faut lire le mot jusqu'au bout. Même règle pour l'image de
   « Lis la phrase », « Lis et attrape » et les noms du « Pokémon mystère ».
+- **« Quel mot est bien écrit ? »** — un « Lis le mot » sur deux est
+  retourné : l'image est donnée (Pikachu), les réponses sont écrites — le vrai
+  mot et des copies où une syllabe change pour une syllabe voisine déjà apprise
+  (`Pikachu` / `Pitachu` / `Pikacho`, `spellItem`). L'image dit *quel* Pokémon,
+  elle ne peut pas donner la réponse : seule la lecture de chaque syllabe la
+  trouve. Les copies gardent la première lettre (sinon un coup d'œil suffit),
+  ne sont jamais un vrai mot et ne sont jamais dites ; la voix lit le bon mot
+  une fois trouvé. Repli sur la question normale quand un mot n'a pas deux
+  copies possibles.
+- **Les syllabes en couleur** : partout où un mot écrit s'affiche et que ses
+  syllabes sont connues — « Lis le mot », ses copies, les examens, le mot du
+  combat, « Lis et attrape », l'atelier, les noms du « Pokémon mystère », les
+  paires — elles alternent **bleu / rouge**, comme au CP. Exception : le
+  tambour, où les couleurs donneraient le nombre de syllabes demandé (il les
+  colore après la réponse). Les mots des phrases restent d'un bloc : leurs
+  syllabes ne sont pas décrites dans le contenu.
 - **Une mauvaise image ne fait pas dire le mot** : « Presque ! Relis le mot. »
   (ou « la phrase »). Avant, la voix lisait le mot après l'erreur : toucher une
   image au hasard, puis écouter, répondait sans lire. Les questions d'écoute

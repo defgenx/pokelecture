@@ -919,6 +919,13 @@ function byLook(list, target, name) {
   return [...list].sort((a, b) => rank(a) - rank(b));
 }
 
+/* A written word as blue/red syllables (README « Les syllabes en couleur »);
+   the plain text when its syllables are unknown. Put it in a .word or .sylcol box. */
+function sylColored(syllables, text) {
+  if (!syllables || !syllables.length) return text;
+  return syllables.map((syl) => el('span', { class: 'syl' }, syl));
+}
+
 function syllableWord(syllables, fallbackText, audio) {
   const parts = (syllables && syllables.length) ? syllables : [fallbackText];
   const box = el('div', { class: 'word' });
@@ -1320,7 +1327,7 @@ function renderQuiz(a, body, done) {
     const item = a.items[idx];
     // Icon counts as a picture too — without it, an icon-only word ("Morsure")
     // silently turned the reading exercise into a listening one.
-    const isText = !!(item.emoji || item.sprite || item.icon) || a.kind === 'phrase';
+    const isText = !!(item.emoji || item.sprite || item.icon) || a.kind === 'phrase' || !!item.spell;
     let answered = false;
     let t0 = performance.now();
     startClock((t) => { if (!answered) t0 = t; });
@@ -1329,7 +1336,15 @@ function renderQuiz(a, body, done) {
     stage.innerHTML = '';
 
     let replay;
-    if (isText) {
+    if (item.spell) {
+      // « Quel mot est bien écrit ? » — the picture is the question, never the
+      // answer; it stays silent until he has picked the right spelling.
+      const face = item.sprite ? el('img', { src: item.sprite, alt: '' })
+        : item.icon ? iconEl(item.icon) : el('span', {}, item.emoji);
+      replay = el('button', { class: 'btn btn-ghost', disabled: true, onclick: () => Voice.play(item.audio, item.prompt) }, '🔊 Vérifier');
+      stage.append(el('div', { class: `tile big-pic spell-pic ${item.sprite ? 'sprite' : item.icon ? 'ico' : 'emoji'}` }, face), replay);
+      say('Quel mot est bien écrit ?');
+    } else if (isText) {
       const prompt = a.kind === 'phrase'
         ? el('div', { class: 'sentence' }, item.prompt)
         : syllableWord(item.syllables, item.prompt, item.syllable_audio);
@@ -1342,13 +1357,14 @@ function renderQuiz(a, body, done) {
       Promise.resolve(Voice.play(item.audio, item.prompt)).then(() => { if (!answered) t0 = performance.now(); });
     }
 
-    const grid = el('div', { class: `grid ${item.choices.length === 2 ? 'two' : item.choices.length >= 4 ? 'four' : ''}` });
+    const grid = el('div', { class: `grid ${item.spell ? 'spell-grid' : item.choices.length === 2 ? 'two' : item.choices.length >= 4 ? 'four' : ''}` });
     item.choices.forEach((c) => {
       // Pokémon → sprite, abstract Pokémon term → our own icon, else emoji.
       const face = c.sprite ? el('img', { src: c.sprite, alt: '' })
         : c.icon ? iconEl(c.icon)
-        : (c.emoji || c.label);
-      const kind = c.sprite ? 'sprite' : c.icon ? 'ico' : c.emoji ? 'emoji' : '';
+        : c.emoji ? c.emoji
+        : el('span', { class: 'sylcol' }, sylColored(c.syllables, c.label));
+      const kind = c.sprite ? 'sprite' : c.icon ? 'ico' : c.emoji ? 'emoji' : item.spell ? 'spell-word' : '';
       const tile = el('button', { class: `tile ${kind}` }, face);
       tile.addEventListener('click', async () => {
         if (tile.disabled) return;
@@ -1491,7 +1507,7 @@ function renderExam(a, body, done) {
     } else if (a.text === 'phrase') {
       stage.append(el('div', { class: 'sentence exam-sentence' }, item.prompt));
     } else {
-      stage.append(el('div', { class: 'word exam-word' }, item.prompt));
+      stage.append(el('div', { class: 'word exam-word' }, sylColored(item.syllables, item.prompt)));
     }
 
     const n = item.choices.length;
@@ -1772,15 +1788,15 @@ function renderCombat(a, body, done) {
       tray.append(b);
     });
 
-    // The attack word is shown whole: segmenting it into syllables is the
-    // exercise, so no colour hints and no tap-to-hear here. A dictation round
-    // (item.dictee, the finale) hides it: he hears it and spells it.
+    // The attack word is shown in coloured syllables, but not tappable: no
+    // voice before the attack. A dictation round (item.dictee, the finale)
+    // hides it: he hears it and spells it.
     if (item.dictee) {
       const ear = el('button', { class: 'btn btn-huge dictee', onclick: () => Voice.play(item.audio, item.prompt) }, '🔊 ÉCOUTE LE MOT');
       stage.append(el('div', { class: 'shout-sub' }, '🙈 MOT CACHÉ !'), ear, hint('Le mot est caché ! Écoute-le, et remets ses syllabes dans l\'ordre.'), slots, tray);
       Voice.play(item.audio, item.prompt);
     } else {
-      stage.append(el('div', { class: 'word' }, item.prompt), slots, tray);
+      stage.append(el('div', { class: 'word' }, sylColored(item.syllables, item.prompt)), slots, tray);
     }
   };
 
@@ -2360,7 +2376,7 @@ const Arcade = {
         });
         grid.append(tile);
       });
-      stage.append(el('div', { class: 'word arcade-word' }, target.text), grid);
+      stage.append(el('div', { class: 'word arcade-word' }, sylColored(target.syllables, target.text)), grid);
     };
 
     const bar = this.countdown(60, () => this.gameOver('lecture', score, false, '📖 Lis et attrape'));
@@ -2427,7 +2443,7 @@ const Arcade = {
         trayEl.append(b);
       });
 
-      stage.append(el('div', { class: 'word arcade-word' }, target.text), slots, trayEl);
+      stage.append(el('div', { class: 'word arcade-word' }, sylColored(target.syllables, target.text)), slots, trayEl);
     };
 
     const bar = this.countdown(90, () => this.gameOver('atelier', score, false, '⚒️ L\'atelier des mots'));
@@ -2457,7 +2473,7 @@ const Arcade = {
       const grid = el('div', { class: 'grid four name-grid' });
       let answered = false;
       options.forEach((p) => {
-        const tile = el('button', { class: 'tile name-tile' }, p.name);
+        const tile = el('button', { class: 'tile name-tile' }, el('span', { class: 'sylcol' }, sylColored(p.syllables, p.name)));
         tile.addEventListener('click', () => {
           if (tile.disabled) return;
           if (p === target) {
@@ -2516,7 +2532,7 @@ const Arcade = {
     const grid = el('div', { class: 'memory-grid big' });
     cards.forEach((c) => {
       const front = c.kind === 'text'
-        ? el('span', { class: 'pair-word' }, c.w.text)
+        ? el('span', { class: 'pair-word sylcol' }, sylColored(c.w.syllables, c.w.text))
         : c.w.sprite ? el('img', { src: c.w.sprite, alt: '' })
         : c.w.icon ? iconEl(c.w.icon)
         : el('span', { class: 'pair-emoji' }, c.w.emoji);

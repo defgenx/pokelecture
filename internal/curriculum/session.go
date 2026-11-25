@@ -19,6 +19,8 @@ type Choice struct {
 	Icon    string `json:"icon,omitempty"`
 	Audio   string `json:"audio,omitempty"`
 	Correct bool   `json:"correct"`
+	// Syllables split a written choice for the blue/red colouring.
+	Syllables []string `json:"syllables,omitempty"`
 }
 
 // Item is one question. ID is the spaced-review key reported back by the client.
@@ -35,6 +37,8 @@ type Item struct {
 	Tray          []string `json:"tray,omitempty"`
 	// Dictee hides the battle word: he hears it and builds it from syllables.
 	Dictee bool `json:"dictee,omitempty"`
+	// Spell flips « Lis le mot »: the picture is shown, the choices are written words.
+	Spell bool `json:"spell,omitempty"`
 }
 
 // GraphemeCard is the "new sound of the day" screen.
@@ -398,7 +402,7 @@ func (c *Curriculum) BuildSession(ep *Episode, st progress.State, now time.Time)
 		})
 	}
 
-	if items := lectureItems(words, p.words, maxLecture, diff.choices); len(items) > 0 {
+	if items := lectureItems(words, p.words, p.syllables, maxLecture, diff.choices); len(items) > 0 {
 		s.Activities = append(s.Activities, Activity{
 			Kind:        "lecture",
 			Title:       "Lis le mot",
@@ -660,10 +664,36 @@ func differsByOne(a, b string) bool {
 	return diff == 1
 }
 
-func lectureItems(target, allWords []Word, limit, nChoices int) []Item {
+// lectureItems alternates the two directions of « Lis le mot »: the word to
+// match to a picture, then a picture to match to its correctly written word
+// among copies with one syllable changed (spellItem) — where the picture can
+// never give the answer away.
+// oneLetterApart: same length in letters, exactly one letter different.
+func oneLetterApart(a, b string) bool {
+	ra, rb := []rune(a), []rune(b)
+	if len(ra) != len(rb) {
+		return false
+	}
+	diff := 0
+	for i := range ra {
+		if ra[i] != rb[i] {
+			diff++
+		}
+	}
+	return diff == 1
+}
+
+func lectureItems(target, allWords []Word, syllables []string, limit, nChoices int) []Item {
 	var out []Item
-	for _, w := range target {
-		out = append(out, lectureItem(w, allWords, nChoices))
+	for i, w := range target {
+		it, ok := Item{}, false
+		if i%2 == 1 {
+			it, ok = spellItem(w, allWords, syllables, nChoices)
+		}
+		if !ok {
+			it = lectureItem(w, allWords, nChoices)
+		}
+		out = append(out, it)
 		if len(out) == limit {
 			break
 		}
@@ -727,6 +757,85 @@ func lectureItem(w Word, allWords []Word, nChoices int) Item {
 	rand.Shuffle(len(choices), func(i, j int) { choices[i], choices[j] = choices[j], choices[i] })
 	it.Choices = choices
 	return it
+}
+
+// SpellPrompt is spoken when a « Quel mot est bien écrit ? » round opens.
+const SpellPrompt = "Quel mot est bien écrit ?"
+
+// spellItem shows a word's picture and asks for its correct spelling among
+// copies with one syllable swapped for a look-alike one (Pikachu / Pitachu /
+// Pikacho), first letter kept. The copies are never voiced and never a real word. False when the
+// word has no picture or fewer than two copies can be made.
+func spellItem(w Word, allWords []Word, syllables []string, nChoices int) (Item, bool) {
+	pic := w.Pic()
+	if pic.Empty() || len(w.Syllables) == 0 || strings.Join(w.Syllables, "") != w.Text {
+		return Item{}, false
+	}
+	real := map[string]bool{}
+	for _, o := range allWords {
+		real[strings.ToLower(o.Text)] = true
+	}
+	// Every valid copy, grouped by the syllable it changes; one per syllable
+	// first, so the copies differ in different places.
+	seen := map[string]bool{strings.ToLower(w.Text): true}
+	var byPos [][]Choice
+	for pos, syl := range w.Syllables {
+		low := strings.ToLower(syl)
+		var opts []Choice
+		for _, c := range syllables {
+			c = strings.ToLower(c)
+			if c == low || !oneLetterApart(c, low) || sameSound(c, low) {
+				continue
+			}
+			rep := c
+			if syl != low { // keep the capital of a name's first syllable
+				r := []rune(rep)
+				rep = strings.ToUpper(string(r[0])) + string(r[1:])
+			}
+			parts := append([]string(nil), w.Syllables...)
+			parts[pos] = rep
+			fake := strings.Join(parts, "")
+			// Same first letter: a copy told apart at a glance would not need reading.
+			k := strings.ToLower(fake)
+			if firstRune(fake) == firstRune(w.Text) && !seen[k] && !real[k] {
+				seen[k] = true
+				opts = append(opts, Choice{Label: fake, Syllables: parts})
+			}
+		}
+		rand.Shuffle(len(opts), func(i, j int) { opts[i], opts[j] = opts[j], opts[i] })
+		if len(opts) > 0 {
+			byPos = append(byPos, opts)
+		}
+	}
+	rand.Shuffle(len(byPos), func(i, j int) { byPos[i], byPos[j] = byPos[j], byPos[i] })
+	var fakes []Choice
+	for round := 0; len(fakes) < nChoices-1; round++ {
+		added := false
+		for _, opts := range byPos {
+			if round < len(opts) && len(fakes) < nChoices-1 {
+				fakes = append(fakes, opts[round])
+				added = true
+			}
+		}
+		if !added {
+			break
+		}
+	}
+	if len(fakes) < 2 {
+		return Item{}, false
+	}
+	choices := append([]Choice{{Label: w.Text, Syllables: w.Syllables, Correct: true}}, fakes...)
+	rand.Shuffle(len(choices), func(i, j int) { choices[i], choices[j] = choices[j], choices[i] })
+	return Item{
+		ID:      "mot:" + w.Text,
+		Prompt:  w.Text,
+		Emoji:   pic.Emoji,
+		Sprite:  pic.Sprite,
+		Icon:    pic.Icon,
+		Audio:   speech.URL(w.Spoken(), speech.StyleWord),
+		Spell:   true,
+		Choices: choices,
+	}, true
 }
 
 // SentenceWords is sentenceWords for the mini-games.
@@ -1383,6 +1492,7 @@ var UIPhrases = []string{
 	"Bien joué !",
 	"Presque ! Écoute encore.",
 	"Presque ! Relis le mot.",
+	SpellPrompt,
 	"Presque ! Relis la phrase.",
 	"Essaie encore, tu y es presque.",
 	"On y va !",

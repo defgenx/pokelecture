@@ -140,3 +140,38 @@ func TestStoryShowsCameoAndPeek(t *testing.T) {
 		t.Fatalf("story screen: %+v", story)
 	}
 }
+
+// The copies differ from the word by one syllable, are never a real word, and
+// the picture is the question: no choice carries one.
+func TestSpellItemOffersMisspelledCopies(t *testing.T) {
+	loadCur(t)
+	w := Word{Text: "Pikachu", Emoji: "a", Syllables: []string{"Pi", "ka", "chu"}}
+	pool := []Word{w, {Text: "Pitachu", Emoji: "b", Syllables: []string{"Pi", "ta", "chu"}}}
+	syl := []string{"pi", "ti", "ka", "ta", "ra", "chu", "cho", "ma"}
+	for i := 0; i < 30; i++ {
+		it, ok := spellItem(w, pool, syl, 3)
+		if !ok || !it.Spell || len(it.Choices) != 3 {
+			t.Fatalf("got %+v, %v", it, ok)
+		}
+		right := 0
+		for _, c := range it.Choices {
+			if c.Sprite != "" || c.Emoji != "" || c.Icon != "" {
+				t.Fatalf("choice %q carries a picture", c.Label)
+			}
+			switch {
+			case c.Correct && c.Label == "Pikachu":
+				right++
+			case c.Label == "Pitachu":
+				t.Fatal("offered a real word as a misspelling")
+			case len(c.Label) != len("Pikachu") || c.Label[:1] != "P":
+				t.Fatalf("copy %q is not one syllable away", c.Label)
+			}
+		}
+		if right != 1 {
+			t.Fatalf("want one right answer: %+v", it.Choices)
+		}
+	}
+	if _, ok := spellItem(Word{Text: "Zut", Emoji: "z", Syllables: []string{"Zut"}}, nil, syl, 3); ok {
+		t.Fatal("a word with no look-alike syllable cannot make copies")
+	}
+}
