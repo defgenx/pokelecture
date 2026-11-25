@@ -84,3 +84,9 @@
 .fluency { display: grid; gap: 14px; justify-items: center; padding: 18px; border-radius: 14px; background: #f6f7fb; }
 .fluency-word { font-size: clamp(42px, 9vw, 84px); font-weight: 800; letter-spacing: .02em; }
 .fluency-clock { font-size: 18px; color: #6a7180; font-variant-numeric: tabular-nums; }
+
+/* Mini-game records: one row per game, its own reset. */
+.rec-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.rec-table th { text-align: left; font-size: 13px; color: #6a7180; font-weight: 600; padding: 4px 6px; }
+.rec-table td { padding: 6px; border-top: 1px solid #eceef3; }
+.rec-table .linkbtn[disabled] { opacity: .35; cursor: default; }

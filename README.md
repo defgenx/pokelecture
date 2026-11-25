@@ -1235,7 +1235,7 @@ lecture déguisée :
   les choix (`o`/`au`/`eau`, `an`/`en`…) : il aurait raison et on lui dirait
   non.
 
-Les records se gèrent dans l'admin (effacer un record, ou tous). Chaque partie
+Les records se gèrent dans l'admin (onglet Réglages) : un tableau des dix mini-jeux, joués ou non, avec leur meilleur score et son unité (le temps pour Memory et les paires, où le plus petit gagne ; les mots pour Mon livre), un 🔒 pour ceux qui ne sont pas encore ouverts, et **un bouton « Remettre à zéro » par jeu** — plus un pour tous, avec confirmation. Chaque partie
 rapporte aussi de l'expérience au partenaire.
 
 ### Mini-jeux : des niveaux

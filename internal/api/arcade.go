@@ -163,6 +163,8 @@ type recordRequest struct {
 	} `json:"items"`
 }
 
+// arcadeGames are the mini-games with a record: the same ids as Arcade.GAMES
+// (web/app.js, web/games.js) and the admin's record table (web/admin.js).
 var arcadeGames = map[string]bool{"livre": true,
 	"memory": true, "chasse": true, "lecture": true, "oreille": true,
 	"atelier": true, "mystere": true, "paires": true,

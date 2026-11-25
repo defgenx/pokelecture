@@ -57,6 +57,7 @@ type adminSummary struct {
 	UpdatedAt  time.Time         `json:"updated_at"`
 	TowerFloor int               `json:"tower_floor"`
 	Records    map[string]int    `json:"records"`
+	GamesOpen  []string          `json:"games_open"` // the mini-games unlocked for this child
 	Settings   progress.Settings `json:"settings"`
 	Today      struct {
 		Lessons int `json:"lessons"`
@@ -90,6 +91,7 @@ func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
 		Speed:      st.Speed,
 	}
 	out.Today.Lessons = st.LessonsToday(time.Now())
+	out.GamesOpen = s.cur.GamesOpen(st)
 
 	unlocked := true
 	for _, ep := range s.cur.Episodes {

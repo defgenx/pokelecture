@@ -462,26 +462,44 @@ function dangerTab(list) {
       'revient à l\'ancien mode sans enjeu.'),
   ));
 
+  // Every mini-game, played or not: its best score with its unit, whether it
+  // is open yet, and its own reset. Same ids as arcadeGames (internal/api/arcade.go).
   const recs = s.records || {};
-  const recNames = {
-    memory: '🃏 Memory (temps)', chasse: '🌿 La chasse', lecture: '📖 Lis et attrape',
-    oreille: '👂 L\'oreille fine', atelier: '⚒️ L\'atelier des mots',
-    mystere: '❓ Pokémon mystère', paires: '🔤 Paires mot-image (temps)',
-  };
-  const recRows = Object.entries(recs).map(([g, v]) =>
-    el('div', { class: 'namebox', style: 'margin-top:6px' },
-      el('label', { style: 'min-width:220px' }, `${recNames[g] || g} : ${v}`),
-      el('button', { class: 'linkbtn', onclick: () => act('api/admin/records/reset', { game: g }) }, '↺ Effacer'),
-    ));
+  const open = new Set(s.games_open || []);
+  const GAMES = [
+    ['memory', '🃏 Memory', 'time'], ['chasse', '🌿 La chasse', 'points'],
+    ['lecture', '📖 Lis et attrape', 'points'], ['oreille', '👂 L\'oreille fine', 'points'],
+    ['atelier', '⚒️ L\'atelier des mots', 'points'], ['mystere', '❓ Pokémon mystère', 'points'],
+    ['paires', '🔤 Les paires mot-image', 'time'], ['livre', '📚 Mon livre', 'mots'],
+    ['tambour', '🥁 Le tambour des syllabes', 'points'], ['trou', '🧩 Le son manquant', 'points'],
+  ];
+  const fmt = (v, unit) => (unit === 'time' ? `${v} s (le plus rapide)` : `${v} ${v > 1 ? unit : unit.replace(/s$/, '')}`);
+  const recTable = el('table', { class: 'rec-table' },
+    el('tr', {}, el('th', {}, 'Mini-jeu'), el('th', {}, 'Meilleur score'), el('th', {}, ''), el('th', {}, '')),
+    GAMES.map(([id, name, unit]) => {
+      const has = Object.prototype.hasOwnProperty.call(recs, id);
+      return el('tr', {},
+        el('td', {}, name),
+        el('td', { style: 'font-weight:700' }, has ? fmt(recs[id], unit) : '—'),
+        el('td', { style: 'color:#6a7180;font-size:13px' }, open.has(id) ? '' : '🔒 pas encore ouvert'),
+        el('td', {}, el('button', {
+          class: 'linkbtn', disabled: !has,
+          onclick: () => act('api/admin/records/reset', { game: id }),
+        }, '↺ Remettre à zéro')));
+    }));
+  const anyRec = GAMES.some(([id]) => Object.prototype.hasOwnProperty.call(recs, id));
   list.append(el('div', { class: 'section' },
     el('h2', {}, 'Tour de Combat et mini-jeux'),
     el('p', { style: 'color:#6a7180;font-size:13px' },
       `🗼 Étage atteint : ${s.tower_floor || 0} · prochain défi : étage ${(s.tower_floor || 0) + 1}.`),
-    recRows.length ? el('div', {}, recRows,
-      el('div', { class: 'namebox', style: 'margin-top:10px' },
-        el('button', { class: 'linkbtn', onclick: () => act('api/admin/records/reset', { game: '' }) },
-          '🗑 Effacer tous les records')),
-    ) : el('p', { style: 'color:#6a7180;font-size:13px' }, 'Aucun record de mini-jeu pour le moment.'),
+    recTable,
+    el('div', { class: 'namebox', style: 'margin-top:10px' },
+      el('button', {
+        class: 'linkbtn', disabled: !anyRec,
+        onclick: () => { if (confirm('Effacer les records de tous les mini-jeux ?')) act('api/admin/records/reset', { game: '' }); },
+      }, '🗑 Remettre tous les records à zéro')),
+    el('p', { style: 'color:#6a7180;font-size:13px;margin-top:6px' },
+      'Le prochain score joué devient le nouveau record. Memory et les paires se jouent en temps : le plus petit gagne.'),
   ));
 
   list.append(el('div', { class: 'section' },
