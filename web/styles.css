@@ -1201,6 +1201,25 @@ body::after {
   filter: drop-shadow(0 10px 24px rgba(238, 21, 21, .55)) saturate(1.3);
 }
 
+/* Dynamax: no Gigamax form, so the same picture in a red storm. */
+.arena img.giga.dynamax { filter: drop-shadow(0 0 14px #ff2a2a) drop-shadow(0 0 34px rgba(255, 40, 40, .7)) saturate(1.4); }
+
+/* Téracristal (README « Gigamax et Téracristal »). */
+.tera-gem {
+  font-size: 30px; line-height: 1; border: 0; background: none; padding: 2px; cursor: pointer;
+  filter: grayscale(1) opacity(.45); transition: filter .4s ease, transform .4s ease;
+}
+.tera-gem.full { filter: drop-shadow(0 0 10px #6ff0ff) saturate(1.6); animation: gem-pulse 1s ease-in-out infinite; }
+.tera-gem.used { filter: drop-shadow(0 0 6px #6ff0ff); }
+@keyframes gem-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+.tera-btn {
+  background: linear-gradient(135deg, #8ff6ff, #b48cff 55%, #ff9ee8); color: #1a1d24;
+  box-shadow: 0 0 0 3px #fff, 0 0 24px rgba(120, 220, 255, .9); animation: gem-pulse 1.2s ease-in-out infinite;
+}
+.tera {
+  filter: drop-shadow(0 0 8px #8ff6ff) drop-shadow(0 0 22px rgba(180, 140, 255, .85)) saturate(1.5) brightness(1.08) !important;
+}
+
 /* ------------------------------------------------------- drill dynamics --- */
 
 .meter-row { display: flex; align-items: center; gap: 14px; min-height: 30px; }

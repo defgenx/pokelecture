@@ -350,6 +350,19 @@ func genSprites(cur *curriculum.Curriculum, root string, force bool) error {
 			got++
 		}
 	}
+	// The real Gigamax forms: the bosses' last-hit-point pictures.
+	for _, g := range curriculum.Gigamax {
+		path := filepath.Join(artDir, fmt.Sprintf("%d.png", g))
+		if fi, err := os.Stat(path); err == nil && fi.Size() > 0 && !force {
+			skipped++
+			continue
+		}
+		if err := download(client, fmt.Sprintf("%s/other/official-artwork/%d.png", spriteBase, g), path); err != nil {
+			fmt.Printf("  ✗ Gigamax #%d: %v\n", g, err)
+			continue
+		}
+		got++
+	}
 	// Arcade extras only ever show as artwork in the mini-games, shrunk so the
 	// whole roster stays light on the tablet.
 	for _, p := range cur.Arcade {

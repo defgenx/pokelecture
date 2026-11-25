@@ -80,6 +80,8 @@ func (c *Curriculum) BuildTrainer(st progress.State, region, n int, now time.Tim
 	p := c.TrainerPokemon(region, n, now)
 	f.Pokemon, f.Name, f.Syllables = p.ID, p.Name, p.Syllables
 	f.Legendary = false
+	f.Gmax = GmaxArt(p.ID)
+	f.Tera = true
 	f.Taunt = TrainerTaunt
 	f.TauntAudio = speech.URL(TrainerTaunt, speech.StyleNormal)
 

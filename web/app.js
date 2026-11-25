@@ -1716,12 +1716,32 @@ function renderCombat(a, body, done) {
   paintHearts();
 
   const foeImg = el('img', { src: `sprites/art/${f.pokemon}.png`, alt: '' });
+  if (f.gmax) new Image().src = f.gmax; // ready for the finale's swap
   const allyImg = companion('ally');
   // The partner's attack follows its first type: a name on screen, a
   // projectile across the arena.
   const partner = App.state && App.state.partner;
   const move = MOVES[((partner && partner.types) || [])[0]] || MOVES.Normal;
   let fastSaid = false;
+
+  /* Téracristal (README « Gigamax et Téracristal »), against people only
+     (f.tera): a critical hit fills the gem, a tap on it crystallises the
+     partner, and every attack after that hits twice. */
+  let tera = 'off'; // 'off' → 'ready' (gem full) → 'on'
+  const gem = f.tera ? el('button', { class: 'tera-gem', title: 'Téracristal', onclick: () => teraOn() }, '💎') : null;
+  const teraOn = async () => {
+    if (tera !== 'ready') return;
+    tera = 'on';
+    gem.classList.remove('full');
+    gem.classList.add('used');
+    allyImg.classList.add('tera');
+    const btn = $('.tera-btn', stage);
+    if (btn) btn.remove();
+    Sfx.legendary();
+    burst('💎');
+    confetti(40);
+    await say('Téracristal ! Tes attaques frappent deux fois plus fort !');
+  };
   let t0 = performance.now();
   const hpFill = el('i');
   const hpBar = el('div', { class: 'hpbar' }, hpFill);
@@ -1749,6 +1769,7 @@ function renderCombat(a, body, done) {
           el('div', { class: 'name' }, App.state.partner.name, el('span', { class: 'lvl' }, ` N.${App.state.partner.level}`)))
         : null,
       heartsEl,
+      gem,
     ),
   );
   paintHP();
@@ -1803,6 +1824,10 @@ function renderCombat(a, body, done) {
     let missed = false;
     t0 = performance.now();
     stage.innerHTML = '';
+    if (tera === 'ready') {
+      stage.append(el('button', { class: 'btn btn-huge tera-btn', onclick: teraOn }, '💎 TÉRACRISTAL !'));
+    }
+    if (f.tera && round === 0) say('Fais un coup critique pour remplir ton joyau Téracristal !');
 
     const slots = el('div', { class: 'slot-row' });
     item.syllables.forEach(() => slots.append(el('div', { class: 'slot' }, '')));
@@ -1885,20 +1910,29 @@ function renderCombat(a, body, done) {
     await sleep(520);
     foeImg.classList.add('hit');
     burst(move.fx);
-    Arcade.popup(foeImg, missed ? '-1' : 'CRITIQUE ×2', missed ? '' : 'hot');
+    const dmg = tera === 'on' ? 2 : 1;
+    Arcade.popup(foeImg, dmg > 1 ? `💎 -${dmg}` : missed ? '-1' : 'CRITIQUE ×2', missed && dmg === 1 ? '' : 'hot');
     if (fast && !fastSaid) { fastSaid = true; await spoken; await say('Super rapide !'); }
     await spoken;
     cheerCompanion();
-    hp--;
+    hp = Math.max(0, hp - dmg);
     paintHP();
+    if (f.tera && !missed && tera === 'off' && hp > 0) {
+      tera = 'ready';
+      gem.classList.add('full');
+      Sfx.badge();
+      await say('Ton joyau Téracristal brille ! Touche-le pour téracristalliser !');
+    }
     await sleep(450);
     foeImg.classList.remove('hit');
-    // The arena finale: on its last hit point a legendary boss GIGAMAXES —
-    // the sprite grows huge for the last word. Pure staging, maximum drama.
-    if (f.legendary && hp === 1 && round + 1 < f.rounds.length && !foeImg.classList.contains('giga')) {
+    // The finale: on its last hit point the boss grows giant for the last
+    // word — its real Gigamax form when it has one (f.gmax), else Dynamax.
+    if ((f.legendary || f.gmax) && hp === 1 && round + 1 < f.rounds.length && !foeImg.classList.contains('giga')) {
+      if (f.gmax) foeImg.src = f.gmax;
+      else foeImg.classList.add('dynamax');
       foeImg.classList.add('giga');
       stage.innerHTML = '';
-      stage.append(el('div', { class: 'shout crit' }, 'GIGAMAX !'));
+      stage.append(el('div', { class: 'shout crit' }, f.gmax ? 'GIGAMAX !' : 'DYNAMAX !'));
       Sfx.legendary();
       burst('🌟');
       await sleep(1100);

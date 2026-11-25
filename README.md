@@ -836,7 +836,7 @@ la vitesse d'un enfant de 5 ans.
   `ca`/`ka`, `ta`/`tta`) : `sameSound` (`internal/curriculum/sounds.go`)
   compare les sons, pas les lettres, pour l'écoute, les examens et les
   syllabes intruses du combat.
-- **La dictée du combat** : le dernier mot d'une arène (le coup GIGAMAX) et
+- **La dictée du combat** : le dernier mot d'une arène (le coup Gigamax ou Dynamax) et
   ceux des étages de la Tour (1 dès le 10ᵉ, 2 au 20ᵉ, 3 au 30ᵉ) sont **cachés** — on l'entend, on
   le reconstruit. Écrire n'est plus recopier. Seulement si aucune tuile ne se
   dit comme une autre (« Rattata », `ta`/`tta`, n'est jamais dicté).
@@ -868,8 +868,26 @@ Chaque syllabe fausse en combat coûte un cœur (❤️ ×3 par défaut). À zé
 **DÉFAITE** — l'allié tombe, et l'épisode recommence du début (l'étage, pour
 la Tour). Les erreurs comptent quand même pour la répétition espacée.
 Configurable dans l'admin : illimitées (l'ancien mode sans enjeu) ou 2 à 5
-vies. Et au dernier point de vie d'une arène, le boss **GIGAMAX** : le sprite
-devient géant pour le dernier mot.
+vies.
+
+### Gigamax et Téracristal
+
+**Le dernier point de vie** : le boss grandit pour le dernier mot. S'il a une
+**vraie forme Gigamax** (Florizarre, Dracaufeu, Tortank, Papilusion, Pikachu,
+Miaouss, Mackogneur, Ectoplasma, Krabboss, Lokhlass, Évoli, Ronflex —
+`curriculum.Gigamax`, les formes « -gmax » de PokeAPI que `pokecontent
+sprites` télécharge), c'est elle qui apparaît : « GIGAMAX ! ». Sinon — les
+légendaires n'en ont pas — il **Dynamaxe** : la même image, géante, dans un
+orage rouge (« DYNAMAX ! »). Ça vaut pour les arènes et la Tour, et pour tout
+combat dont le boss a une forme Gigamax (les routes d'Évoli, Pikachu, Ronflex,
+Dracaufeu, Mackogneur, Florizarre ; un Dresseur qui l'envoie).
+
+**Le Téracristal, contre des personnes** — les Dresseurs de la carte, le
+Conseil des 4 et le Champion (`TeraRegion`) : un 💎 vide à côté du partenaire.
+Un **coup critique** (un mot construit sans une seule erreur) le remplit ; le
+bouton « 💎 TÉRACRISTAL ! » (ou le joyau lui-même) cristallise le partenaire,
+et **chaque attaque suivante enlève 2 PV** : le combat se gagne plus vite. Au
+premier mot, la voix l'explique ; c'est la récompense de la lecture parfaite.
 
 ### Les exercices, plus vivants
 

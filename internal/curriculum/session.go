@@ -76,6 +76,11 @@ type Fight struct {
 	Taunt      string   `json:"taunt"`
 	TauntAudio string   `json:"taunt_audio"`
 	Rounds     []Item   `json:"rounds"`
+	// Gmax: the boss's real Gigamax picture for its last hit point ("" =
+	// Dynamax). Tera: a fight against a person — a critical hit charges the
+	// partner's Téracristal (double damage). README « Gigamax et Téracristal ».
+	Gmax string `json:"gmax,omitempty"`
+	Tera bool   `json:"tera,omitempty"`
 }
 
 // BadgeCard is the badge ceremony after an arena victory.
@@ -983,6 +988,8 @@ func (c *Curriculum) fight(ep *Episode, words []Word, allSyllables []string, dif
 		Syllables:  boss.Syllables,
 		HP:         hp,
 		Legendary:  ep.Legendary,
+		Gmax:       GmaxArt(boss.ID),
+		Tera:       ep.Region == TeraRegion,
 		Taunt:      ep.Boss.Taunt,
 		TauntAudio: speech.URL(ep.Boss.Taunt, speech.StyleNormal),
 	}
@@ -1270,6 +1277,7 @@ func (c *Curriculum) BuildTower(st progress.State, floor int, now time.Time) (Se
 		Syllables:  boss.Syllables,
 		HP:         len(words),
 		Legendary:  true, // the tower borrows the arena's event staging
+		Gmax:       GmaxArt(boss.ID),
 		Taunt:      taunt,
 		TauntAudio: speech.URL(taunt, speech.StyleNormal),
 	}
@@ -1485,6 +1493,10 @@ var UIPhrases = []string{
 	"Presque ! Écoute encore.",
 	"Presque ! Relis le mot.",
 	"Niveau suivant !",
+	// Téracristal (README « Gigamax et Téracristal »)
+	"Fais un coup critique pour remplir ton joyau Téracristal !",
+	"Ton joyau Téracristal brille ! Touche-le pour téracristalliser !",
+	"Téracristal ! Tes attaques frappent deux fois plus fort !",
 	// La pêche (README « La pêche »)
 	"Il te faut une canne à pêche. Le Pêcheur de la Côte Saphir en a une !",
 	"Bonne pêche ! Touche l'eau pour pêcher.",
