@@ -380,7 +380,7 @@ func (s *Server) state() stateView {
 			})
 		}
 		out.Episodes = append(out.Episodes, v)
-		if stat.Completions > 0 {
+		if stat.Completions > 0 || st.Settings.FreePlay {
 			out.Tower = true
 		}
 		if unlocked && out.NextID == "" && stat.Completions == 0 {

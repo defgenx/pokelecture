@@ -4,8 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/adelvecchio/pokelecture/internal/curriculum"
+	"github.com/adelvecchio/pokelecture/internal/progress"
 )
 
 // A water Pokémon is fished, never met in the grass: without the rod the
@@ -86,5 +91,30 @@ func TestRouteAnnouncesTheRod(t *testing.T) {
 	}
 	if res := post("ep15", 5); res.RodWon {
 		t.Fatal("rod announced twice")
+	}
+}
+
+// Free play opens every place on the map, as if the whole course were done.
+func TestFreePlayOpensEveryPlace(t *testing.T) {
+	cur, err := curriculum.Load(filepath.Join("../..", "data"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	store, err := progress.Open(filepath.Join(t.TempDir(), "p.json"), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	store.ChoosePartner(4, 0)
+	store.UpdateSettings(0, true, 3) // no route done, free play on
+	srv := httptest.NewServer(New(cur, store, filepath.Join("../..", "web"), "/").Routes())
+	t.Cleanup(srv.Close)
+	var st stateView
+	getJSON(t, srv.URL+"/api/state", &st)
+	if !st.Tower || !st.Rod {
+		t.Fatalf("free play: tower %v, rod %v", st.Tower, st.Rod)
+	}
+	var pool wildPoolView
+	if code := getJSON(t, srv.URL+"/api/wild", &pool); code != http.StatusOK {
+		t.Fatalf("wild pool under free play: %d", code)
 	}
 }

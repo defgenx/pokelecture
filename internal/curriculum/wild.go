@@ -27,8 +27,11 @@ const (
 	RodStars = 4
 )
 
-// HasRod reports whether the child has earned the fishing rod.
+// HasRod reports whether the child has earned the fishing rod (free play: always).
 func (c *Curriculum) HasRod(st progress.State) bool {
+	if st.Settings.FreePlay {
+		return true
+	}
 	from := c.Index(RodFrom)
 	if from < 0 {
 		return false
@@ -150,4 +153,20 @@ func (c *Curriculum) validateWild() []error {
 		}
 	}
 	return errs
+}
+
+// LastDone is the index of the furthest completed episode, -1 if none. The
+// admin's free play counts the whole course as done: every place on the map
+// (Tower, trainers, grass, mini-games' material, exams) opens with it.
+func (c *Curriculum) LastDone(st progress.State) int {
+	if st.Settings.FreePlay {
+		return len(c.Episodes) - 1
+	}
+	last := -1
+	for i, ep := range c.Episodes {
+		if st.Episodes[ep.ID].Completions > 0 {
+			last = i
+		}
+	}
+	return last
 }

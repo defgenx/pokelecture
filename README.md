@@ -451,7 +451,10 @@ une) ; quatre onglets, tout agit immédiatement sur la sauvegarde de ce joueur :
 - **Pokédex** : attraper / retirer n'importe quel Pokémon à la main.
 - **Réglages** : renommer l'enfant sans redémarrer ; **la politique de
   déblocage** — terminer suffit (défaut), ou exiger de ★ à ★★★★★ avant de
-  débloquer la suite, ou tout débloquer (mode libre) — avec, dans l'onglet
+  débloquer la suite, ou tout débloquer (**mode libre** : toutes les routes et
+  régions, mais aussi la Tour, les Dresseurs, les hautes herbes, la canne à
+  pêche et les mini-jeux, comme si tout le cours était fait —
+  `curriculum.LastDone`) — avec, dans l'onglet
   Épisodes, **un seuil propre à chaque épisode** (« ★ pour la suite ») qui
   prime sur la règle globale ; l'étage de la Tour et les records des
   mini-jeux ; et la remise à zéro complète (le prénom et ces réglages sont

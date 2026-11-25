@@ -320,12 +320,7 @@ const (
 // BuildExam generates an exam: four strict sections drawn from everything
 // learned so far, weakest material first. False while nothing is learned.
 func (c *Curriculum) BuildExam(ev *Event, st progress.State, now time.Time) (Session, bool) {
-	lastDone := -1
-	for i, ep := range c.Episodes {
-		if st.Episodes[ep.ID].Completions > 0 {
-			lastDone = i
-		}
-	}
+	lastDone := c.LastDone(st)
 	if lastDone < 0 {
 		return Session{}, false
 	}

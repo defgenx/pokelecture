@@ -231,16 +231,8 @@ type wildPoolView struct {
 	Shiny   int        `json:"shiny_odds"`
 }
 
-// lastDone is the index of the furthest completed episode, -1 if none.
-func (s *Server) lastDone(st progress.State) int {
-	last := -1
-	for i, ep := range s.cur.Episodes {
-		if st.Episodes[ep.ID].Completions > 0 {
-			last = i
-		}
-	}
-	return last
-}
+// lastDone is curriculum.LastDone (free play counts everything as done).
+func (s *Server) lastDone(st progress.State) int { return s.cur.LastDone(st) }
 
 func (s *Server) wildViews(st progress.State) []wildView {
 	last := s.lastDone(st)

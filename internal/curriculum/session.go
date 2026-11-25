@@ -1109,12 +1109,7 @@ func SyllableAudio(syls []string) []string {
 // material the Tour de Combat and the mini-games draw from. False while no
 // episode is completed yet.
 func (c *Curriculum) LearnedPool(st progress.State) ([]Word, []string, bool) {
-	lastDone := -1
-	for i, ep := range c.Episodes {
-		if st.Episodes[ep.ID].Completions > 0 {
-			lastDone = i
-		}
-	}
+	lastDone := c.LastDone(st)
 	if lastDone < 0 {
 		return nil, nil, false
 	}
@@ -1240,12 +1235,7 @@ func TowerFloorOf(i int) int {
 // next, and every second floor a tower-exclusive Pokémon joins the Pokédex.
 // Returns false while no episode is completed yet.
 func (c *Curriculum) BuildTower(st progress.State, floor int, now time.Time) (Session, bool) {
-	lastDone := -1
-	for i, ep := range c.Episodes {
-		if st.Episodes[ep.ID].Completions > 0 {
-			lastDone = i
-		}
-	}
+	lastDone := c.LastDone(st)
 	if lastDone < 0 {
 		return Session{}, false
 	}

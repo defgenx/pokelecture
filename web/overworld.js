@@ -267,7 +267,9 @@ const Overworld = {
   },
 
   /* Entry point (App.home): the region of the next episode, standing on its
-     stop — the big JOUER is one tap away from the moment the app opens. */
+     stop — the big JOUER is one tap away from the moment the app opens.
+     spawn {from: ±1}: arriving from the previous/next region, one step inside
+     the matching exit — found on THIS region's map, every map being different. */
   async open(regionIdx, spawn) {
     Voice.stop();
     WakeLock.off();
@@ -280,6 +282,13 @@ const Overworld = {
     this.region = regionIdx;
     this.grid = this.layout();
     const reg = regs[regionIdx];
+    let arrival = null;
+    if (spawn && spawn.from) {
+      const portrait = this.grid.length > this.grid[0].length;
+      const entry = this.find(spawn.from > 0 ? (portrait ? '^' : '<') : (portrait ? 'v' : '>'));
+      const step = spawn.from > 0 ? 1 : -1;
+      arrival = entry && (portrait ? { x: entry.x, y: entry.y + step } : { x: entry.x + step, y: entry.y });
+    }
 
     // Slots without an episode in this region become plain path.
     for (let k = reg.eps.length + 1; k <= 5; k++) {
@@ -291,7 +300,8 @@ const Overworld = {
 
     this.spots = new Set(this.sparkles(regionIdx).map((sp) => { const p = this.toScreen(sp); return `${p.x},${p.y}`; }));
     const nextIdx = reg.eps.findIndex((e) => e.id === s.next_episode);
-    this.pos = spawn || this.find(String(nextIdx >= 0 ? nextIdx + 1 : 1)) || { x: 1, y: 2 };
+    const stop = this.find(String(nextIdx >= 0 ? nextIdx + 1 : 1)) || this.find('1');
+    this.pos = arrival && this.free(arrival.x, arrival.y) ? arrival : stop || { x: 1, y: 2 };
     if (!Wild.pool && s.tower) Wild.load();
     this.render(reg);
     this.arrive(true);
@@ -698,13 +708,7 @@ const Overworld = {
       return;
     }
     say(dir > 0 ? 'En route vers la région suivante !' : 'Retour à la région précédente !');
-    // Arrive through the opposite exit, one step inside the map.
-    this.grid = this.layout();
-    const portrait = this.grid.length > this.grid[0].length;
-    const entry = this.find(dir > 0 ? (portrait ? '^' : '<') : (portrait ? 'v' : '>'));
-    const step = dir > 0 ? 1 : -1;
-    const inside = entry && (portrait ? { x: entry.x, y: entry.y + step } : { x: entry.x + step, y: entry.y });
-    this.open(to, inside || undefined);
+    this.open(to, { from: dir });
   },
 
   grassRoll() {

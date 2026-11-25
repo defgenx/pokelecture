@@ -77,6 +77,12 @@ func checkMap(m []string) []string {
 	if pos['<'][0] != 0 || pos['>'][0] != w-1 {
 		errs = append(errs, "the exits must sit on the left and right edges")
 	}
+	// Arriving from a neighbour region lands one step inside its exit.
+	for _, in := range [][2]int{{1, pos['<'][1]}, {w - 2, pos['>'][1]}} {
+		if c := []rune(m[in[1]])[in[0]]; strings.ContainsRune("TWDE", c) {
+			errs = append(errs, fmt.Sprintf("the tile inside an exit (%d,%d) is %q", in[0], in[1], c))
+		}
+	}
 	at := func(x, y int) rune {
 		if x < 0 || y < 0 || x >= w || y >= h {
 			return 'T'
