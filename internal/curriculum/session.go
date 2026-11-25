@@ -740,6 +740,19 @@ func (c *Curriculum) SentencesUpTo(idx int) []Sentence {
 	return out
 }
 
+// lookAlike ranks how much a name looks like target at a glance: 0 = same
+// first two letters, 1 = same first letter, 2 = neither.
+func lookAlike(name, target string) int {
+	a, b := []rune(strings.ToLower(name)), []rune(strings.ToLower(target))
+	switch {
+	case len(a) >= 2 && len(b) >= 2 && a[0] == b[0] && a[1] == b[1]:
+		return 0
+	case len(a) > 0 && len(b) > 0 && a[0] == b[0]:
+		return 1
+	}
+	return 2
+}
+
 func firstRune(s string) string {
 	for _, r := range s {
 		return string(r)
@@ -788,18 +801,26 @@ func phraseItems(sentences []Sentence, words []Word, nChoices int) []Item {
 			inSentence[strings.ToLower(w)] = true
 		}
 
-		var others []Picture
+		// Each wrong picture carries the name it shows, so look-alike names
+		// come first: the picture is the subject's, and a first letter alone
+		// must not find it.
+		type named struct {
+			pic  Picture
+			name string
+		}
+		var others []named
 		for j, o := range sentences {
 			if j != i {
-				others = append(others, o.Pic())
+				others = append(others, named{o.Pic(), sentenceWords(o.Text)[0]})
 			}
 		}
 		for _, w := range words {
 			if !inSentence[strings.ToLower(w.Text)] {
-				others = append(others, w.Pic())
+				others = append(others, named{w.Pic(), w.Text})
 			}
 		}
 		rand.Shuffle(len(others), func(a, b int) { others[a], others[b] = others[b], others[a] })
+		sortStable(others, func(a, b named) bool { return lookAlike(a.name, toks[0]) < lookAlike(b.name, toks[0]) })
 		used := map[string]bool{pic.Key(): true}
 		for _, w := range words {
 			if inSentence[strings.ToLower(w.Text)] {
@@ -807,7 +828,8 @@ func phraseItems(sentences []Sentence, words []Word, nChoices int) []Item {
 			}
 		}
 		choices := []Choice{{Emoji: pic.Emoji, Sprite: pic.Sprite, Icon: pic.Icon, Correct: true}}
-		for _, op := range others {
+		for _, o := range others {
+			op := o.pic
 			if op.Empty() || used[op.Key()] {
 				continue
 			}
@@ -1197,7 +1219,7 @@ func abs(n int) int {
 
 // sortStable is insertion sort: tiny inputs, and it keeps the shuffle as the
 // tie-breaker, same trick as the review queue.
-func sortStable(w []Word, less func(a, b Word) bool) {
+func sortStable[T any](w []T, less func(a, b T) bool) {
 	for i := 1; i < len(w); i++ {
 		for j := i; j > 0 && less(w[j], w[j-1]); j-- {
 			w[j], w[j-1] = w[j-1], w[j]
@@ -1327,6 +1349,8 @@ var UIPhrases = []string{
 	"Génial !",
 	"Bien joué !",
 	"Presque ! Écoute encore.",
+	"Presque ! Relis le mot.",
+	"Presque ! Relis la phrase.",
 	"Essaie encore, tu y es presque.",
 	"On y va !",
 	"Touche la bonne image.",

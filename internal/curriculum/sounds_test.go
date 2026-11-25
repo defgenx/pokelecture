@@ -99,6 +99,22 @@ func TestWordQuizPrefersLookAlikes(t *testing.T) {
 	}
 }
 
+// The right picture is the subject's: a wrong one must start like it, or
+// the first letter of the sentence answers the question.
+func TestSentenceQuizPrefersLookAlikes(t *testing.T) {
+	loadCur(t)
+	sentences := []Sentence{{Text: "Abo utilise Morsure.", Emoji: "a"}, {Text: "Zéro dort.", Emoji: "z"}}
+	words := []Word{{Text: "Abra", Emoji: "b"}, {Text: "Lune", Emoji: "d"}, {Text: "Morsure", Emoji: "m"}}
+	for i := 0; i < 20; i++ {
+		items := phraseItems(sentences, words, 2)
+		for _, ch := range items[0].Choices {
+			if !ch.Correct && ch.Emoji != "b" {
+				t.Fatalf("distractor %q instead of the look-alike Abra", ch.Emoji)
+			}
+		}
+	}
+}
+
 func TestFirstExamWaitsEveryDay(t *testing.T) {
 	c := loadCur(t)
 	st := progress.State{Episodes: map[string]progress.EpisodeStat{}}

@@ -907,6 +907,18 @@ function comboBreak(chip) {
 
 /* Renders a word as coloured syllables, each one tappable to hear it alone —
    the help affordance for a word he stalls on. */
+/* Look-alike names first (same first two letters, then same first letter):
+   with random wrong answers a first letter alone finds the right one. Mirrors
+   curriculum.lookAlike. The sort is stable, so the shuffle stays the tie-break. */
+function byLook(list, target, name) {
+  const t = target.toLowerCase();
+  const rank = (x) => {
+    const n = name(x).toLowerCase();
+    return n.slice(0, 2) === t.slice(0, 2) ? 0 : n[0] === t[0] ? 1 : 2;
+  };
+  return [...list].sort((a, b) => rank(a) - rank(b));
+}
+
 function syllableWord(syllables, fallbackText, audio) {
   const parts = (syllables && syllables.length) ? syllables : [fallbackText];
   const box = el('div', { class: 'word' });
@@ -1365,8 +1377,14 @@ function renderQuiz(a, body, done) {
           tile.disabled = true;
           setTimeout(() => tile.classList.remove('bad'), 450);
           Sfx.wrong();
-          await say('Presque ! Écoute encore.');
-          await Voice.play(item.audio, item.prompt);
+          // A reading item never says its word after a wrong tap: one random
+          // tap would turn the rest of the question into listening.
+          if (isText) {
+            await say(a.kind === 'phrase' ? 'Presque ! Relis la phrase.' : 'Presque ! Relis le mot.');
+          } else {
+            await say('Presque ! Écoute encore.');
+            await Voice.play(item.audio, item.prompt);
+          }
         }
       });
       grid.append(tile);
@@ -1377,10 +1395,9 @@ function renderQuiz(a, body, done) {
 }
 
 /* "Lis la phrase", the CP way: read the sentence aloud (any word he stalls
-   on can be tapped and heard), then "J'AI LU !" reads it back with each word
-   lighting up as the voice reaches it — he checks himself against it — and
-   finally the comprehension question: which picture goes with the sentence?
-   Only reading the whole sentence answers it. */
+   on can be tapped and heard), "J'AI LU !", then the comprehension question —
+   which picture goes with the sentence? Only once he has picked the right one
+   does the voice read it back, each word lighting up (README « Lis la phrase »). */
 function renderPhrase(a, body, done) {
   let idx = 0;
   const head = el('h2', {}, a.title);
@@ -1403,10 +1420,9 @@ function renderPhrase(a, body, done) {
       onclick: () => Voice.play(item.syllable_audio ? item.syllable_audio[k] : null, w),
     }, w));
     const sentence = el('div', { class: 'read-sentence' }, chips);
-    const readBtn = el('button', { class: 'btn btn-huge btn-go' }, 'J\'AI LU ! 🔊');
-    readBtn.addEventListener('click', async () => {
+    const readBtn = el('button', { class: 'btn btn-huge btn-go' }, 'J\'AI LU !');
+    readBtn.addEventListener('click', () => {
       readBtn.remove();
-      await karaoke(item.audio, item.prompt, chips);
       ask();
     }, { once: true });
     stage.append(sentence, readBtn);
@@ -1425,7 +1441,10 @@ function renderPhrase(a, body, done) {
             tile.classList.add('good');
             Session.record(item.id, first);
             if (first) comboUp(combo); else comboBreak(combo);
-            await praise();
+            burst(['⭐', '🎉', '👏', '💫'][praiseIdx++ % 4]);
+            Sfx.correct();
+            cheerCompanion();
+            await karaoke(item.audio, item.prompt, chips);
             await sleep(250);
             idx++;
             step();
@@ -1434,8 +1453,8 @@ function renderPhrase(a, body, done) {
             tile.disabled = true;
             tile.classList.add('bad');
             Sfx.wrong();
-            // Wrong picture: hear the sentence again, karaoke and all.
-            await karaoke(item.audio, item.prompt, chips);
+            // Wrong picture: back to the text, not to the voice.
+            await say('Presque ! Relis la phrase.');
           }
         });
         grid.append(tile);
@@ -2306,7 +2325,7 @@ const Arcade = {
       const target = shuffled[0];
       const options = [target];
       const seen = new Set([faceKey(target)]);
-      for (const w of shuffled.slice(1)) {
+      for (const w of byLook(shuffled.slice(1), target.text, (x) => x.text)) {
         if (options.length === 4) break;
         if (!seen.has(faceKey(w))) { seen.add(faceKey(w)); options.push(w); }
       }
@@ -2430,7 +2449,8 @@ const Arcade = {
     const ask = () => {
       const shuffled = [...roster].sort(() => Math.random() - 0.5);
       const target = shuffled[0];
-      const options = shuffled.slice(0, 4).sort(() => Math.random() - 0.5);
+      const options = [target, ...byLook(shuffled.slice(1), target.name, (p) => p.name).slice(0, 3)]
+        .sort(() => Math.random() - 0.5);
 
       stage.innerHTML = '';
       const shadow = el('img', { class: 'silhouette', src: target.sprite, alt: '' });

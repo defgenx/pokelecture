@@ -55,12 +55,11 @@
       "icon": "water"
     },
     {
-      "text": "Croc",
-      "say_as": "croque",
+      "text": "Roc",
       "syllables": [
-        "Croc"
+        "Roc"
       ],
-      "icon": "fang"
+      "icon": "rock"
     },
     {
       "text": "Bulbe",

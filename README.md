@@ -594,7 +594,7 @@ ensuite**, et le Champion en toute fin de parcours.
 | 2 | p d | Doduo, Dodrio, Nidorina, Paras, Tornade | Doduo |
 | 3 | f v | Mélofée, Évoli, Nosferapti, Fée, Vol, Vitesse | Évoli |
 | ★ | *révision de tout* | **Arène de Glace** · Badge Glace | **Artikodin** |
-| 4 | b c | Abo, Sabelette, Caninos, Cascade, Croc | Caninos |
+| 4 | b c | Abo, Sabelette, Caninos, Cascade, Roc | Caninos |
 | 5 | ou oo | Roucool, Miaouss, Poudre, Roc, Coupe | Roucool |
 | 6 | ch è k | **Pikachu**, Salamèche, Machoc, Sacha, Charme | Pikachu |
 | ★ | *révision de tout* | **Arène de l'Orage** · Badge Orage | **Électhor** |
@@ -797,7 +797,12 @@ la vitesse d'un enfant de 5 ans.
   découverte.
 - **« Lis le mot » propose des images de mots qui se ressemblent** (même
   première syllabe, sinon même première lettre) : la première lettre ne suffit
-  plus à deviner, il faut lire le mot jusqu'au bout.
+  plus à deviner, il faut lire le mot jusqu'au bout. Même règle pour l'image de
+  « Lis la phrase », « Lis et attrape » et les noms du « Pokémon mystère ».
+- **Une mauvaise image ne fait pas dire le mot** : « Presque ! Relis le mot. »
+  (ou « la phrase »). Avant, la voix lisait le mot après l'erreur : toucher une
+  image au hasard, puis écouter, répondait sans lire. Les questions d'écoute
+  rejouent toujours le son.
 - **Aucune question n'offre deux syllabes qui se disent pareil** (`san`/`sen`,
   `ca`/`ka`, `ta`/`tta`) : `sameSound` (`internal/curriculum/sounds.go`)
   compare les sons, pas les lettres, pour l'écoute, les examens et les
@@ -1068,14 +1073,16 @@ sauvegarde (`POST /api/records`).
 Comme au CP, en trois temps :
 
 1. **Lire à voix haute** — la phrase en grand, chaque mot touchable pour
-   l'entendre s'il bloque.
-2. **« J'AI LU ! »** — la voix relit la phrase et **chaque mot s'allume** au
-   moment où elle le prononce (karaoké calé sur l'horloge du clip) : il se
-   corrige tout seul.
-3. **Comprendre** — « Quelle image va avec la phrase ? », trois images. Les
+   l'entendre s'il bloque, puis « J'AI LU ! ».
+2. **Comprendre** — « Quelle image va avec la phrase ? », trois images. Les
    mauvaises ne montrent jamais un mot de la phrase (avec « Otaria utilise
-   Morsure. », l'icône Morsure serait aussi une bonne réponse). Une erreur
-   relance le karaoké.
+   Morsure. », l'icône Morsure serait aussi une bonne réponse) et commencent
+   comme le sujet (Abo / Abra) : la première lettre ne suffit pas. Une erreur
+   dit « Presque ! Relis la phrase. », sans la lire.
+3. **La relecture** — seulement après la bonne image : la voix relit la phrase
+   et **chaque mot s'allume** au moment où elle le prononce (karaoké calé sur
+   l'horloge du clip) : il se corrige tout seul. Placée avant la question,
+   elle donnait la réponse à l'oreille.
 
 L'ancien « Construis la phrase » (remettre les mots mélangés dans l'ordre)
 demandait de deviner la syntaxe sans modèle sous les yeux : ce n'était pas de

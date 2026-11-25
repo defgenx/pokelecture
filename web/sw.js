@@ -12,7 +12,7 @@
 // v5: 8-badge order, tower floors, arcade, sentence builder, landscape layouts.
 // v6: world map, battle lives, gigamax, new regions and games.
 // v7: neural voice track (same URLs, new audio) and the arcade roster.
-const CACHE = 'pokelecture-v36';
+const CACHE = 'pokelecture-v37';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './app.js', './styles.css', './icons.js', './sfx.js', './world.js', './games.js', './overworld.js', './fonts/andika-regular.woff2', './fonts/andika-bold.woff2', './fonts/playwrite-fr-moderne.woff2'])));
