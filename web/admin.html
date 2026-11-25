@@ -4,43 +4,57 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <base href="__BASE__">
-  <title>Pokélecture — administration</title>
+  <title>Pokélecture — espace parent</title>
   <link rel="stylesheet" href="parent.css">
   <link rel="stylesheet" href="admin.css">
 </head>
-<body>
-  <header>
-    <div class="brand">
-      <span class="pokeball" aria-hidden="true"></span>
-      <div>
-        <h1>Administration</h1>
-        <p id="tally">…</p>
+<body class="admin">
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="pokeball" aria-hidden="true"></span>
+        <div>
+          <b>Pokélecture</b>
+          <small>Espace parent</small>
+        </div>
       </div>
-    </div>
-    <div class="tools">
-      <a class="linkbtn" href="admin/studio">🎙 Studio voix</a>
-      <a class="linkbtn" href="./">▶ Le jeu</a>
-    </div>
-  </header>
+      <div class="side-label">Joueur</div>
+      <div id="players" class="players"></div>
+      <nav id="tabs" class="nav" aria-label="Sections"></nav>
+      <div class="side-foot">
+        <a class="side-link" href="admin/studio">🎙 Studio voix</a>
+        <a class="side-link" href="./">▶ Ouvrir le jeu</a>
+      </div>
+    </aside>
 
-  <div id="players" class="players"></div>
+    <main class="content">
+      <header class="page-head">
+        <div>
+          <h1 id="page-title">Tableau de bord</h1>
+          <p id="tally">…</p>
+        </div>
+        <div id="head-tools" class="head-tools"></div>
+      </header>
 
-  <p id="warn" class="warn" hidden></p>
+      <p id="warn" class="warn" hidden></p>
+      <div id="list"></div>
 
-  <nav id="tabs" class="tabs"></nav>
-  <main id="list"></main>
+      <footer>
+        <p>Chaque joueur a sa sauvegarde dans <code>var/players/</code> : chaque action est
+          enregistrée immédiatement. « Rejouer comme neuf » efface les stats d'un
+          épisode — ses étoiles quittent le total et se regagnent en le rejouant ;
+          « Marquer terminé » débloque la suite et remplit le Pokédex comme une
+          vraie victoire.</p>
+        <p>🔒 Cette page n'est ouverte qu'aux adresses de <code>POKELECTURE_ADMINS</code>,
+          connectées avec Google (voir le README).</p>
+      </footer>
+    </main>
+  </div>
 
-  <footer>
-    <p>Chaque joueur a sa sauvegarde dans <code>var/players/</code> : chaque action est
-      enregistrée immédiatement. « Rejouer comme neuf » efface les stats d'un
-      épisode — ses étoiles quittent le total et se regagnent en le rejouant ;
-      « Marquer terminé » débloque la suite et remplit le Pokédex comme une
-      vraie victoire.</p>
-    <p>🔒 Cette page n'est ouverte qu'aux adresses de <code>POKELECTURE_ADMINS</code>,
-      connectées avec Google (voir le README).</p>
-  </footer>
+  <div id="viz-tip" class="viz-tip" hidden></div>
 
   <script src="auth.js"></script>
   <script src="admin.js"></script>
+  <script src="admin-stats.js"></script>
 </body>
 </html>

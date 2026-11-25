@@ -90,3 +90,179 @@
 .rec-table th { text-align: left; font-size: 13px; color: #6a7180; font-weight: 600; padding: 4px 6px; }
 .rec-table td { padding: 6px; border-top: 1px solid #eceef3; }
 .rec-table .linkbtn[disabled] { opacity: .35; cursor: default; }
+
+/* ===================================================== espace parent shell ===
+   README « Administration »: a sidebar grouped by Suivi / Collection /
+   Réglages, the page on the right. Colours are tokens; the charts use one
+   series colour (--series-1), the text inks, a recessive grid. */
+.admin {
+  --surface: #ffffff;
+  --surface-2: #f3f5f9;
+  --side: #161b33;
+  --side-ink: #c9cfe4;
+  --side-hover: #232a4d;
+  --accent: #ee1515;
+  --gold: #ffcb05;
+  --series-1: #257de0;
+  --grid-line: #e6e9f0;
+  --text-2: #5d6473;
+  --good: #0a8a3a;
+  --bad: #c2321f;
+  --heat-0: #eef1f6; --heat-1: #b6d5f8; --heat-2: #6aabf1; --heat-3: #257de0; --heat-4: #1757ac;
+  background: var(--surface-2);
+}
+.shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100vh; }
+
+.side {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  background: var(--side); color: var(--side-ink);
+  display: flex; flex-direction: column; gap: 6px; padding: 18px 14px;
+}
+.side-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px 12px; border-bottom: 1px solid #2a3157; }
+.side-brand b { display: block; color: #fff; font-size: 17px; letter-spacing: -.2px; }
+.side-brand small { color: #8f98bd; font-size: 12px; }
+.side-label { margin: 14px 8px 4px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6f789f; }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  font: inherit; font-size: 14px; font-weight: 600; color: var(--side-ink);
+  background: none; border: 0; border-radius: 10px; padding: 9px 10px; cursor: pointer;
+}
+.nav-item:hover { background: var(--side-hover); color: #fff; }
+.nav-item.on { background: linear-gradient(90deg, rgba(238, 21, 21, .9), rgba(238, 21, 21, .65)); color: #fff; box-shadow: 0 4px 14px rgba(238, 21, 21, .35); }
+.nav-icon { width: 22px; text-align: center; }
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid #2a3157; }
+.side-link { color: var(--side-ink); text-decoration: none; font-size: 14px; padding: 7px 10px; border-radius: 9px; }
+.side-link:hover { background: var(--side-hover); color: #fff; }
+
+.side .players { flex-direction: column; align-items: stretch; margin: 0; gap: 4px; }
+.side .players > b { display: none; }
+.side .player-chip { background: transparent; border-color: #2f3760; color: var(--side-ink); justify-content: flex-start; }
+.side .player-chip.on { background: var(--gold); border-color: var(--gold); color: #1a1d24; }
+.side .player-chip.add { color: #9fb0ff; border-style: dashed; }
+
+.content { padding: 26px 32px 40px; min-width: 0; }
+.admin .page-head {
+  position: static; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; justify-content: space-between;
+  padding: 0 0 18px; margin: 0 0 18px; background: none; border: 0; border-bottom: 1px solid var(--grid-line);
+}
+.page-head h1 { margin: 0; font-size: 26px; letter-spacing: -.4px; }
+.page-head p { margin: 4px 0 0; color: var(--text-2); }
+.head-tools { display: flex; gap: 8px; align-items: center; }
+.btn.ghost { border-color: var(--grid-line); background: var(--surface); font-weight: 600; }
+.btn.ghost:hover { border-color: #b9c0cf; }
+
+/* Settings pages keep their sections, now as cards. */
+.admin #list > .section, .admin #list > .row-group {
+  background: var(--surface); border: 1px solid var(--grid-line); border-radius: 16px;
+  padding: 4px 20px 18px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(20, 24, 34, .04);
+}
+
+/* Stat tiles. */
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.kpi {
+  background: var(--surface); border: 1px solid var(--grid-line); border-radius: 16px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 2px; box-shadow: 0 1px 2px rgba(20, 24, 34, .04);
+}
+.kpi-label { font-size: 12px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
+.kpi-value { font-size: 26px; letter-spacing: -.5px; color: var(--ink); }
+.kpi-sub { font-size: 13px; color: var(--text-2); }
+.trend { font-size: 12px; font-weight: 700; color: var(--text-2); margin-top: 4px; }
+.trend.up { color: var(--good); }
+.trend.down { color: var(--bad); }
+
+/* Cards and charts. */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 430px), 1fr)); gap: 16px; }
+.card {
+  background: var(--surface); border: 1px solid var(--grid-line); border-radius: 16px; padding: 16px 18px;
+  box-shadow: 0 1px 2px rgba(20, 24, 34, .04); min-width: 0;
+}
+.card.wide { grid-column: 1 / -1; }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.card-head h3 { margin: 0; font-size: 15px; }
+.card-head small { color: var(--text-2); font-size: 12px; }
+.card h4 { margin: 4px 0 8px; font-size: 13px; color: var(--text-2); }
+.linkbtn.small { font-size: 12px; padding: 4px 9px; white-space: nowrap; }
+.empty { color: var(--text-2); font-size: 13px; margin: 6px 0; }
+.two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+ul.plain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--text-2); }
+ul.plain b { color: var(--ink); }
+
+.viz-wrap { width: 100%; }
+svg.viz { width: 100%; height: auto; display: block; overflow: visible; }
+svg.viz .grid { stroke: var(--grid-line); stroke-width: 1; }
+svg.viz .axis { stroke: #c9ceda; stroke-width: 1; }
+svg.viz .tick { fill: var(--text-2); font-size: 11px; }
+svg.viz .bar { fill: var(--series-1); }
+svg.viz .line { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+svg.viz .dot { fill: var(--series-1); }
+svg.viz .marker { fill: var(--surface); stroke: var(--series-1); stroke-width: 3; }
+svg.viz .cross { stroke: #9aa2b4; stroke-width: 1; stroke-dasharray: 3 3; }
+svg.viz .hit { fill: transparent; cursor: pointer; }
+svg.viz .hit:hover + .hit { fill: transparent; }
+
+.hbars { display: flex; flex-direction: column; gap: 8px; }
+.hbar { display: grid; grid-template-columns: minmax(70px, 34%) 1fr auto; gap: 10px; align-items: center; font-size: 13px; cursor: default; }
+.hbar-label { color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hbar-track { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.hbar-track i { display: block; height: 100%; background: var(--series-1); border-radius: 0 4px 4px 0; }
+.hbar-value { color: var(--text-2); font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
+
+.heat { display: grid; grid-template-rows: repeat(7, 14px); grid-auto-flow: column; grid-auto-columns: 14px; gap: 3px; margin: 4px 0 0 20px; }
+.heat-days { position: absolute; display: grid; grid-template-rows: repeat(7, 14px); gap: 3px; font-size: 10px; color: var(--text-2); margin-top: 4px; }
+.card .heat-days + .heat { margin-left: 20px; }
+.heat-cell { width: 14px; height: 14px; border-radius: 3px; background: var(--heat-0); display: inline-block; }
+.heat-cell.l1 { background: var(--heat-1); } .heat-cell.l2 { background: var(--heat-2); }
+.heat-cell.l3 { background: var(--heat-3); } .heat-cell.l4 { background: var(--heat-4); }
+.heat-legend { display: flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 11px; color: var(--text-2); }
+
+.viz-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.viz-table th { text-align: left; color: var(--text-2); font-weight: 600; padding: 4px 6px; }
+.viz-table td { padding: 5px 6px; border-top: 1px solid var(--grid-line); font-variant-numeric: tabular-nums; }
+
+.viz-tip {
+  position: fixed; z-index: 50; pointer-events: none; max-width: 260px;
+  background: #161b33; color: #fff; font-size: 13px; line-height: 1.35;
+  padding: 8px 11px; border-radius: 10px; box-shadow: 0 8px 24px rgba(20, 24, 34, .25);
+}
+
+/* Filters, segmented control, search. */
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+.filters-label { font-size: 13px; font-weight: 700; color: var(--text-2); }
+.segmented { display: inline-flex; background: var(--surface); border: 1px solid var(--grid-line); border-radius: 11px; padding: 3px; }
+.segmented button { font: inherit; font-size: 13px; font-weight: 600; border: 0; background: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; color: var(--text-2); }
+.segmented button.on { background: var(--side); color: #fff; }
+.search { font: inherit; padding: 8px 12px; border: 1px solid var(--grid-line); border-radius: 11px; min-width: 220px; background: var(--surface); }
+
+/* Pokédex grid. */
+.dexgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.dexcard {
+  background: var(--surface); border: 1px solid var(--grid-line); border-radius: 14px; padding: 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
+}
+.dexcard img { width: 76px; height: 76px; object-fit: contain; }
+.dexcard.off img { filter: grayscale(1) opacity(.35); }
+.dexcard b { font-size: 13px; }
+.dexcard small { color: var(--text-2); font-size: 11px; margin-bottom: 4px; }
+
+/* Parcours: a header per region. */
+.region-head { display: flex; align-items: center; gap: 12px; margin: 22px 0 8px; }
+.region-head b { font-size: 15px; min-width: 170px; }
+.region-head small { color: var(--text-2); }
+.progress { flex: 1; max-width: 260px; height: 8px; border-radius: 999px; background: #e2e6ee; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--series-1); border-radius: 999px; }
+
+/* Phone and small tablet: the sidebar becomes a top bar, sections scroll sideways. */
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .side { position: sticky; z-index: 20; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 10px 12px; gap: 8px; }
+  .side-brand { border: 0; padding: 0; }
+  .side-label, .side-foot { display: none; }
+  .side .players { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; margin-left: auto; }
+  .side .player-chip { flex: none; }
+  .nav { flex-direction: row; overflow-x: auto; width: 100%; gap: 4px; scrollbar-width: none; }
+  .nav-item { width: auto; flex: none; white-space: nowrap; padding: 7px 10px; }
+  .content { padding: 18px 16px 32px; }
+  .two-cols { grid-template-columns: 1fr; }
+  .page-head h1 { font-size: 21px; }
+}

@@ -18,17 +18,24 @@ const el = (tag, attrs, ...kids) => {
   return n;
 };
 
+// The sidebar, by group (README « Administration »): id, icon, title, group, subtitle.
 const TABS = [
-  ['episodes', 'Épisodes'],
-  ['items', 'Révisions'],
-  ['pokedex', 'Pokédex'],
-  ['exams', 'Examens'],
-  ['fluency', 'Lecture'],
-  ['danger', 'Réglages'],
+  ['dashboard', '📊', 'Tableau de bord', 'Suivi', 'L\'essentiel de sa semaine, en un coup d\'œil'],
+  ['stats', '📈', 'Statistiques', 'Suivi', 'Temps de jeu, réussite, temps de réponse, jour par jour'],
+  ['episodes', '🗺️', 'Parcours', 'Suivi', 'Les routes, région par région : étoiles, déblocage, rejouer'],
+  ['items', '🧠', 'Révisions', 'Suivi', 'Ce qui tient et ce qui coince, du plus fragile au plus solide'],
+  ['exams', '🎓', 'Examens', 'Suivi', 'Les examens surprises et leur bulletin'],
+  ['fluency', '📖', 'Lecture à voix haute', 'Suivi', 'Le test d\'une minute, assis à côté de lui'],
+  ['pokedex', '📘', 'Pokédex', 'Collection', 'Ses Pokémon, attrapés ou non'],
+  ['rules', '⚙️', 'Règles du jeu', 'Réglages', 'Déblocage, vies, limite du jour, police de lecture'],
+  ['games', '🎮', 'Mini-jeux et Tour', 'Réglages', 'Records et étage de la Tour'],
+  ['player', '👤', 'Joueur', 'Réglages', 'Prénom, code privé, remise à zéro'],
 ];
 
 // player: whose save the page shows and acts on (every admin call carries it).
-const state = { sum: null, tab: 'episodes', players: [], player: null };
+// tab: the page shown, remembered on this device.
+const savedTab = (() => { try { return localStorage.getItem('admin-tab'); } catch (_) { return null; } })();
+const state = { sum: null, tab: TABS.some((t) => t[0] === savedTab) ? savedTab : 'dashboard', players: [], player: null };
 
 /* ------------------------------------------------------------------ api --- */
 
@@ -89,23 +96,56 @@ function fmtDate(iso) {
 }
 
 function tally() {
-  const s = state.sum;
-  const done = s.episodes.filter((e) => e.completions > 0).length;
-  const caught = s.pokedex.filter((p) => p.caught).length;
-  $('#tally').textContent =
-    `${s.name} · ⭐ ${s.stars} · 🔥 série de ${s.streak} jour${s.streak > 1 ? 's' : ''} · ` +
-    `${done}/${s.episodes.length} épisodes · ${caught}/${s.pokedex.length} Pokémon`;
+  const tab = TABS.find((t) => t[0] === state.tab);
+  $('#page-title').textContent = `${tab[1]} ${tab[2]}`;
+  $('#tally').textContent = `${state.sum.name} — ${tab[4]}`;
+  document.title = `${tab[2]} · ${state.sum.name} — Pokélecture`;
 }
 
 function tabs() {
   const nav = $('#tabs');
   nav.innerHTML = '';
-  TABS.forEach(([id, label]) => {
+  let group = '';
+  TABS.forEach(([id, icon, label, g]) => {
+    if (g !== group) {
+      group = g;
+      nav.append(el('div', { class: 'side-label' }, g));
+    }
     nav.append(el('button', {
-      class: state.tab === id ? 'on' : '',
-      onclick: () => { state.tab = id; render(); },
-    }, label));
+      class: `nav-item ${state.tab === id ? 'on' : ''}`,
+      onclick: () => {
+        state.tab = id;
+        try { localStorage.setItem('admin-tab', id); } catch (_) {}
+        render();
+        window.scrollTo(0, 0);
+      },
+    }, el('span', { class: 'nav-icon' }, icon), label));
   });
+}
+
+// headTools: the page header's actions — the save as a file, to keep or compare.
+function headTools() {
+  const box = $('#head-tools');
+  box.innerHTML = '';
+  box.append(el('button', {
+    class: 'btn ghost',
+    title: 'Télécharger tout ce que montre cette page (progression, statistiques) en JSON',
+    onclick: () => {
+      const blob = new Blob([JSON.stringify(state.sum, null, 2)], { type: 'application/json' });
+      const a = el('a', { href: URL.createObjectURL(blob), download: `pokelecture-${state.sum.name}-${new Date().toISOString().slice(0, 10)}.json` });
+      document.body.append(a);
+      a.click();
+      a.remove();
+    },
+  }, '📥 Exporter'));
+}
+
+// settingsPage shows one Réglages page: dangerTab builds every settings
+// section (they share one save call), each tagged with its data-page.
+function settingsPage(list, page) {
+  const all = el('div');
+  dangerTab(all);
+  [...all.children].filter((n) => n.dataset.page === page).forEach((n) => list.append(n));
 }
 
 function statCards() {
@@ -123,8 +163,19 @@ function episodesTab(list) {
   const overrides = (state.sum.settings && state.sum.settings.episode_stars) || {};
   list.append(el('p', { style: 'color:#6a7180;font-size:13px' },
     '« ★ pour la suite » : les étoiles que CET épisode doit avoir pour débloquer le suivant — ' +
-    'par défaut la règle globale (onglet Réglages), ajustable épisode par épisode.'));
+    'par défaut la règle globale (Règles du jeu), ajustable épisode par épisode.'));
+  let region = null;
   state.sum.episodes.forEach((e) => {
+    // A header per region, with how much of it is done.
+    if (e.region !== region) {
+      region = e.region;
+      const eps = state.sum.episodes.filter((x) => x.region === region);
+      const done = eps.filter((x) => x.completions > 0).length;
+      list.append(el('div', { class: 'region-head' },
+        el('b', {}, region),
+        el('span', { class: 'progress' }, el('i', { style: `width:${(done / eps.length) * 100}%` })),
+        el('small', {}, `${done} / ${eps.length}`)));
+    }
     const stars = e.completions > 0 ? '★'.repeat(e.best_stars) + '☆'.repeat(Math.max(0, 5 - e.best_stars)) : '';
 
     // The per-episode unlock threshold, overriding the global policy.
@@ -303,27 +354,45 @@ async function runFluency(stage) {
   ));
 }
 
+/* The Pokédex as a picture grid: filter, search, and a tap to catch or release. */
 function pokedexTab(list) {
-  state.sum.pokedex.forEach((p) => {
-    list.append(el('div', { class: 'row' },
-      el('div', { class: `dexline ${p.caught ? '' : 'off'}` },
-        el('img', { src: `sprites/${p.id}.png`, alt: '', loading: 'lazy' }),
-        el('b', {}, `#${p.id} ${p.name}`),
-      ),
-      el('span', { class: 'meta' }, p.caught ? (p.shiny ? 'attrapé ✨' : 'attrapé') : '—'),
-      el('button', {
-        class: `small ${p.caught ? 'danger' : ''}`,
-        onclick: () => act(`api/admin/pokedex/${p.id}`, { caught: !p.caught }),
-      }, p.caught ? 'Retirer' : 'Attraper'),
-    ));
-  });
+  const dex = state.sum.pokedex;
+  const caught = dex.filter((p) => p.caught).length;
+  const shinies = dex.filter((p) => p.shiny).length;
+  list.append(el('div', { class: 'kpis' },
+    kpi('Attrapés', `${caught} / ${dex.length}`, `${Math.round((caught / dex.length) * 100)} % du Pokédex`),
+    kpi('Chromatiques', `✨ ${shinies}`, 'gagnés en rejouant une route'),
+  ));
+  state.dexFilter = state.dexFilter || 'all';
+  const search = el('input', { class: 'search', placeholder: 'Chercher un Pokémon…', value: state.dexSearch || '' });
+  const grid = el('div', { class: 'dexgrid' });
+  const paint = () => {
+    const q = (state.dexSearch || '').toLowerCase();
+    grid.innerHTML = '';
+    dex.filter((p) => (state.dexFilter === 'all' || (state.dexFilter === 'caught') === p.caught)
+      && (!q || p.name.toLowerCase().includes(q) || String(p.id) === q))
+      .forEach((p) => grid.append(el('div', { class: `dexcard ${p.caught ? '' : 'off'}` },
+        el('img', { src: `sprites/art/${p.id}.png`, alt: '', loading: 'lazy' }),
+        el('b', {}, p.name),
+        el('small', {}, `#${p.id}${p.shiny ? ' · ✨' : ''}`),
+        el('button', {
+          class: `small ${p.caught ? 'danger' : ''}`,
+          onclick: () => act(`api/admin/pokedex/${p.id}`, { caught: !p.caught }),
+        }, p.caught ? 'Retirer' : 'Attraper'))));
+  };
+  search.addEventListener('input', () => { state.dexSearch = search.value; paint(); });
+  list.append(el('div', { class: 'filters' },
+    segmented([['all', 'Tous'], ['caught', 'Attrapés'], ['missing', 'Manquants']], state.dexFilter,
+      (v) => { state.dexFilter = v; render(); }),
+    search), grid);
+  paint();
 }
 
 function dangerTab(list) {
   const s = state.sum;
 
   const input = el('input', { value: s.name, placeholder: 'Prénom' });
-  list.append(el('div', { class: 'section' },
+  list.append(el('div', { class: 'section', 'data-page': 'player' },
     el('h2', {}, 'Prénom'),
     el('div', { class: 'namebox' },
       input,
@@ -351,7 +420,7 @@ function dangerTab(list) {
       }),
   );
   font.addEventListener('change', () => act('api/admin/font', { font: font.value }));
-  list.append(el('div', { class: 'section' },
+  list.append(el('div', { class: 'section', 'data-page': 'rules' },
     el('h2', {}, 'Police de lecture'),
     el('div', { class: 'namebox' }, el('label', {}, 'Les mots à lire s\'écrivent en : '), font),
     el('p', { style: 'color:#6a7180;font-size:13px;margin-top:8px' },
@@ -422,7 +491,7 @@ function dangerTab(list) {
   lives.addEventListener('change', apply);
   [dailyOn, dailyGoals, dailyN].forEach((c) => c.addEventListener('change', () => { paintDaily(); apply(); }));
   const today = s.today || {};
-  list.append(el('div', { class: 'section' },
+  list.append(el('div', { class: 'section', 'data-page': 'rules' },
     el('h2', {}, 'Limite du jour'),
     el('div', { class: 'namebox' },
       el('label', { style: 'display:flex;align-items:center;gap:8px' }, dailyOn, 'Limiter la journée'),
@@ -436,7 +505,7 @@ function dangerTab(list) {
       '= une route terminée (rejouée ou non) ou un examen. ' +
       `Aujourd'hui : ${plural(today.lessons || 0, 'leçon')} faite${(today.lessons || 0) > 1 ? 's' : ''}.`),
   ));
-  list.append(el('div', { class: 'section' },
+  list.append(el('div', { class: 'section', 'data-page': 'rules' },
     el('h2', {}, 'Déblocage des épisodes'),
     el('div', { class: 'namebox' },
       el('label', {}, 'Pour débloquer la suite : '), minStars,
@@ -451,7 +520,7 @@ function dangerTab(list) {
       'avoir son propre seuil dans l\'onglet Épisodes (« ★ pour la suite »).'),
   ));
 
-  list.append(el('div', { class: 'section' },
+  list.append(el('div', { class: 'section', 'data-page': 'rules' },
     el('h2', {}, 'Vies en combat'),
     el('div', { class: 'namebox' },
       el('label', {}, 'Erreurs permises avant la défaite : '), lives,
@@ -488,7 +557,7 @@ function dangerTab(list) {
         }, '↺ Remettre à zéro')));
     }));
   const anyRec = GAMES.some(([id]) => Object.prototype.hasOwnProperty.call(recs, id));
-  list.append(el('div', { class: 'section' },
+  list.append(el('div', { class: 'section', 'data-page': 'games' },
     el('h2', {}, 'Tour de Combat et mini-jeux'),
     el('p', { style: 'color:#6a7180;font-size:13px' },
       `🗼 Étage atteint : ${s.tower_floor || 0} · prochain défi : étage ${(s.tower_floor || 0) + 1}.`),
@@ -502,7 +571,7 @@ function dangerTab(list) {
       'Le prochain score joué devient le nouveau record. Memory et les paires se jouent en temps : le plus petit gagne.'),
   ));
 
-  list.append(el('div', { class: 'section' },
+  list.append(el('div', { class: 'section', 'data-page': 'player' },
     el('h2', {}, 'Zone dangereuse'),
     el('div', { class: 'dangerzone' },
       el('p', {}, 'Efface toute la progression : épisodes, étoiles, Pokédex, révisions. Seul le prénom est conservé. Irréversible.'),
@@ -559,7 +628,7 @@ function lockSection(list, s) {
     onclick: () => { if (code.length < 4) { code.push(n); show(); } },
   }, el('img', { src: `sprites/art/${n}.png`, alt: name }))));
   show();
-  list.append(el('div', { class: 'section' },
+  list.append(el('div', { class: 'section', 'data-page': 'player' },
     el('h2', {}, s.locked ? '🔒 Privé' : '🌐 Public'),
     el('p', { style: 'color:#6a7180;font-size:13px;margin-bottom:10px' }, s.locked
       ? `${s.name} est privé : le jeu demande son code (quatre Pokémon, dans l'ordre) une fois par appareil. Changer le code le redemande sur tous les appareils.`
@@ -610,9 +679,14 @@ function render() {
   playerBar();
   tabs();
   tally();
+  headTools();
   const list = $('#list');
   list.innerHTML = '';
-  ({ episodes: episodesTab, items: itemsTab, pokedex: pokedexTab, exams: examsTab, fluency: fluencyTab, danger: dangerTab })[state.tab](list);
+  ({
+    dashboard: dashboardTab, stats: statsTab,
+    episodes: episodesTab, items: itemsTab, pokedex: pokedexTab, exams: examsTab, fluency: fluencyTab,
+    rules: (l) => settingsPage(l, 'rules'), games: (l) => settingsPage(l, 'games'), player: (l) => settingsPage(l, 'player'),
+  })[state.tab](list);
 }
 
 /* ------------------------------------------------------------------ boot --- */

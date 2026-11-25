@@ -21,6 +21,7 @@ type adminEpisodeView struct {
 	ID          string    `json:"id"`
 	Route       int       `json:"route"`
 	Title       string    `json:"title"`
+	Region      string    `json:"region"`
 	Legendary   bool      `json:"legendary,omitempty"`
 	Badge       string    `json:"badge,omitempty"`
 	Unlocked    bool      `json:"unlocked"`
@@ -105,6 +106,7 @@ func (s *Server) handleAdminSummary(w http.ResponseWriter, r *http.Request) {
 			ID:          ep.ID,
 			Route:       ep.Route,
 			Title:       ep.Title,
+			Region:      ep.Region,
 			Legendary:   ep.Legendary,
 			Unlocked:    unlocked,
 			Completions: stat.Completions,
@@ -333,6 +335,7 @@ type adminDayView struct {
 	Answers  int                      `json:"answers"`
 	Right    int                      `json:"right"`
 	AvgMS    int                      `json:"avg_ms"` // over timed right answers; 0 = none
+	Timed    int                      `json:"timed"`  // those answers, to weigh AvgMS over days
 	Kinds    map[string]adminKindView `json:"kinds"`
 }
 
@@ -340,6 +343,7 @@ type adminKindView struct {
 	Answers int `json:"answers"`
 	Right   int `json:"right"`
 	AvgMS   int `json:"avg_ms"`
+	Timed   int `json:"timed"`
 }
 
 type adminSlowView struct {
@@ -366,14 +370,14 @@ func adminStats(st progress.State, now time.Time) ([]adminDayView, []adminSlowVi
 			v.Right += k.Right
 			timed += k.Timed
 			ms += k.MS
-			kv := adminKindView{Answers: k.N, Right: k.Right}
+			kv := adminKindView{Answers: k.N, Right: k.Right, Timed: k.Timed}
 			if k.Timed > 0 {
 				kv.AvgMS = k.MS / k.Timed
 			}
 			v.Kinds[kind] = kv
 		}
 		if timed > 0 {
-			v.AvgMS = ms / timed
+			v.AvgMS, v.Timed = ms/timed, timed
 		}
 		days = append(days, v)
 	}

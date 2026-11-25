@@ -439,8 +439,42 @@ derrière le build tag `dev` (`internal/api/localadmin.go`) ; la build normale
 l'option (`flag provided but not defined: -local-admin`). En production,
 Google reste obligatoire. `make test` teste les deux builds.
 
-En haut, la barre **👥 Joueur** choisit la sauvegarde affichée (et en ajoute
-une) ; quatre onglets, tout agit immédiatement sur la sauvegarde de ce joueur :
+**L'espace parent** : une barre latérale (le joueur affiché, puis les pages
+groupées **Suivi** / **Collection** / **Réglages** ; la page ouverte est
+retenue sur l'appareil ; sur un téléphone, la barre passe en haut et les
+pages défilent de côté) et, en haut de chaque page, **📥 Exporter** (tout ce
+que la page sait de ce joueur, en JSON). Les pages :
+
+- **📊 Tableau de bord** — sept tuiles (aujourd'hui, la semaine et son écart
+  avec la précédente, la réussite, le temps de réponse, la série, le parcours,
+  le Pokédex), le temps de jeu et la réussite des 14 derniers jours, « Ce qui
+  coince » (les éléments les plus fragiles et les plus lents, à faire relire),
+  la progression région par région, le calendrier d'activité des 60 jours, la
+  limite du jour si elle est active.
+- **📈 Statistiques** — sur 7, 14, 30 ou 60 jours : temps de jeu, réponses,
+  réussite, temps de réponse jour par jour ; par type de question (sons,
+  syllabes, mots, phrases) ; les plus lents à lire ; la lecture à voix haute
+  test après test ; les examens ; le calendrier.
+- **🗺️ Parcours**, **🧠 Révisions**, **🎓 Examens**, **📖 Lecture à voix
+  haute**, **📘 Pokédex** (une grille d'images, filtres Tous / Attrapés /
+  Manquants, recherche).
+- **⚙️ Règles du jeu**, **🎮 Mini-jeux et Tour**, **👤 Joueur** — les
+  réglages, chacun sur sa page.
+
+### Statistiques
+
+Chaque réponse est comptée par jour et par type (`State.Days`, 60 jours
+gardés, `LogAnswer`), avec son temps quand c'est une bonne réponse
+chronométrée (entre 0,3 et 60 s — un tap perdu ou une tablette posée ne
+comptent pas) ; chaque élément garde son temps habituel (`Item.MS`, une
+moyenne glissante). Chaque séance et chaque mini-jeu ajoute sa durée (une
+heure au plus) — `LogSession`. L'admin reçoit ces jours déjà alignés
+(`adminStats`) et les dessine en SVG à la main (`web/admin-stats.js`) : une
+série par graphique, une seule couleur, une info-bulle sur chaque barre, point
+ou case, et « Voir les chiffres » pour le tableau. L'historique commence le
+jour de cette version : avant, rien n'était enregistré jour par jour.
+
+Les pages ci-dessous agissent immédiatement sur la sauvegarde du joueur affiché :
 
 - **Épisodes** : parties jouées, étoiles, dernière session. « ↺ Rejouer comme
   neuf » efface les stats d'un épisode (les étoiles déjà gagnées restent
