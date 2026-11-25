@@ -399,11 +399,26 @@ make run
 # puis, sur l'ORDINATEUR : http://localhost:8080/admin/studio
 ```
 
-Maintiens **ENREGISTRER** pendant que tu parles, relâche : c'est envoyé. Le
-fichier est servi à la place de la synthèse **à la même URL**, donc le jeu n'a
-rien à savoir. **↺** revient à la synthèse.
+Le studio est **une page de l'espace parent** (🎙 Studio voix, groupe Voix ;
+`/admin/studio` l'ouvre directement, même connexion Google — `web/admin-studio.js`).
+Les enregistrements valent pour tout le jeu, pas pour un joueur.
 
-Les lignes sont classées **dans l'ordre de la progression** : les 39 sons
+Maintiens **● Enregistrer** pendant que tu parles (une jauge montre le niveau
+du micro), relâche : c'est envoyé, puis ta prise est rejouée. Le fichier est
+servi à la place de la synthèse **à la même URL**, donc le jeu n'a rien à
+savoir. **▶** écoute ce que le jeu dit, **↺** revient à la synthèse.
+
+- **Une tuile par groupe** (sons, syllabes, mots, phrases) : combien sont déjà
+  dans ta voix.
+- **Filtres** : le groupe, Toutes / À enregistrer / Ma voix, et une recherche ;
+  100 lignes à la fois (« Afficher plus »). Les phrases du jeu, dites comme des
+  mots, sont rangées dans Phrases.
+- **▶ Enregistrer à la suite** : une phrase à la fois, en grand — la synthèse
+  d'abord, maintenir (ou la barre d'espace) pour parler, la prise rejouée, puis
+  la suivante non enregistrée du groupe ; « Passer », Échap pour arrêter.
+- **🎤 Tester le micro** : la jauge quelques secondes, sans rien enregistrer.
+
+Les lignes sont classées **dans l'ordre de la progression** : les sons
 d'abord (route 1 en tête), puis syllabes, mots, phrases. Enregistrer juste les
 sons, c'est ~5 minutes et c'est là que se joue l'essentiel.
 

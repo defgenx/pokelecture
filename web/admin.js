@@ -27,6 +27,7 @@ const TABS = [
   ['exams', '🎓', 'Examens', 'Suivi', 'Les examens surprises et leur bulletin'],
   ['fluency', '📖', 'Lecture à voix haute', 'Suivi', 'Le test d\'une minute, assis à côté de lui'],
   ['pokedex', '📘', 'Pokédex', 'Collection', 'Ses Pokémon, attrapés ou non'],
+  ['studio', '🎙', 'Studio voix', 'Voix', 'Ta propre voix sur n\'importe quelle phrase du jeu'],
   ['rules', '⚙️', 'Règles du jeu', 'Réglages', 'Déblocage, vies, limite du jour, police de lecture'],
   ['games', '🎮', 'Mini-jeux et Tour', 'Réglages', 'Records et étage de la Tour'],
   ['player', '👤', 'Joueur', 'Réglages', 'Prénom, code privé, remise à zéro'],
@@ -34,7 +35,9 @@ const TABS = [
 
 // player: whose save the page shows and acts on (every admin call carries it).
 // tab: the page shown, remembered on this device.
-const savedTab = (() => { try { return localStorage.getItem('admin-tab'); } catch (_) { return null; } })();
+// /admin/studio opens straight on the studio (the old studio address).
+const savedTab = /\/admin\/studio\/?$/.test(location.pathname) ? 'studio'
+  : (() => { try { return localStorage.getItem('admin-tab'); } catch (_) { return null; } })();
 const state = { sum: null, tab: TABS.some((t) => t[0] === savedTab) ? savedTab : 'dashboard', players: [], player: null };
 
 /* ------------------------------------------------------------------ api --- */
@@ -116,6 +119,8 @@ function tabs() {
       onclick: () => {
         state.tab = id;
         try { localStorage.setItem('admin-tab', id); } catch (_) {}
+        // The address follows the page, so the studio's link can be shared.
+        history.replaceState(null, '', id === 'studio' ? 'admin/studio' : 'admin');
         render();
         window.scrollTo(0, 0);
       },
@@ -683,7 +688,7 @@ function render() {
   const list = $('#list');
   list.innerHTML = '';
   ({
-    dashboard: dashboardTab, stats: statsTab,
+    dashboard: dashboardTab, stats: statsTab, studio: studioTab,
     episodes: episodesTab, items: itemsTab, pokedex: pokedexTab, exams: examsTab, fluency: fluencyTab,
     rules: (l) => settingsPage(l, 'rules'), games: (l) => settingsPage(l, 'games'), player: (l) => settingsPage(l, 'player'),
   })[state.tab](list);

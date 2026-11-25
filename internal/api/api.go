@@ -54,7 +54,9 @@ func NewPlayers(cur *curriculum.Curriculum, players *progress.Registry, webDir, 
 // build run at / locally and under /pokelecture/ in production.
 // parentPages maps each parent page's address to its file: the admin, and
 // the voice studio under it.
-var parentPages = map[string]string{"admin": "admin.html", "admin/studio": "parent.html"}
+// The studio is a page of the admin: /admin/studio serves the same page,
+// opened on it (web/admin-studio.js).
+var parentPages = map[string]string{"admin": "admin.html", "admin/studio": "admin.html"}
 
 // oldParentPages are earlier addresses of the parent pages, now redirects.
 var oldParentPages = map[string]string{"admin.html": "admin", "parent.html": "admin/studio", "studio": "admin/studio"}

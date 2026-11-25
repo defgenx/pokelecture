@@ -21,7 +21,7 @@ import (
 // exist. The extension follows what MediaRecorder produced: .m4a for AAC
 // (recent Chrome, Safari — plays everywhere including iPads), .webm for Opus
 // (older Chrome — iPads refuse it and the game falls back to the synthetic
-// voice there, so AAC is preferred at capture time in parent.js).
+// voice there, so AAC is preferred at capture time in admin-studio.js).
 
 const recordedDir = "recorded"
 
@@ -71,6 +71,10 @@ func groupOf(it curriculum.SpeechItem) string {
 	case speech.StyleSyllable:
 		return "syllabes"
 	case speech.StyleWord:
+		// A sentence to read is voiced like a word, slowly; it is still a sentence.
+		if t := strings.TrimSpace(it.Text); strings.Contains(t, " ") && strings.ContainsAny(t[len(t)-1:], ".!?") {
+			return "phrases"
+		}
 		return "mots"
 	default:
 		return "phrases"
